@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: ems-opg
+Version: 0.1.0
+Summary: EMS Operations and Production Gateway
+Requires-Python: >=3.12
+License-File: LICENSE
+Requires-Dist: qrcode
+Requires-Dist: pillow
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Dynamic: license-file

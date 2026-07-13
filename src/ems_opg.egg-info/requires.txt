@@ -1,0 +1,8 @@
+qrcode
+pillow
+
+[dev]
+pytest
+pytest-cov
+black
+ruff

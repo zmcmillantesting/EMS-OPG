@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "ems-opg"
+version = "0.1.0"
+description = "EMS Operations and Production Gateway"
+requires-python = ">=3.12"
+
+dependencies = [
+    "qrcode",
+    "pillow",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "black",
+    "ruff",
+]
+
+
+[tool.setuptools.packages.find]
+where = [
+    "src"
+]
+
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
+
+pythonpath = [
+    "src"
+]
