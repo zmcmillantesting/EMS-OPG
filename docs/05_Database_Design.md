@@ -22,6 +22,7 @@ Stores customer production orders.
 |---------|-------------|
 | id | Primary Key |
 | order_number | Customer Order Number |
+| part_number | FIN |
 | status | Open / Closed |
 | created_at | Record creation timestamp |
 
