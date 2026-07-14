@@ -1,5 +1,6 @@
 qrcode
 pillow
+SQLAlchemy>=2.0
 
 [dev]
 pytest

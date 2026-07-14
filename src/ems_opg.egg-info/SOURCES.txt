@@ -10,13 +10,13 @@ src/ems_opg.egg-info/requires.txt
 src/ems_opg.egg-info/top_level.txt
 src/ems_opg/app_logging/__init__.py
 src/ems_opg/app_logging/logger.py
-src/ems_opg/config/environment.py
+src/ems_opg/config/config_manager.py
 src/ems_opg/core/__init__.py
 src/ems_opg/core/application.py
 src/ems_opg/core/constants.py
 src/ems_opg/core/environment.py
 src/ems_opg/core/exceptions.py
-src/ems_opg/core/paths.py
+src/ems_opg/core/paths_manager.py
 src/ems_opg/core/shutdown.py
 src/ems_opg/core/startup.py
 src/ems_opg/core/version.py
