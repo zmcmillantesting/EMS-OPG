@@ -1,27 +1,14 @@
-"""
-Application bootstrap.
-"""
-
-from PyQt5.QtWidgets import QApplication
-
-import sys
-
-from ems_opg.core.startup import startup
-from ems_opg.core.shutdown import shutdown
-
+from src.ems_opg.app_logging.logger import Logger 
+from src.ems_opg.config.config_manager import ConfigurationManager
+from src.ems_opg.core.paths_manager import PathManager
 
 class Application:
 
     def __init__(self):
 
-        startup()
+        self.config = ConfigurationManager(...)
+        self.paths = PathManager(self.config)
 
-        self.qt_app = QApplication(sys.argv)
+        self.logger = Logger().get_logger()
 
-    def run(self):
-
-        exit_code = self.qt_app.exec_()
-
-        shutdown()
-
-        return exit_code
+        self.logger.info("Application initialized.")

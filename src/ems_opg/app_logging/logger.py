@@ -1,93 +1,93 @@
 """
-Logging module for the EMS-OPG application.
+Centralized logging manager.
 
-Usage:
-    from logger import logging
-    logger = logging.getLogger(__name__)
-    logger.info("This is an info message.")
-    logger.warning("This is a warning message.")
-    logger.error("This is an error message.")
-    logger.critical("This is a critical message.")
-    logger.debug("This is a debug message.")
+Responsible for configuring the application's logging system.
 """
+
 import logging
+from logging.handlers import RotatingFileHandler
 
-class Logger:
+
+class LoggerManager:
     """
-    Logger class for the EMS-OPG application. This class provides a centralized logging mechanism for the application.
+    Configures the application's logging.
+
+    This class should only be instantiated once during application startup.
     """
-    def __init__(self):
+
+    def __init__(self, config, paths):
+
+        self.config = config
+        self.paths = paths
+
+        self.logger = logging.getLogger()
+
+        self.logger.setLevel(
+            getattr(
+                logging,
+                self.config.logging.level.upper()
+            )
+        )
+
+        self.logger.propagate = False
+
+        self.configure()
+
+    def configure(self):
+
         """
-        Initializes the Logger instance.
+        Configure console and file logging.
         """
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
 
-        # Create console handler and set level to debug
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
+        # Prevent duplicate handlers if called twice
+        if self.logger.handlers:
+            return
 
-        # Create formatter
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)-15s | %(message)s"
+        )
 
-        # Add formatter to console handler
-        ch.setFormatter(formatter)
+        #
+        # Console
+        #
 
-        # Add console handler to logger
-        self.logger.addHandler(ch)
+        console_handler = logging.StreamHandler()
 
-        print("Logger initialized")
+        console_handler.setFormatter(formatter)
 
-    def get_logger(self):
+        self.logger.addHandler(console_handler)
+
+        #
+        # File
+        #
+
+        log_file = self.paths.logs / "application.log"
+
+        file_handler = RotatingFileHandler(
+            filename=log_file,
+            maxBytes=self.config.logging.max_log_size_mb * 1024 * 1024,
+            backupCount=self.config.logging.backup_count,
+            encoding="utf-8"
+        )
+
+        file_handler.setFormatter(formatter)
+
+        self.logger.addHandler(file_handler)
+
+        #
+        # Startup Message
+        #
+
+        self.logger.info("=" * 70)
+        self.logger.info("Logger initialized.")
+        self.logger.info("Log file: %s", log_file)
+        self.logger.info("=" * 70)
+
+    @staticmethod
+    def get_logger(name):
+
         """
-        Returns the logger instance.
+        Return a named logger.
+        """
 
-        Returns:
-            logging.Logger: The logger instance.
-        """
-        return self.logger
-    
-    def info(self, message):
-        """
-        Logs an info message.
-
-        Args:
-            message (str): The message to log.
-        """
-        self.logger.info(message)
-
-    def warning(self, message):
-        """
-        Logs a warning message.
-
-        Args:
-            message (str): The message to log.
-        """
-        self.logger.warning(message)
-
-    def error(self, message):
-        """
-        Logs an error message.
-
-        Args:
-            message (str): The message to log.
-        """
-        self.logger.error(message)
-
-    def critical(self, message):
-        """
-        Logs a critical message.
-
-        Args:
-            message (str): The message to log.
-        """
-        self.logger.critical(message)
-
-    def debug(self, message):
-        """
-        Logs a debug message.
-
-        Args:
-            message (str): The message to log.
-        """
-        self.logger.debug(message)
+        return logging.getLogger(name)

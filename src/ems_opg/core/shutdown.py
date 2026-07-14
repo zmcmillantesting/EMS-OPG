@@ -1,12 +1,19 @@
-"""
-Shutdown routines.
-"""
+from src.ems_opg.app_logging.logger import Logger
 
+class Shutdown:
 
-def shutdown():
+    def __init__(self, app):
 
-    print("Saving settings...")
+        self.app = app
+        self.app.logger = Logger().get_logger()
+        self.logger = self.app.logger
 
-    print("Closing database...")
+    def shutdown(self):
 
-    print("Goodbye.")
+        self.app.logger.info("Shutdown requested.")
+        self.app.logger.info("=" * 60)
+
+        self.app.logger.info("Closing database...")
+        self.app.logger.info("Saving configuration...")
+        self.app.logger.info("Application shutdown complete.")
+        self.app.logger.info("=" * 60)
