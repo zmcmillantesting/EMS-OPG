@@ -1,19 +1,20 @@
-Testing Pyramid
+# Testing Strategy
+## Rerforming Tests
 
-Unit Tests
+We are using pytest and pluggy to perform testing.
 
-Integration Tests
+With that in mind because of environment variables the best way to run testing is by running the following terminal command.
 
-UI Tests
+```
+python -m pytest tests/...
+```
 
-Regression Tests
+---
 
-Performance Tests
+## What to test
 
-Acceptance Tests
+For this application every core service, config, database and logging feature must be tested indivually. 
 
-Coverage Goals
+---
 
-Bug Reporting
 
-Regression Policy
