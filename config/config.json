@@ -1,0 +1,38 @@
+{
+    "application": {
+        "name": "EMS-OPG",
+        "version": "1.0.0",
+        "environment": "development"
+    },
+    "database": {
+        "type": "sqlite",
+        "filename": "traceability_db.db",
+        "auto_backup": true
+    },
+    "logging": {
+        "level": "INFO",
+        "directory": "logs",
+        "max_log_size_mb": 10,
+        "backup_count": 5
+    },
+    "backup": {
+        "enabled": true,
+        "directory": "backup",
+        "backup_on_startup": true,
+        "backup_on_shutdown": false
+    },
+    "paths": {
+        "assets": "assets",
+        "exports": "exports",
+        "database": "database"
+    },
+    "window": {
+        "width": 1400,
+        "height": 900,
+        "maximize": true
+    },
+    "workflow": {
+        "confirm_before_finish": true,
+        "allow_cancel": true
+    }
+}
