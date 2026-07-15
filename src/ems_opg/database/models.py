@@ -78,8 +78,8 @@ class Device(Base):
         autoincrement=True,
     )
 
-    order_id: Mapped[int] = mapped_column(
-        ForeignKey("orders.id"),
+    order_number: Mapped[str] = mapped_column(
+        ForeignKey("orders.order_number"),
         nullable=False,
     )
 
@@ -113,7 +113,7 @@ class Device(Base):
         nullable=False,
     )
 
-    test_timestamp: Mapped[datetime] = mapped_column(
+    timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
     )
