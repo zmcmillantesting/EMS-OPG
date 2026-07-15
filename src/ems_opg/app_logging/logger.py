@@ -91,3 +91,31 @@ class LoggerManager:
         """
 
         return logging.getLogger(name)
+
+
+class Logger:
+    """Lightweight logging wrapper for tests and simple startup use."""
+
+    def __init__(self, config=None, paths=None):
+        self._logger = logging.getLogger()
+        if config is not None and paths is not None:
+            manager = LoggerManager(config, paths)
+            self._logger = manager.logger
+
+    def get_logger(self, name=None):
+        return self._logger if name is None else logging.getLogger(name)
+
+    def info(self, msg, *args, **kwargs):
+        self._logger.info(msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        self._logger.warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        self._logger.error(msg, *args, **kwargs)
+
+    def critical(self, msg, *args, **kwargs):
+        self._logger.critical(msg, *args, **kwargs)
+
+    def debug(self, msg, *args, **kwargs):
+        self._logger.debug(msg, *args, **kwargs)

@@ -1,12 +1,7 @@
 from pathlib import Path
-import sys
 
 from src.ems_opg.config.config_manager import ConfigurationManager
 from src.ems_opg.core.paths_manager import PathManager
-
-ROOT = Path(__file__).resolve().parents[3]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 config = ConfigurationManager(
     Path("config/config.json")
