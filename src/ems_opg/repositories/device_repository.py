@@ -46,11 +46,16 @@ class DeviceRepository:
     
     def get_by_order(self, order_number):
 
-        return self.sessionscalar(
+        return self.session.scalar(
             select(Device).where(
-                Device.order_number == order_number
-        )
+                Device.used == True
+            )
+        ).all()
 
+    def list_available(self):
+        return self.session.scalar(
+            select(Device).where(Device.used == False)
+        ).all()
 
     def asign_to_order(self, device, order_number, serial_number, operator):
         device.order_number = order_number
