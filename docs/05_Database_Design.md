@@ -23,6 +23,7 @@ Stores customer production orders.
 | id | Primary Key |
 | order_number | Customer Order Number |
 | part_number | FIN |
+| quantity | int |
 | status | Open / Closed |
 | created_at | Record creation timestamp |
 
@@ -35,7 +36,7 @@ Stores traceability information for every tested device.
 | Column | Description |
 |---------|-------------|
 | id | Primary Key |
-| order_id | Foreign Key to Orders |
+| order_number | Foreign Key to Orders |
 | serial_number | Device Serial Number |
 | mac_address | Device MAC Address |
 | used | Boolean indicating MAC allocation |
