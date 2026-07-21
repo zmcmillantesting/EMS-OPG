@@ -29,9 +29,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 
-from src.ems_opg.database.models import Device
+from src.ems_opg.database.base import Base
+from src.ems_opg.database.engine import engine
+from src.ems_opg.database.init_db import init_database
+from src.ems_opg.database.models import Device, Order
 from src.ems_opg.database.session import SessionLocal
 
 
@@ -39,7 +42,7 @@ from src.ems_opg.database.session import SessionLocal
 # Configuration
 # ---------------------------------------------------------------------------
 
-CSV_FILE = Path("mac_addresses.csv")
+CSV_FILE = Path("scripts/mac_addresses.csv")
 LOG_FILE = Path("logs/mac_database_initialization.log")
 
 LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -77,36 +80,81 @@ def file_checksum(path: Path) -> str:
 def load_csv(path: Path) -> list[str]:
     """
     Read MAC addresses from CSV.
+
+    The CSV contains a header row and multiple columns. The MAC address is
+    stored in the ``mac_address`` column, so the loader must read the header
+    and select that column rather than assuming the first column contains the
+    address.
     """
 
-    macs = []
+    macs: list[str] = []
 
-    with path.open(newline="") as f:
-
+    with path.open(newline="", encoding="utf-8") as f:
         reader = csv.reader(f)
+        rows = list(reader)
 
-        for row in reader:
+    if not rows:
+        return macs
 
-            if not row:
-                continue
+    header = [column.strip().lower() for column in rows[0]]
 
-            mac = row[0].strip()
+    if "mac_address" not in header:
+        raise ValueError("CSV file does not contain a mac_address column")
 
-            if not mac:
-                continue
+    mac_index = header.index("mac_address")
 
-            if not MAC_REGEX.match(mac):
+    for row in rows[1:]:
+        if not row:
+            continue
 
-                logger.warning(
-                    "Skipping invalid MAC address: %s",
-                    mac,
-                )
+        if len(row) <= mac_index:
+            continue
 
-                continue
+        mac = row[mac_index].strip()
 
-            macs.append(mac)
+        if not mac:
+            continue
+
+        if not MAC_REGEX.match(mac):
+            logger.warning(
+                "Skipping invalid MAC address: %s",
+                mac,
+            )
+            continue
+
+        macs.append(mac)
 
     return macs
+
+
+def ensure_database_schema() -> None:
+    """Create or refresh the database schema if it is stale."""
+
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+
+    if "devices" not in tables or "orders" not in tables:
+        logger.info("Initializing database schema")
+        Base.metadata.drop_all(bind=engine)
+        init_database()
+        return
+
+    device_columns = {column["name"] for column in inspector.get_columns("devices")}
+    required_columns = {
+        "order_number",
+        "serial_number",
+        "mac_address",
+        "used",
+        "test_result",
+        "operator",
+        "timestamp",
+        "post_test_changes",
+    }
+
+    if not required_columns.issubset(device_columns):
+        logger.warning("Detected an outdated device schema; recreating database tables")
+        Base.metadata.drop_all(bind=engine)
+        init_database()
 
 
 # ---------------------------------------------------------------------------
@@ -144,9 +192,24 @@ def main():
     inserted = 0
     duplicates = 0
 
+    ensure_database_schema()
+
     with SessionLocal() as session:
 
         try:
+
+            order = session.scalar(
+                select(Order).where(Order.order_number == "MAC_IMPORT")
+            )
+
+            if order is None:
+                order = Order(
+                    order_number="MAC_IMPORT",
+                    part_number="MAC_POOL",
+                    status="Open",
+                )
+                session.add(order)
+                session.flush()
 
             for mac in csv_macs:
 
@@ -162,13 +225,12 @@ def main():
 
                 session.add(
                     Device(
+                        order_number=order.order_number,
+                        serial_number=mac.replace(":", ""),
                         mac_address=mac,
                         used=False,
-                        order_number=None,
-                        serial_number=None,
-                        operator=None,
-                        timestamp=None,
-                        post_testing_changes=None,
+                        test_result="Pending",
+                        operator="Imported",
                     )
                 )
 
