@@ -45,6 +45,12 @@ class Order(Base):
         nullable=False,
     )
 
+    quantity: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        nullable=False,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
