@@ -14,7 +14,7 @@ def test_order_has_devices(session):
 
     session.add_all([
         Device(
-            order_id=order.id,
+            order_number=order.order_number,
             serial_number="SN1",
             mac_address="00:11:22:33:44:01",
             used=True,
@@ -22,7 +22,7 @@ def test_order_has_devices(session):
             operator="Tester",
         ),
         Device(
-            order_id=order.id,
+            order_number=order.order_number,
             serial_number="SN2",
             mac_address="00:11:22:33:44:02",
             used=True,

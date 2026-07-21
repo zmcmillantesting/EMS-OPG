@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from src.ems_opg.database.engine import DATABASE_FILE
 from src.ems_opg.database.init_db import init_database
 from src.ems_opg.database.session import SessionLocal
 from src.ems_opg.database.models import Order, Device, AuditLog
@@ -19,8 +20,11 @@ def print_header(title: str):
 
 def main():
 
+    if DATABASE_FILE.exists():
+        DATABASE_FILE.unlink()
+
     print_header("Creating Database")
-    init_database()
+    init_database(force=True)
 
     session = SessionLocal()
 
@@ -36,6 +40,7 @@ def main():
             order_number="SO-10001",
             part_number="FIN-5000",
             status="Open",
+            quantity=15,
         )
 
         session.add(order)
@@ -51,7 +56,7 @@ def main():
         print_header("Creating Devices")
 
         device1 = Device(
-            order_id=order.id,
+            order_number=order.order_number,
             serial_number="SN000001",
             mac_address="00:11:22:33:44:55",
             used=True,
@@ -60,7 +65,7 @@ def main():
         )
 
         device2 = Device(
-            order_id=order.id,
+            order_number=order.order_number,
             serial_number="SN000002",
             mac_address="00:11:22:33:44:56",
             used=True,

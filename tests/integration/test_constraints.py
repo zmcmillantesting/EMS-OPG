@@ -16,7 +16,7 @@ def test_duplicate_mac_fails(session):
     session.commit()
 
     session.add(Device(
-        order_id=order.id,
+        order_number=order.order_number,
         serial_number="SN1",
         mac_address="AA:BB:CC:DD:EE:FF",
         used=True,
@@ -27,7 +27,7 @@ def test_duplicate_mac_fails(session):
     session.commit()
 
     session.add(Device(
-        order_id=order.id,
+        order_number=order.order_number,
         serial_number="SN2",
         mac_address="AA:BB:CC:DD:EE:FF",
         used=True,

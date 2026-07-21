@@ -13,7 +13,7 @@ def test_create_device(session):
     session.commit()
 
     device = Device(
-        order_id=order.id,
+        order_number=order.order_number,
         serial_number="SN001",
         mac_address="00:11:22:33:44:55",
         used=True,
@@ -40,7 +40,7 @@ def test_update_device(session):
     session.commit()
 
     device = Device(
-        order_id=order.id,
+        order_number=order.order_number,
         serial_number="SN002",
         mac_address="00:11:22:33:44:56",
         used=False,
