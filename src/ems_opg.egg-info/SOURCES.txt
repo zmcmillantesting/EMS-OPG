@@ -31,6 +31,7 @@ src/ems_opg/repositories/__init__.py
 src/ems_opg/repositories/audit_repository.py
 src/ems_opg/repositories/base_repositories.py
 src/ems_opg/repositories/device_repository.py
+src/ems_opg/repositories/mac_address_repository.py
 src/ems_opg/repositories/order_repository.py
 src/ems_opg/services/__init__.py
 src/ems_opg/services/audit_service.py
