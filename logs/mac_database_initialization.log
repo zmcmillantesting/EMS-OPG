@@ -1,0 +1,131 @@
+2026-07-22 10:37:52,944 | INFO     | ======================================================================
+2026-07-22 10:37:52,944 | INFO     | Starting MAC Database Initialization
+2026-07-22 10:37:52,944 | INFO     | ======================================================================
+2026-07-22 10:37:52,952 | INFO     | CSV File: scripts/mac_addresses.csv
+2026-07-22 10:37:52,952 | INFO     | SHA256: b46de436e5d619212bc2213b480fc56cdd7fb9e27f390df7800222a20be6a8b2
+2026-07-22 10:37:53,022 | INFO     | Read 53504 MAC addresses
+2026-07-22 10:37:53,023 | INFO     | BEGIN (implicit)
+2026-07-22 10:37:53,023 | INFO     | SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-07-22 10:37:53,023 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,023 | INFO     | ROLLBACK
+2026-07-22 10:37:53,024 | INFO     | BEGIN (implicit)
+2026-07-22 10:37:53,024 | INFO     | PRAGMA main.table_xinfo("devices")
+2026-07-22 10:37:53,024 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,024 | INFO     | ROLLBACK
+2026-07-22 10:37:53,024 | WARNING  | Detected an outdated device schema; recreating database tables
+2026-07-22 10:37:53,024 | INFO     | BEGIN (implicit)
+2026-07-22 10:37:53,025 | INFO     | PRAGMA main.table_info("orders")
+2026-07-22 10:37:53,025 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,025 | INFO     | PRAGMA main.table_info("devices")
+2026-07-22 10:37:53,025 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,025 | INFO     | PRAGMA main.table_info("audit_log")
+2026-07-22 10:37:53,025 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,025 | INFO     | 
+DROP TABLE devices
+2026-07-22 10:37:53,026 | INFO     | [no key 0.00012s] ()
+2026-07-22 10:37:53,031 | INFO     | 
+DROP TABLE audit_log
+2026-07-22 10:37:53,032 | INFO     | [no key 0.00016s] ()
+2026-07-22 10:37:53,036 | INFO     | 
+DROP TABLE orders
+2026-07-22 10:37:53,036 | INFO     | [no key 0.00016s] ()
+2026-07-22 10:37:53,039 | INFO     | COMMIT
+2026-07-22 10:37:53,040 | INFO     | BEGIN (implicit)
+2026-07-22 10:37:53,040 | INFO     | SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite~_%' ESCAPE '~' ORDER BY name
+2026-07-22 10:37:53,040 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,040 | INFO     | ROLLBACK
+2026-07-22 10:37:53,040 | INFO     | BEGIN (implicit)
+2026-07-22 10:37:53,041 | INFO     | PRAGMA main.table_info("orders")
+2026-07-22 10:37:53,041 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,041 | INFO     | PRAGMA temp.table_info("orders")
+2026-07-22 10:37:53,041 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,041 | INFO     | PRAGMA main.table_info("devices")
+2026-07-22 10:37:53,041 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,041 | INFO     | PRAGMA temp.table_info("devices")
+2026-07-22 10:37:53,041 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,041 | INFO     | PRAGMA main.table_info("audit_log")
+2026-07-22 10:37:53,042 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,042 | INFO     | PRAGMA temp.table_info("audit_log")
+2026-07-22 10:37:53,042 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,042 | INFO     | COMMIT
+2026-07-22 10:37:53,042 | INFO     | BEGIN (implicit)
+2026-07-22 10:37:53,042 | INFO     | PRAGMA main.table_info("orders")
+2026-07-22 10:37:53,042 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,042 | INFO     | PRAGMA temp.table_info("orders")
+2026-07-22 10:37:53,042 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,043 | INFO     | PRAGMA main.table_info("devices")
+2026-07-22 10:37:53,043 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,043 | INFO     | PRAGMA temp.table_info("devices")
+2026-07-22 10:37:53,043 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,043 | INFO     | PRAGMA main.table_info("audit_log")
+2026-07-22 10:37:53,043 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,043 | INFO     | PRAGMA temp.table_info("audit_log")
+2026-07-22 10:37:53,043 | INFO     | [raw sql] ()
+2026-07-22 10:37:53,044 | INFO     | 
+CREATE TABLE orders (
+	id INTEGER NOT NULL, 
+	order_number VARCHAR(50) NOT NULL, 
+	part_number VARCHAR(100) NOT NULL, 
+	status VARCHAR(20) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-22 10:37:53,044 | INFO     | [no key 0.00012s] ()
+2026-07-22 10:37:53,048 | INFO     | CREATE UNIQUE INDEX ix_orders_order_number ON orders (order_number)
+2026-07-22 10:37:53,048 | INFO     | [no key 0.00026s] ()
+2026-07-22 10:37:53,052 | INFO     | 
+CREATE TABLE audit_log (
+	id INTEGER NOT NULL, 
+	timestamp DATETIME NOT NULL, 
+	operator VARCHAR(100) NOT NULL, 
+	action VARCHAR(100) NOT NULL, 
+	details TEXT, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-22 10:37:53,053 | INFO     | [no key 0.00056s] ()
+2026-07-22 10:37:53,057 | INFO     | 
+CREATE TABLE devices (
+	id INTEGER NOT NULL, 
+	order_number VARCHAR(50) NOT NULL, 
+	serial_number VARCHAR(100) NOT NULL, 
+	first_mac_address VARCHAR(17) NOT NULL, 
+	second_mac_address VARCHAR(17), 
+	used BOOLEAN NOT NULL, 
+	test_result VARCHAR(10) NOT NULL, 
+	operator VARCHAR(100) NOT NULL, 
+	timestamp DATETIME NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	post_test_changes TEXT, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(order_number) REFERENCES orders (order_number)
+)
+
+
+2026-07-22 10:37:53,058 | INFO     | [no key 0.00016s] ()
+2026-07-22 10:37:53,061 | INFO     | CREATE UNIQUE INDEX ix_devices_second_mac_address ON devices (second_mac_address)
+2026-07-22 10:37:53,061 | INFO     | [no key 0.00021s] ()
+2026-07-22 10:37:53,065 | INFO     | CREATE UNIQUE INDEX ix_devices_first_mac_address ON devices (first_mac_address)
+2026-07-22 10:37:53,065 | INFO     | [no key 0.00022s] ()
+2026-07-22 10:37:53,069 | INFO     | CREATE UNIQUE INDEX ix_devices_serial_number ON devices (serial_number)
+2026-07-22 10:37:53,069 | INFO     | [no key 0.00015s] ()
+2026-07-22 10:37:53,072 | INFO     | COMMIT
+2026-07-22 10:37:53,073 | INFO     | BEGIN (implicit)
+2026-07-22 10:37:53,077 | INFO     | SELECT orders.id, orders.order_number, orders.part_number, orders.status, orders.quantity, orders.created_at 
+FROM orders 
+WHERE orders.order_number = ?
+2026-07-22 10:37:53,077 | INFO     | [generated in 0.00019s] ('MAC_IMPORT',)
+2026-07-22 10:37:53,079 | INFO     | INSERT INTO orders (order_number, part_number, status, quantity, created_at) VALUES (?, ?, ?, ?, ?)
+2026-07-22 10:37:53,079 | INFO     | [generated in 0.00035s] ('MAC_IMPORT', 'MAC_POOL', 'Open', 1, '2026-07-22 16:37:53.078930')
+2026-07-22 10:37:53,079 | INFO     | ROLLBACK
+2026-07-22 10:37:53,080 | ERROR    | Database initialization failed.
+Traceback (most recent call last):
+  File "/home/zmcmillan/EMS-OPG/scripts/load_database.py", line 218, in main
+    Device.mac_address == mac
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'Device' has no attribute 'mac_address'

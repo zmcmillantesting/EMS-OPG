@@ -96,14 +96,14 @@ class Device(Base):
         index=True,
     )
 
-    first_mac_address: Mapped[str] = mapped_column(
+    ethaddr_id: Mapped[str] = mapped_column(
         String(17),
         unique=True,
         nullable=False,
         index=True,
     )
 
-    second_mac_address: Mapped[str] = mapped_column(
+    ethaddr1_id: Mapped[str] = mapped_column(
         String(17),
         unique =True,
         nullable=True,
@@ -158,6 +158,39 @@ class Device(Base):
             f"serial={self.serial_number}, "
             f"first_mac={self.first_mac_address})>"
             f"second_mac={self.second_mac_address}>"
+        )
+
+#---------------------------------------------------------
+# MAC Address Pool
+#---------------------------------------------------------
+
+class MACAddressPool(Base):
+    __tablename__ = "mac_address_pool"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    mac_address: Mapped[str] = mapped_column(
+        String(17),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    used: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    def __repr__(self):
+        return (
+            f"<MACAddressPool("
+            f"mac_address={self.mac_address}, "
+            f"used={self.used})>"
         )
 
 
