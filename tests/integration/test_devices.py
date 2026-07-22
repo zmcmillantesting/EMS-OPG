@@ -15,7 +15,8 @@ def test_create_device(session):
     device = Device(
         order_number=order.order_number,
         serial_number="SN001",
-        mac_address="00:11:22:33:44:55",
+        first_mac_address="00:11:22:33:44:55",
+        second_mac_address="00:11:22:33:44:56",
         used=True,
         test_result="Pass",
         operator="Tester",
@@ -42,7 +43,8 @@ def test_update_device(session):
     device = Device(
         order_number=order.order_number,
         serial_number="SN002",
-        mac_address="00:11:22:33:44:56",
+        first_mac_address="00:11:22:33:44:56",
+        second_mac_address="00:11:22:33:44:57",
         used=False,
         test_result="Fail",
         operator="Tester",

@@ -27,3 +27,17 @@ src/ems_opg/database/init_db.py
 src/ems_opg/database/models.py
 src/ems_opg/database/session.py
 src/ems_opg/database/migrations/seed_data.py
+src/ems_opg/repositories/__init__.py
+src/ems_opg/repositories/audit_repository.py
+src/ems_opg/repositories/base_repositories.py
+src/ems_opg/repositories/device_repository.py
+src/ems_opg/repositories/order_repository.py
+src/ems_opg/services/__init__.py
+src/ems_opg/services/audit_service.py
+src/ems_opg/services/device_service.py
+src/ems_opg/services/order_service.py
+src/ems_opg/services/qr_service.py
+src/ems_opg/workflow/__init__.py
+src/ems_opg/workflow/workflow_engine.py
+src/ems_opg/workflow/workflow_session.py
+src/ems_opg/workflow/workflow_state.py

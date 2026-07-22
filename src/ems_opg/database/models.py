@@ -96,10 +96,17 @@ class Device(Base):
         index=True,
     )
 
-    mac_address: Mapped[str] = mapped_column(
+    first_mac_address: Mapped[str] = mapped_column(
         String(17),
         unique=True,
         nullable=False,
+        index=True,
+    )
+
+    second_mac_address: Mapped[str] = mapped_column(
+        String(17),
+        unique =True,
+        nullable=True,
         index=True,
     )
 
@@ -149,7 +156,8 @@ class Device(Base):
         return (
             f"<Device("
             f"serial={self.serial_number}, "
-            f"mac={self.mac_address})>"
+            f"first_mac={self.first_mac_address})>"
+            f"second_mac={self.second_mac_address}>"
         )
 
 
