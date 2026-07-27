@@ -1,1 +1,4 @@
+assets
+backup
 ems_opg
+logs

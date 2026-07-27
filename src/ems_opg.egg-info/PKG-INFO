@@ -5,6 +5,7 @@ Summary: EMS Operations and Production Gateway
 Requires-Python: >=3.12
 License-File: LICENSE
 Requires-Dist: qrcode
+Requires-Dist: segno
 Requires-Dist: pillow
 Requires-Dist: SQLAlchemy>=2.0
 Provides-Extra: dev
