@@ -1,6 +1,6 @@
 from sqlalchemy import select
 
-from ems_opg.database.models import MacAddressPool
+from ems_opg.database.models import MACAddressPool
 
 class MacAddressRepository:
 
@@ -9,12 +9,12 @@ class MacAddressRepository:
 
     def get_by_id(self, mac_id):
 
-        return self.session.get(MacAddressPool, mac_id)
+        return self.session.get(MACAddressPool, mac_id)
 
     def get_by_mac(self, mac_address):
         return self.session.scalar(
-            select(MacAddressPool).where(
-                MacAddressPool.mac_address == mac_address
+            select(MACAddressPool).where(
+                MACAddressPool.mac_address == mac_address
             )
         )
 
@@ -22,7 +22,7 @@ class MacAddressRepository:
 
         return (
             self.session.scalars(
-                select(MacAddressPool).order_by(MacAddressPool.mac_address)
+                select(MACAddressPool).order_by(MACAddressPool.mac_address)
             )
             .all()
         )
@@ -31,9 +31,9 @@ class MacAddressRepository:
 
         return (
             self.session.scalars(
-                select(MacAddressPool)
-                .where(MacAddressPool.used.is_(False))
-                .order_by(MacAddressPool.mac_address)
+                select(MACAddressPool)
+                .where(MACAddressPool.used.is_(False))
+                .order_by(MACAddressPool.mac_address)
             )
             .all()
         )
@@ -41,10 +41,17 @@ class MacAddressRepository:
     def get_first_available(self):
 
         return self.session.scalar(
-                select(MacAddressPool)
-                .where(MacAddressPool.used.is_(False))
-                .order_by(MacAddressPool.mac_address)
+                select(MACAddressPool)
+                .where(MACAddressPool.used.is_(False))
+                .order_by(MACAddressPool.mac_address)
             )
+    
+    def get_next_available(self):
+        return self.session.scalar(
+            select(MACAddressPool)
+            .where(MACAddressPool.used.is_(False))
+            .order_by(MACAddressPool.mac_address)
+        )
 
     def mark_used(self, mac):
         mac.used = True

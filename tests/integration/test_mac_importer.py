@@ -1,18 +1,19 @@
-from pathlib import Path
+from ems_opg.database.models import MACAddressPool
+from ems_opg.repositories.mac_address_repository import MacAddressRepository
 
-from scripts.load_database import load_csv
 
+def test_mac_repository(session):
+    repository = MacAddressRepository(session)
 
-def test_load_csv_uses_mac_address_column(tmp_path: Path):
-    csv_path = tmp_path / "macs.csv"
-    csv_path.write_text(
-        "id,order_number,serial_number,mac_address,used,test_result,timestamp,operator,created_at,updated_at,post_testing_changes\n"
-        "1,,SN001,00:13:C6:13:3F:00,False,False,,,,,\n"
-        "2,,SN002,00:13:C6:13:3F:01,False,False,,,,,\n",
-        encoding="utf-8",
-    )
+    repository.create(MACAddressPool(mac_address="00:13:C6:13:3F:00"))
+    repository.create(MACAddressPool(mac_address="00:13:C6:13:3F:01"))
+    repository.commit()
 
-    assert load_csv(csv_path) == [
-        "00:13:C6:13:3F:00",
-        "00:13:C6:13:3F:01",
-    ]
+    first_mac = repository.get_by_mac("00:13:C6:13:3F:00")
+    second_mac = repository.get_by_mac("00:13:C6:13:3F:01")
+    next_available = repository.get_next_available()
+
+    assert first_mac is not None
+    assert second_mac is not None
+    assert next_available is not None
+    assert next_available.mac_address == "00:13:C6:13:3F:00"
