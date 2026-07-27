@@ -1,2 +1,0 @@
-# check .toml for more dependencies
-pytest==9.1.1
