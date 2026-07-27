@@ -50,6 +50,18 @@ Stores traceability information for every tested device.
 
 ---
 
+# MAC Address Pool
+
+Stores all MAC addresses that client provided
+
+| Column | Description |
+|---------|-------------|
+| id | Primary Key |
+| mac_address | range provided by client |
+| used | status of each unique mac address |
+
+---
+
 # Audit Log
 
 Records important application events.
