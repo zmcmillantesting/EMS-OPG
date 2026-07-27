@@ -1,18 +1,19 @@
+from datetime import UTC, datetime
+
 from sqlalchemy import select
 
-from ems_opg.database.models import Device
+from ems_opg.database.models import Device, Order
 
 class DeviceRepository:
 
     def __init__(self, session):
         self.session = session
 
-    def get_by_mac(self, mac_address):
-
+    def get_by_mac(self, ethaddr, ethaddr1):
         return self.session.scalar(
-            select(Device).where(
-                Device.mac_address == mac_address
-            )
+            select(Device)
+            .where(Device.ethaddr_id == ethaddr)
+            .where(Device.ethaddr1_id == ethaddr1)
         )
 
     def get_by_serial(self, serial):
@@ -57,9 +58,25 @@ class DeviceRepository:
             select(Device).where(Device.used == False)
         ).all()
 
-    def asign_to_order(self, device, order_number, serial_number, operator):
-        device.order_number = order_number
-        device.serial_number = serial_number
+    def assign_order(self, device, order, serial, operator):
+        if device.used:
+            raise ValueError("MAC address has already been used.")
+
+        existing = self.get_by_serial(serial)
+        if existing and existing.id != device.id:
+            raise ValueError("Serial number already exists.")
+
+        order_obj = self.session.scalar(
+            select(Order).where(Order.order_number == order)
+        )
+        if order_obj is None:
+            raise ValueError("Order not found.")
+
+        device.order_number = order
+        device.serial_number = serial
         device.operator = operator
         device.used = True
-    
+        device.timestamp = datetime.now(UTC)
+
+        self.session.commit()
+        return device

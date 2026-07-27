@@ -26,6 +26,7 @@ Stores customer production orders.
 | quantity | int |
 | status | Open / Closed |
 | created_at | Record creation timestamp |
+|
 ---
 
 # Devices
