@@ -57,3 +57,45 @@ def test_update_device(session):
     session.commit()
 
     assert device.test_result == "Pass"
+
+
+def test_assign_order_to_device(session):
+
+    from ems_opg.repositories.device_repository import DeviceRepository
+    from ems_opg.services.device_service import DeviceService
+
+    order = Order(
+        order_number="SO-200",
+        part_number="XYZ",
+        status="Open",
+    )
+
+    session.add(order)
+    session.commit()
+
+    device = Device(
+        order_number=order.order_number,
+        serial_number="SN003",
+        first_mac_address="00:11:22:33:44:57",
+        second_mac_address="00:11:22:33:44:58",
+        used=False,
+        test_result="Pending",
+        operator="Importer",
+    )
+
+    session.add(device)
+    session.commit()
+
+    service = DeviceService(session)
+    reserved = service.reserve_device(
+        ethaddr_id=device.ethaddr_id,
+        ethaddr1_id=device.ethaddr1_id,
+        order_number=order.order_number,
+        serial_number="SN003-ASSIGNED",
+        operator="Technician",
+    )
+
+    assert reserved.used is True
+    assert reserved.operator == "Technician"
+    assert reserved.serial_number == "SN003-ASSIGNED"
+    assert reserved.order_number == order.order_number

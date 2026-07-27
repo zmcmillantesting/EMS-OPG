@@ -9,13 +9,14 @@ class DeviceService:
 
     def reserve_device(
         self,
-        mac_address,
+        ethaddr_id,
+        ethaddr1_id,
         order_number,
         serial_number,
         operator,
     ):
 
-        device = self.repository.get_by_mac(mac_address)
+        device = self.repository.get_by_mac(ethaddr_id, ethaddr1_id)
 
         if device is None:
 
@@ -24,10 +25,7 @@ class DeviceService:
             )
 
         if device.used:
-
-            raise ValueError(
-                "MAC address has already been used."
-            )
+            raise ValueError("MAC address has already been used.")
 
         self.repository.assign_order(
             device,

@@ -26,7 +26,7 @@ Stores customer production orders.
 | quantity | int |
 | status | Open / Closed |
 | created_at | Record creation timestamp |
-
+|
 ---
 
 # Devices
@@ -38,14 +38,28 @@ Stores traceability information for every tested device.
 | id | Primary Key |
 | order_number | Foreign Key to Orders |
 | serial_number | Device Serial Number |
-| mac_address | Device MAC Address |
+| ethaddr_id | First MAC Address |
+| ethaddr1_id | Second MAC Address |
 | used | Boolean indicating MAC allocation |
 | test_result | Pass / Fail |
 | operator | Test Operator |
-| test_timestamp | Time of testing |
+| timestamp | Time of testing |
 | created_at | Record created |
 | updated_at | Last modified |
 | post_test_changes | Notes entered after testing |
+| order | Orders that have used each device |
+
+---
+
+# MAC Address Pool
+
+Stores all MAC addresses that client provided
+
+| Column | Description |
+|---------|-------------|
+| id | Primary Key |
+| mac_address | range provided by client |
+| used | status of each unique mac address |
 
 ---
 
