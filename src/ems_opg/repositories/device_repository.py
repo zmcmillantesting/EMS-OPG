@@ -10,7 +10,7 @@ class DeviceRepository:
         self.session = session
 
     def get_by_mac(self, ethaddr, ethaddr1):
-        return self.session.scalar(
+        return self.session.scalars(
             select(Device)
             .where(Device.ethaddr_id == ethaddr)
             .where(Device.ethaddr1_id == ethaddr1)
@@ -18,7 +18,7 @@ class DeviceRepository:
 
     def get_by_serial(self, serial):
 
-        return self.session.scalar(
+        return self.session.scalars(
             select(Device).where(
                 Device.serial_number == serial
             )
@@ -39,7 +39,7 @@ class DeviceRepository:
     
     def mark_unused(self, device):
 
-        return self.session.scalar(
+        return self.session.scalars(
             select(Device).where(
                 Device.id == device.id
             )
@@ -47,33 +47,33 @@ class DeviceRepository:
     
     def get_by_order(self, order_number):
 
-        return self.session.scalar(
+        return self.session.scalars(
             select(Device).where(
                 Device.used == True
             )
         ).all()
 
     def list_available(self):
-        return self.session.scalar(
+        return self.session.scalars(
             select(Device).where(Device.used == False)
         ).all()
 
-    def assign_order(self, device, order, serial, operator):
+    def assign_order(self, device, order_number, serial_number, operator):
         if device.used:
             raise ValueError("MAC address has already been used.")
 
-        existing = self.get_by_serial(serial)
+        existing = self.get_by_serial(serial_number)
         if existing and existing.id != device.id:
             raise ValueError("Serial number already exists.")
 
-        order_obj = self.session.scalar(
-            select(Order).where(Order.order_number == order)
-        )
-        if order_obj is None:
+        order_obj = self.session.scalars(
+            select(Order).where(Order.order_number == order_number)
+        ).all()
+        if not order_obj:
             raise ValueError("Order not found.")
 
-        device.order_number = order
-        device.serial_number = serial
+        device.order_number = order_number
+        device.serial_number = serial_number
         device.operator = operator
         device.used = True
         device.timestamp = datetime.now(UTC)
