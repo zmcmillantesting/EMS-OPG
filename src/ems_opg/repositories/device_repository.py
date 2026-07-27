@@ -10,15 +10,14 @@ class DeviceRepository:
         self.session = session
 
     def get_by_mac(self, ethaddr, ethaddr1):
-        return self.session.scalars(
+        return self.session.scalar(
             select(Device)
             .where(Device.ethaddr_id == ethaddr)
             .where(Device.ethaddr1_id == ethaddr1)
         )
 
     def get_by_serial(self, serial):
-
-        return self.session.scalars(
+        return self.session.scalar(
             select(Device).where(
                 Device.serial_number == serial
             )
@@ -38,12 +37,8 @@ class DeviceRepository:
         return device
     
     def mark_unused(self, device):
-
-        return self.session.scalars(
-            select(Device).where(
-                Device.id == device.id
-            )
-        ).all()
+        device.used = False
+        return device
     
     def get_by_order(self, order_number):
 
@@ -51,11 +46,12 @@ class DeviceRepository:
             select(Device).where(
                 Device.used == True
             )
+            .where(Device.order_number == order_number)
         ).all()
 
     def list_available(self):
         return self.session.scalars(
-            select(Device).where(Device.used == False)
+            select(Device).where(Device.used.is_(False))
         ).all()
 
     def assign_order(self, device, order_number, serial_number, operator):

@@ -23,9 +23,13 @@ class DeviceService:
             raise ValueError(
                 "MAC address not found."
             )
+        
+        if device.used is True:
 
-        if device.used:
-            raise ValueError("MAC address has already been used.")
+            raise ValueError(
+                "MAC address has already been used."
+            )
+
 
         self.repository.assign_order(
             device,

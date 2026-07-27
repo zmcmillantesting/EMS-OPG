@@ -16,7 +16,6 @@ from .base import Base
 
 # ---------------------------------------------------------
 # Orders
-# note: one to one relationship with devices to orders
 # ---------------------------------------------------------
 
 class Order(Base):
@@ -56,6 +55,13 @@ class Order(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         nullable=False,
+    )
+
+    # One Order -> Many Devices
+    devices: Mapped[list["Device"]] = relationship(
+        "Device",
+        back_populates="order",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self):
@@ -144,6 +150,7 @@ class Device(Base):
 
     # Many Devices -> One Order
     order: Mapped["Order"] = relationship(
+        "Order",
         back_populates="devices"
     )
 
@@ -151,8 +158,8 @@ class Device(Base):
         return (
             f"<Device("
             f"serial={self.serial_number}, "
-            f"ethaddr_id={self.ethaddr_id})>"
-            f"ethaddr1_id={self.ethaddr1_id}>"
+            f"first_mac={self.first_mac_address})>"
+            f"second_mac={self.second_mac_address}>"
         )
 
 #---------------------------------------------------------
