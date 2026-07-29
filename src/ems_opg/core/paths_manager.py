@@ -1,45 +1,48 @@
 from pathlib import Path
-import sys
-
-ROOT = Path(__file__).resolve().parents[3]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
 
 class PathManager:
 
     def __init__(self):
 
-        # Project root is two levels above the `src` package directory.
         self.root = Path(__file__).resolve().parents[3]
 
-        self.config = self.root / "config"
+        #
+        # Directories
+        #
+        self.config_dir = self.root / "config"
+        self.database_dir = self.root / "database"
+        self.logs_dir = self.root / "logs"
+        self.backup_dir = self.root / "backup"
+        self.assets_dir = self.root / "assets"
+        self.cache_dir = self.root / "cache"
+        self.qr_cache = self.cache_dir / "qr"
 
-        self.database = self.root / "database"
-
-        self.logs = self.root / "logs"
-
-        self.backup = self.root / "backup"
-
-        self.assets = self.root / "assets"
+        #
+        # Files
+        #
+        self.config_file = self.config_dir / "config.json"
+        self.database_file = self.database_dir / "traceability_db.db"
 
     def create_directories(self):
 
-        directories = [
+        for directory in (
 
-            self.database,
+            self.database_dir,
 
-            self.logs,
+            self.logs_dir,
 
-            self.backup,
+            self.backup_dir,
 
-            self.assets
+            self.assets_dir,
 
-        ]
+            self.cache_dir,
 
-        for directory in directories:
+            self.qr_cache,
+
+        ):
 
             directory.mkdir(
                 parents=True,
-                exist_ok=True
+                exist_ok=True,
             )

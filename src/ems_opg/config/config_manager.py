@@ -44,6 +44,25 @@ class ConfigurationManager:
                 indent=4
             )
 
+    def get_qr_commands(self):
+        return self._config["qr_commands"]
+
+
+    def get_combined_steps(self):
+        return self._config["combined_steps"]
+
+
+    def get_qr_command(self, step):
+        return self._config["qr_commands"][step]
+
+
+    def get_workflow(self, workflow):
+        return self._config["combined_steps"][workflow]
+
+    def format_qr_command(self, step, **kwargs):
+        command=self.get_qr_command(step)
+        return command.format(**kwargs)
+
     @property
     def application(self):
 
@@ -68,6 +87,10 @@ class ConfigurationManager:
     def paths(self):
 
         return self._config["paths"]
+
+    @property
+    def qr_cache(self):
+        return Path(self._config["paths"]["qr_cache"])
 
     @property
     def workflow(self):
