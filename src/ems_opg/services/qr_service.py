@@ -1,7 +1,9 @@
 from ems_opg.QR_Codes.qr_generator import QRGenerator
-from ems_opg.QR_Codes import qr_templates
+# from ems_opg.QR_Codes import qr_templates
+from ems_opg.QR_Codes.qr_validator import QRValidator
 from ems_opg.config.config_manager import ConfigurationManager
 from ems_opg.core.paths_manager import PathManager
+from ems_opg.core.exceptions import QRValidationError
 
 
 class QRService:
@@ -10,37 +12,50 @@ class QRService:
         paths = PathManager()
         self.generator = QRGenerator(output_directory)
         self.config = ConfigurationManager(paths.config_file)
+        self.validator = QRValidator()
 
-    def create_step3(self):
+    # def create_step3(self):
 
-        return self.generator.generate(
-            qr_templates.STEP3,
-            "step3",
-        )
+    #     return self.generator.generate(
+    #         qr_templates.STEP3,
+    #         "step3",
+    #     )
 
-    def create_step8(self, mac1):
+    # def create_step8(self, mac1):
 
-        command = qr_templates.STEP8.format(
-            mac1=mac1,
-        )
+    #     command = qr_templates.STEP8.format(
+    #         mac1=mac1,
+    #     )
 
-        return self.generator.generate(
-            command,
-            "step8",
-        )
+    #     validation = self.validator.validate_step8(command)
+    #     if not validation.valid:
+    #         raise QRValidationError(
+    #             "\n".join(validation.errors)
+    #         )
 
-    def create_step9(self, mac2):
+    #     return self.generator.generate(
+    #         command,
+    #         "step8",
+    #     )
 
-        command = qr_templates.STEP9.format(
-            mac2=mac2,
-        )
+    # def create_step9(self, mac2):
 
-        return self.generator.generate(
-            command,
-            "step9",
-        )
+    #     command = qr_templates.STEP9.format(
+    #         mac2=mac2,
+    #     )
 
-# combine steps 
+    #     validation = self.validator.validate_step9(command)
+    #     if not validation.valid:
+    #         raise QRValidationError(
+    #             "\n".join(validation.errors)
+    #         )
+
+    #     return self.generator.generate(
+    #         command,
+    #         "step9",
+    #     )
+
+# combine steps 3,5,4,6
     def multi_step(self):
 
         steps = self.config.get_workflow("functional_test")
@@ -48,6 +63,12 @@ class QRService:
             self.config.get_qr_command(step)
             for step in steps
         )
+
+        validation = self.validator.validate_functional_workflow(command)
+        if not validation.valid:
+            raise QRValidationError(
+                "\n".join(validation.errors)
+            )
 
         return command
 
@@ -65,4 +86,22 @@ class QRService:
         for step in templates
         )
 
+        validation = self.validator.validate_mac_programming(command)
+        if not validation.valid:
+            raise QRValidationError(
+                "\n".join(validation.errors)
+            )   
+
         return command
+
+    def create_step10(self):
+        command = self.config.get_qr_command("step10")
+
+        validation = self.validator.validate_step10(command)
+        if not validation.valid:
+            raise QRValidationError(
+                "\n".join(validation.errors)
+            )
+        return command
+
+        
