@@ -2,12 +2,18 @@ LICENSE
 README.md
 pyproject.toml
 src/ems_opg/__init__.py
-src/ems_opg/main.py
 src/ems_opg.egg-info/PKG-INFO
 src/ems_opg.egg-info/SOURCES.txt
 src/ems_opg.egg-info/dependency_links.txt
 src/ems_opg.egg-info/requires.txt
 src/ems_opg.egg-info/top_level.txt
+src/ems_opg/QR_Codes/__init__.py
+src/ems_opg/QR_Codes/qr_generator.py
+src/ems_opg/QR_Codes/qr_result.py
+src/ems_opg/QR_Codes/qr_templates.py
+src/ems_opg/QR_Codes/qr_validator.py
+src/ems_opg/api/routes.py
+src/ems_opg/api/server.py
 src/ems_opg/app_logging/__init__.py
 src/ems_opg/app_logging/logger.py
 src/ems_opg/config/config_manager.py
@@ -20,6 +26,7 @@ src/ems_opg/core/paths_manager.py
 src/ems_opg/core/shutdown.py
 src/ems_opg/core/startup.py
 src/ems_opg/core/version.py
+src/ems_opg/database/base.py
 src/ems_opg/database/database.py
 src/ems_opg/database/engine.py
 src/ems_opg/database/init_db.py

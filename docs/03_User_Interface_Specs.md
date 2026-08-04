@@ -2,7 +2,7 @@
 
 **Project:** EMS Operations Production Gateway (EMS-OPG)
 
-**Version:** 1.1
+**Version:** 1.0
 
 **Author:** Zachary McMillan
 
@@ -213,361 +213,1953 @@ Database Updated
 
 Return Home
 
----
-
 # 5. UI Design Principles
 
-These principles govern every screen in the application, not just the workflow steps.
+## Philosophy
 
-### 5.1 Consistency
+The EMS-OPG interface should feel like industrial manufacturing software rather than a traditional desktop application.
 
-Every screen uses the same header, the same button placement, and the same visual language.
+The operator should immediately understand what the application expects from them without requiring training.
 
-An operator who learns one screen has learned them all.
+Every screen should answer three questions:
 
-### 5.2 Immediate Feedback
+1. What am I working on?
+2. What do I do next?
+3. Is everything working correctly?
 
-Every action produces a visible response within 200ms.
+If the operator has to stop and think, the interface has failed.
 
-A scan, a click, or a keystroke should never leave the operator wondering if it registered.
+---
 
-Feedback types:
+## Design Objectives
 
-- Color change (button press, field validation)
-- Status banner (success, warning, error)
-- Sound cue (optional, configurable per station)
+The interface should prioritize:
 
-### 5.3 Error Prevention Over Error Correction
+- Speed
+- Simplicity
+- Consistency
+- Readability
+- Reliability
 
-The interface should make invalid input impossible where feasible, rather than catching it after the fact.
+Not:
 
-Examples:
+- Fancy animations
+- Unnecessary graphics
+- Complex menus
+- Excessive customization
 
-- Disable "Next" until required fields are valid
-- Reject malformed MAC addresses at the input level, not after submission
-- Grey out actions that are not currently valid
+---
 
-### 5.4 Fail Loud, Fail Clear
+## Industrial Theme
 
-When something does go wrong (duplicate MAC, network failure, invalid scan), the error must be:
+The existing EMS-OPG application already has an industrial appearance.
 
-- Large
-- Red
-- Impossible to miss
-- Written in plain language, not error codes
+The redesigned interface should preserve this identity while modernizing the layout.
 
-An operator should never need to interpret a stack trace or a status number.
+### Theme Characteristics
 
-### 5.5 No Idle Ambiguity
+- Dark workspace
+- Light content cards
+- Blue primary actions
+- Green success indicators
+- Red destructive actions
+- Neutral gray backgrounds
 
-The current state of the system should always be visible. An operator glancing at the screen after being away for 30 seconds should immediately understand what step they are on and what is expected of them.
+The application should feel similar to:
 
-### 5.6 Glove-First Accessibility
-
-All interactive elements assume the operator may be wearing thick work gloves:
-
-- Minimum touch target: 50px height (per Section 2)
-- Minimum spacing between adjacent targets: 15px
-- No hover-dependent interactions (gloves and touchscreens don't hover)
-- No small checkboxes, radio buttons, or dropdown arrows
+- Industrial PLC software
+- Manufacturing execution systems (MES)
+- Network management consoles
+- Equipment configuration software
 
 ---
 
 # 6. Color Palette
 
-The palette is built for a factory floor: variable lighting, safety-glass glare, and operators glancing at the screen quickly rather than studying it.
+The color palette will remain consistent with the original EMS-OPG application.
 
-### 6.1 Base Colors
+The existing application's colors should be preserved wherever practical to maintain operator familiarity.
 
-| Role | Color | Hex |
-|---|---|---|
-| Background (primary) | Near-black charcoal | #1A1D21 |
-| Background (panel) | Dark slate | #24282E |
-| Primary text | Off-white | #F2F2F2 |
-| Secondary text | Light grey | #A0A6AD |
-| Border / divider | Muted grey | #3A3F46 |
+## Primary Background
 
-### 6.2 Accent Colors
+```
+#202124
+```
 
-| Role | Color | Hex |
-|---|---|---|
-| Primary action | Safety blue | #2E7CF6 |
-| Success / validated | Safety green | #2FB86E |
-| Warning | Amber | #F5A623 |
-| Error / critical | Safety red | #E5484D |
-| Disabled state | Flat grey | #565C64 |
+Application background.
 
-### 6.3 Usage Rules
+---
 
-- Red is reserved exclusively for errors and blocking conditions. It is never used decoratively.
-- Green only appears after successful validation (MAC accepted, QR generated, device finalized).
-- No more than one accent color should dominate a screen at a time.
-- Backgrounds stay dark. This is a deliberate choice for eye strain reduction during long shifts and for QR code contrast.
+## Secondary Background
+
+```
+#2D2D30
+```
+
+Main content panels.
+
+---
+
+## Tertiary Background
+
+```
+#33363C
+```
+
+Headers and footers.
+
+---
+
+## Card Background
+
+```
+#35383D
+```
+
+Information cards.
+
+---
+
+## Primary Button
+
+```
+#3D7EFF
+```
+
+Used for:
+
+- Next
+- Save
+- Generate
+- Continue
+
+---
+
+## Success
+
+```
+#4CAF50
+```
+
+Used for:
+
+- Connected
+- Database Online
+- Test Passed
+- Ready
+
+---
+
+## Warning
+
+```
+#FFC107
+```
+
+Used for:
+
+- Waiting
+- Validation Required
+- Operator Attention
+
+---
+
+## Error
+
+```
+#C62828
+```
+
+Used for:
+
+- Duplicate MAC
+- Database Error
+- Cancel Test
+- Invalid Input
+
+---
+
+## Disabled
+
+```
+#666666
+```
+
+Inactive controls.
+
+---
+
+## Text
+
+Primary
+
+```
+#FFFFFF
+```
+
+Secondary
+
+```
+#B0B0B0
+```
+
+Muted
+
+```
+#808080
+```
 
 ---
 
 # 7. Typography
 
-### 7.1 Typeface
+The interface should prioritize readability.
 
-A single sans-serif typeface is used throughout the application (e.g., Inter, Segoe UI, or an equivalent system font). No decorative or serif fonts.
+Preferred font:
 
-### 7.2 Type Scale
+```
+Segoe UI
+```
 
-| Use | Size | Weight |
-|---|---|---|
-| Screen title | 32px | Bold |
-| Step indicator | 20px | Medium |
-| Body / labels | 18px | Regular |
-| Input field text | 22px | Regular |
-| Button text | 22px | Semibold |
-| Error / status banner | 24px | Bold |
+Fallbacks:
 
-### 7.3 Monospace for Identifiers
+```
+Arial
+Sans Serif
+```
 
-Order numbers, serial numbers, and MAC addresses are always displayed in a monospaced font. This prevents ambiguity between characters like `0` / `O` or `1` / `l`, which matters when an operator is cross-checking a physical label against the screen.
+---
 
-### 7.4 Readability Rules
+## Font Sizes
 
-- Minimum body text size: 18px (never smaller, regardless of screen density)
-- Line height: 1.4x font size minimum
-- No text truncation with ellipsis on identifiers — always wrap or scroll instead, since a hidden character in a MAC address is a traceability defect.
+Window Title
+
+28 px
+
+Section Header
+
+22 px
+
+Card Header
+
+18 px
+
+Body Text
+
+16 px
+
+Small Labels
+
+12 px
+
+Status Bar
+
+11 px
+
+---
+
+## Font Weight
+
+Titles
+
+Bold
+
+Section Headers
+
+Semi-Bold
+
+Body
+
+Regular
+
+Labels
+
+Light
 
 ---
 
 # 8. Window Layout
 
-### 8.1 Application Mode
-
-EMS-OPG runs in fullscreen kiosk mode on a fixed-resolution station display. The window is not resizable and has no OS chrome (title bar, minimize/maximize/close controls are hidden or disabled).
-
-### 8.2 Structure
+The application consists of four primary pages.
 
 ```
-┌─────────────────────────────────────────┐
-│  Header Bar (fixed, 60px)                │
-│  [Station ID]     [Step Indicator]  [⌂]  │
-├─────────────────────────────────────────┤
-│                                           │
-│                                           │
-│            Main Content Area             │
-│         (single screen at a time)        │
-│                                           │
-│                                           │
-├─────────────────────────────────────────┤
-│  Footer Bar (fixed, 70px)                │
-│  [Previous]              [Next / Action] │
-└─────────────────────────────────────────┘
+Home
+
+↓
+
+Testing
+
+↓
+
+History
+
+↓
+
+Settings
 ```
 
-### 8.3 Header Bar
+These pages should be managed using a QStackedWidget.
 
-- Left: Station ID / operator badge (read-only, informational)
-- Center: Current step indicator (e.g., "Step 3 of 6: Scan MAC")
-- Right: Home icon — always available, always takes the operator back to Home (see Section 11)
-
-### 8.4 Main Content Area
-
-Reserved exclusively for the current screen's task. On QR display screens, this area is dominated by the QR code itself per the Section 2 principle that QR codes are never scaled down to fit other content.
-
-### 8.5 Footer Bar
-
-Houses the primary navigation actions only: Previous (when applicable) and Next / primary action. No secondary or tertiary buttons live in the footer — anything else does not belong on the screen at all.
+Only one page should be visible at any time.
 
 ---
 
-# 9. Screen Specifications
+## Window Size
 
-### 9.1 Home Screen
+Recommended development size:
 
-- Large "Start New Device" button, centered, dominant on screen
-- Station status summary (idle / ready)
-- Access to audit history (small, secondary button — not competing visually with Start)
+```
+1600 × 900
+```
 
-### 9.2 Order Number Entry
+Minimum supported:
 
-- Single large input field, numeric keypad or scanner input
-- "Next" disabled until a valid, recognized order number is entered
-- Inline validation against the order database
+```
+1400 × 900
+```
 
-### 9.3 Serial Number Entry
+Preferred operator monitor:
 
-- Single large input field
-- Duplicate-serial check runs on submit
-- Clear error state if the serial already exists in the system
-
-### 9.4 MAC Scan Screen
-
-- Single large input field, scanner-focused (auto-focus on load)
-- Real-time format validation as characters are entered
-- On valid scan: green confirmation state, auto-advance
-- On duplicate MAC: full-screen red error state, scan is rejected, operator must rescan a different unit
-
-### 9.5 QR Display Screen (Steps 1–N)
-
-- QR code occupies at minimum 70% of the main content area
-- Step label and short instruction text above or below the code, never overlapping it
-- "Confirm Scan" advances only after the corresponding scan event is received from the backend — not on a manual click, to prevent operators skipping a step
-
-### 9.6 Finalize Screen
-
-- Summary of order number, serial number, both MAC addresses
-- Single "Finalize Device" button
-- On success: green confirmation banner, auto-return to Home after a short delay
-
-### 9.7 Error Screen (modal overlay, not a separate route)
-
-- Full-width red banner at the top of the current screen
-- Plain-language message + suggested next action
-- Does not block the rest of the screen unless the error is blocking by nature (e.g., duplicate MAC)
+```
+1920 × 1080
+```
 
 ---
 
-# 10. Widget Standards
+## Main Layout
 
-### 10.1 Buttons
-
-- Height: 50px minimum, 60px preferred (per Section 2)
-- Corner radius: 6px
-- States: default, pressed, disabled — each visually distinct
-- Primary action buttons use the primary blue accent; destructive actions (abort, cancel device) use red and require a confirmation step
-
-### 10.2 Text Input Fields
-
-- Height: 50px minimum
-- Large, high-contrast border on focus
-- Auto-focus on screen load so the operator (or scanner) can begin immediately without clicking into the field
-- Font: monospace for identifier fields (per Section 7.3)
-
-### 10.3 QR Display Widget
-
-- Fixed aspect ratio (1:1), scales with available space
-- White background behind the code regardless of app theme, to preserve scan contrast
-- Never overlaid with text or icons
-
-### 10.4 Status Banner
-
-- Full-width, fixed position at top of content area
-- Color-coded per Section 6.2 (green / amber / red)
-- Auto-dismisses on success after 2–3 seconds; persists on error until acknowledged or resolved
-
-### 10.5 Step Indicator
-
-- Horizontal progress stepper in the header
-- Completed steps shown filled/green, current step highlighted, future steps greyed out
-- No step is ever skippable by clicking ahead on the indicator — it is informational only, not navigational
+```
++------------------------------------------------------------+
+| Header                                                     |
++------------------------------------------------------------+
+| Session / Progress                                         |
++----------------------+-------------------------------------+
+|                      |                                     |
+| Session Panel        |          Primary Content            |
+|                      |                                     |
+|                      |                                     |
+|                      |                                     |
++----------------------+-------------------------------------+
+| Footer / Navigation                                        |
++------------------------------------------------------------+
+```
 
 ---
 
-# 11. Navigation
+## Header
 
-### 11.1 Linear by Default
+Contains:
 
-Navigation follows the Operator Workflow (Section 4) strictly. There is no free navigation between arbitrary screens.
+- Application name
+- Operator
+- Connection status
+- Database status
+- Current version
 
-### 11.2 Previous
+Example
 
-Available only where going back does not violate data integrity (e.g., before a MAC has been validated). Once a MAC is validated and QR codes are generated, "Previous" is disabled — the operator must complete or abort instead.
+```
+EMS-OPG
 
-### 11.3 Home
+Operator: Zach
 
-Always available via the header icon. Selecting Home from mid-workflow prompts a confirmation dialog if the current device is incomplete, since this discards in-progress work.
+Database ● Connected
 
-### 11.4 No Nested Menus
-
-There are no dropdown menus, no settings buried in submenus, and no hidden gestures. Anything the operator needs is a single click away from the current screen.
-
----
-
-# 12. User Workflows
-
-### 12.1 Happy Path
-
-Home → STEP1: username (root) → STEP2: password (default) → STEP3-6: Functional test QR code → STEP7: MAC Scan → Validate →STEP8: Auto-assign second MAC →STEP9: Generate QR codes → validate (step 10) Finalize (order number, serial number) → Return Home.
-
-### 12.2 Duplicate MAC Path
-
-MAC Scan → Validation fails (duplicate detected) → Full-screen red error → Operator rescans a different unit → Validation retried.
-
-### 12.3 Duplicate Serial Path
-
-Serial Number Entry → Validation fails (serial already exists) → Inline red error on the field → Operator corrects or escalates.
-
-### 12.4 Network / Backend Failure Path
-
-Any step requiring backend validation → Request times out or fails → Amber "Retrying..." state shown automatically → If retries are exhausted, red error with a manual "Retry" action → Workflow does not advance until backend confirms.
-
-### 12.5 Operator Abort Path
-
-Any in-progress screen → Home icon selected → Confirmation dialog ("Discard current device?") → On confirm, in-progress data is discarded and logged; on cancel, operator returns to the current step.
+Version 1.0
+```
 
 ---
 
-# 13. Backend Integration
+## Footer
 
-### 13.1 Integration Model
+The footer remains visible throughout the application.
 
-The UI is a thin client. All validation, MAC assignment, QR generation, and persistence logic lives in the backend service layer — the UI never makes traceability decisions on its own.
+Typical buttons include:
 
-### 13.2 Key Integration Points
+Previous
 
-| UI Event | Backend Call | Response Handling |
-|---|---|---|
-| QR step scanned | Confirm scan event received | Auto-advance to next step |
-| MAC scanned | Validate format + check for duplicate | Auto-advance or show error |
-| MAC validated | Request second MAC assignment | Populate second MAC, generate QR set |
-| Order number entered | Validate order exists | Enable/disable Next |
-| Serial number entered | Check for duplicate serial | Enable/disable Next, show error |
-| Finalize pressed | Commit device record to database | Show success banner, return Home |
+Repeat
 
-### 13.3 Failure Handling
+Next
 
-All backend calls run asynchronously with a visible loading/waiting state (never a frozen UI). Timeouts trigger the Network Failure Path defined in Section 12.4. The UI never assumes success — every state transition is driven by a confirmed backend response.
+Finish
 
-### 13.4 Audit Trail
+Cancel
 
-Every state transition (order entered, serial entered, MAC validated, device finalized, device aborted) is logged with a timestamp and station ID, satisfying the audit history goal in Section 3.
+The button order should remain identical on every workflow page.
+
+Operators quickly develop muscle memory.
+
+Do not rearrange buttons between screens.
 
 ---
 
-# 14. PyQt Architecture
+# 9. Navigation
 
-### 14.1 Structure
+The application intentionally contains only four primary pages.
 
-- **QMainWindow** as the application shell, hosting the fixed header and footer.
-- **QStackedWidget** as the main content area, with one widget per screen defined in Section 9. Screen transitions are stack-index changes, not new windows.
-- Each screen is its own `QWidget` subclass, kept in its own module, separating layout/UI code from business logic.
+```
+Home
 
-### 14.2 Signal/Slot Pattern
+Testing
 
-- UI widgets emit signals only (button clicks, field changes, scan events).
-- A controller layer listens for these signals and coordinates backend calls, keeping screen classes free of business logic.
-- Backend responses come back as signals as well, so the UI layer never blocks waiting on I/O.
+History
 
-### 14.3 Threading
+Settings
+```
 
-- All backend/network calls run on a `QThread` (or `QThreadPool` worker), never on the main UI thread.
-- The main thread is reserved exclusively for rendering and input handling, preserving the "immediate feedback" principle in Section 5.2.
+No additional navigation should exist.
 
-### 14.4 State Management
+Avoid:
 
-- A single `DeviceSession` object holds the in-progress device's data (order number, serial, MACs, step index) for the current workflow run.
-- This object is passed to the controller, not duplicated across screens, so there is one source of truth for "what device is currently being built."
+- Ribbon menus
+- Nested menus
+- Floating toolbars
+- Multiple windows
 
-### 14.5 Styling
-
-- Centralized QSS (Qt Style Sheets) stylesheet implementing the Color Palette (Section 6) and Typography (Section 7) rules, loaded once at application startup — no per-widget inline styling.
+Everything should remain discoverable within one or two clicks.
 
 ---
 
-# 15. Future Improvements
+## Future Navigation
 
-The following are out of scope for v1.0 but recorded for future consideration:
+A collapsible sidebar may be implemented later.
 
-- Barcode scanner auto-focus recovery (re-focus scan input automatically if an operator accidentally clicks elsewhere)
-- Multi-language support for operator-facing text
-- Direct label printer integration for QR/serial labels
-- Station-level analytics dashboard (throughput, error rates, average cycle time)
-- Configurable sound cues per station
-- Optional dark/light theme toggle for stations with different ambient lighting
-- Remote monitoring view for line supervisors (read-only, separate from operator stations)
+```
+🏠 Home
+
+🧪 Testing
+
+📜 History
+
+⚙ Settings
+```
+
+During active testing the sidebar may collapse to maximize QR code size.
+
+This behavior is optional but recommended.
+
+---
+
+# General Layout Rules
+
+Maintain at least 20 pixels of spacing between cards.
+
+Cards should use rounded corners.
+
+Avoid more than two nested panels.
+
+Do not place unrelated information together.
+
+Information should be grouped logically:
+
+Session
+
+↓
+
+Device Information
+
+↓
+
+Current Step
+
+↓
+
+Actions
+
+This creates a predictable visual hierarchy for operators.
+
+# 10. Screen Specifications
+
+The EMS-OPG interface consists of four primary pages.
+
+Each page has a single responsibility.
+
+```
+Home
+        ↓
+Testing
+        ↓
+History
+        ↓
+Settings
+```
+
+No additional primary windows should exist.
+
+Dialogs should only be used when absolutely necessary.
+
+---
+
+# 10.1 Home Screen
+
+## Purpose
+
+The Home screen serves as the application's landing page.
+
+Operators arrive here after launching the application and after successfully completing a device.
+
+The Home page should contain no unnecessary information.
+
+Its purpose is simply to begin testing quickly.
+
+---
+
+## Layout
+
+```
++--------------------------------------------------------------+
+| EMS-OPG                                      Operator: Zach  |
++--------------------------------------------------------------+
+
+              EMS Operations Production Gateway
+
+                    [ New Test ]
+
+              [ History ]   [ Settings ]
+
+---------------------------------------------------------------
+
+ Database        Connected
+
+ Devices Today   124
+
+ Last Backup     Today 08:00
+
+ Version         1.0.0
+
+---------------------------------------------------------------
+
+ Status: Ready
+```
+
+---
+
+## Widgets
+
+### Header
+
+Displays:
+
+- Application Name
+- Operator
+- Connection Status
+
+---
+
+### New Test Button
+
+Primary action.
+
+Large blue button.
+
+This begins a new testing session.
+
+Calls:
+
+```
+WorkflowEngine.start_session()
+```
+
+---
+
+### History Button
+
+Navigates to:
+
+History Screen
+
+---
+
+### Settings Button
+
+Navigates to:
+
+Settings Screen
+
+---
+
+### Status Cards
+
+Display:
+
+Database
+
+Operator
+
+Today's Device Count
+
+Current Version
+
+Last Backup
+
+---
+
+## Backend Connections
+
+WorkflowEngine
+
+Application
+
+DatabaseService
+
+AuditService
+
+---
+
+## Validation
+
+None required.
+
+---
+
+# 10.2 Testing Screen
+
+## Purpose
+
+This is the primary production screen.
+
+Operators spend approximately 95% of their time here.
+
+Everything about this page should optimize for speed.
+
+The QR code is the most important element.
+
+---
+
+## Layout
+
+```
++-----------------------------------------------------------------------------------+
+| EMS-OPG                         Operator              Database Connected           |
++-----------------------------------------------------------------------------------+
+
+ Order: 123456              Serial: SN123456            Step 4 of 8
+
+ ███████████████████░░░░░░░░░░░░░░░░░░░░
+
++--------------------------+--------------------------------------------------------+
+|                          |                                                        |
+| Session                  |                                                        |
+|                          |                                                        |
+| MAC 1                    |                                                        |
+|                          |                                                        |
+| MAC 2                    |                                                        |
+|                          |                  QR CODE                               |
+| Operator                 |                                                        |
+|                          |                                                        |
+| Elapsed Time             |                                                        |
+|                          |                                                        |
+| Status                   |                                                        |
+|                          |                                                        |
++--------------------------+--------------------------------------------------------+
+
+ Current Command
+
+ timeout 2s loopback /dev/port0[2-4] -q
+
++--------------------------------------------------------------------------+
+
+ Previous      Repeat      Next      Cancel Test
+```
+
+---
+
+## Session Panel
+
+The left panel remains visible throughout testing.
+
+It displays:
+
+Order Number
+
+Serial Number
+
+MAC 1
+
+MAC 2
+
+Operator
+
+Current Step
+
+Elapsed Time
+
+Database Status
+
+Logging Status
+
+Workflow State
+
+---
+
+## QR Display
+
+Largest widget on screen.
+
+Approximately
+
+500 x 500 pixels
+
+Minimum acceptable size:
+
+400 x 400
+
+---
+
+## Current Command
+
+Displays the exact command encoded inside the QR code.
+
+This allows manual verification.
+
+Example
+
+```
+timeout 2s loopback /dev/port0[2-4] -q
+```
+
+---
+
+## Progress Bar
+
+Displays
+
+Current Step
+
+Total Steps
+
+Percentage Complete
+
+---
+
+## Footer Buttons
+
+### Previous
+
+Returns to previous workflow step.
+
+Disabled during Step 1.
+
+---
+
+### Repeat
+
+Regenerates the current QR.
+
+No workflow changes occur.
+
+---
+
+### Next
+
+Advances the workflow.
+
+Loads next QR.
+
+Updates progress.
+
+---
+
+### Cancel
+
+Cancels the session.
+
+Confirmation dialog required.
+
+---
+
+## Backend Connections
+
+WorkflowEngine
+
+WorkflowSession
+
+QRService
+
+DeviceService
+
+OrderService
+
+AuditService
+
+Logger
+
+---
+
+## Validation Rules
+
+Order Number required.
+
+Serial Number required.
+
+MAC1 required.
+
+MAC1 must exist.
+
+MAC1 cannot already be used.
+
+MAC2 assigned automatically.
+
+MAC2 cannot already be used.
+
+Workflow cannot continue if validation fails.
+
+---
+
+## Workflow
+
+```
+New Test
+
+↓
+
+Enter Order
+
+↓
+
+Enter Serial
+
+↓
+
+Scan MAC1
+
+↓
+
+Assign MAC2
+
+↓
+
+Generate QR
+
+↓
+
+Display Step
+
+↓
+
+Next
+
+↓
+
+Display Step
+
+↓
+
+Repeat
+
+↓
+
+Finish
+
+↓
+
+Database Commit
+
+↓
+
+Return Home
+```
+
+---
+
+# 10.3 History Screen
+
+## Purpose
+
+Provides traceability.
+
+Allows supervisors and operators to locate previous devices.
+
+Supports troubleshooting.
+
+No editing occurs here.
+
+Editing belongs in Settings.
+
+---
+
+## Layout
+
+```
++--------------------------------------------------------------+
+
+ Search
+
+ [__________________________]
+
+---------------------------------------------------------------
+
+ Order
+
+ Serial
+
+ MAC
+
+ Operator
+
+ Date
+
+---------------------------------------------------------------
+
+ 123456
+
+ SN001
+
+ 00:60...
+
+ Zach
+
+ 2026-08-01
+
+---------------------------------------------------------------
+
+ View Details
+
+ Export CSV
+
+ Return
+```
+
+---
+
+## Widgets
+
+Search Box
+
+Search Button
+
+History Table
+
+Export Button
+
+View Device Button
+
+Return Button
+
+---
+
+## Search Options
+
+Order Number
+
+Serial Number
+
+MAC Address
+
+Operator
+
+Date
+
+---
+
+## Table Columns
+
+Date
+
+Order
+
+Serial
+
+MAC1
+
+MAC2
+
+Operator
+
+Result
+
+Status
+
+---
+
+## Backend Connections
+
+AuditService
+
+DeviceService
+
+OrderService
+
+Repositories
+
+---
+
+## Future Enhancements
+
+Advanced Filters
+
+Sorting
+
+CSV Export
+
+PDF Export
+
+Statistics
+
+---
+
+# 10.4 Settings Screen
+
+## Purpose
+
+Provides configuration and maintenance tools.
+
+Operators should rarely access this page.
+
+Supervisors will use it more frequently.
+
+---
+
+## Layout
+
+```
++--------------------------------------------------------------+
+
+ Database
+
+ [ Backup ]
+
+ [ Restore ]
+
+ [ Export ]
+
+---------------------------------------------------------------
+
+ Logging
+
+ Log Level
+
+ Open Logs
+
+---------------------------------------------------------------
+
+ Manual Corrections
+
+ Edit Device
+
+ Edit Order
+
+ Edit Serial
+
+ Edit Operator
+
+ Reset MAC
+
+---------------------------------------------------------------
+
+ Workflow
+
+ Reload Config
+
+ Verify Database
+
+ Regenerate Cache
+
+---------------------------------------------------------------
+
+ Save
+
+ Cancel
+
+ Return Home
+```
+
+---
+
+## Database Section
+
+Functions
+
+Backup Database
+
+Restore Database
+
+Verify Database
+
+Export CSV
+
+---
+
+## Logging Section
+
+Log Level
+
+Open Log Folder
+
+Clear Logs
+
+---
+
+## Manual Corrections
+
+Search Device
+
+Modify Order
+
+Modify Serial
+
+Modify Operator
+
+Reset Used Status
+
+Reassign MAC
+
+View Audit History
+
+Every modification must generate an audit log entry.
+
+---
+
+## Workflow Section
+
+Reload configuration
+
+Verify QR cache
+
+Rebuild cache
+
+Validate configuration
+
+---
+
+## Backend Connections
+
+ConfigurationManager
+
+PathManager
+
+Logger
+
+AuditService
+
+Repositories
+
+WorkflowEngine
+
+DatabaseService
+
+---
+
+## Security
+
+Future versions may restrict this page to supervisors.
+
+Operator mode should hide advanced maintenance functions.
+
+# 11. Widget Standards
+
+The EMS-OPG interface should use a consistent widget library throughout the application.
+
+Each widget should have a single purpose.
+
+No widget should perform business logic.
+
+Business logic belongs inside Services and the Workflow Engine.
+
+Widgets display information.
+
+Services perform work.
+
+---
+
+# General Widget Rules
+
+Every widget should have:
+
+- A descriptive objectName
+- A single responsibility
+- No direct database access
+- No SQL statements
+- No QR generation logic
+
+Widgets should communicate through:
+
+Signals
+
+↓
+
+Workflow Engine
+
+↓
+
+Services
+
+↓
+
+Repositories
+
+↓
+
+Database
+
+Never:
+
+Widget
+
+↓
+
+Database
+
+---
+
+# Primary Widgets
+
+## Primary Button
+
+Purpose
+
+Starts or advances a workflow.
+
+Examples
+
+Next
+
+Save
+
+Generate
+
+Begin Test
+
+Appearance
+
+Blue
+
+Large
+
+Rounded corners
+
+Height
+
+60 pixels
+
+---
+
+## Secondary Button
+
+Purpose
+
+Navigation
+
+History
+
+Settings
+
+Previous
+
+Repeat
+
+Gray
+
+---
+
+## Danger Button
+
+Purpose
+
+Cancel
+
+Delete
+
+Reset
+
+Appearance
+
+Red
+
+Confirmation required
+
+---
+
+## Information Card
+
+Purpose
+
+Displays read-only information.
+
+Examples
+
+Order Number
+
+Serial Number
+
+MAC Address
+
+Operator
+
+Current Step
+
+Cards never accept user input.
+
+---
+
+## Input Field
+
+Purpose
+
+Collect operator input.
+
+Examples
+
+Order Number
+
+Serial Number
+
+MAC Address
+
+Every input field should validate immediately.
+
+Never wait until Finish.
+
+---
+
+## QR Display
+
+Largest widget in the application.
+
+Minimum Size
+
+400 x 400
+
+Preferred
+
+500 x 500
+
+Displays
+
+QR Image
+
+Current Command
+
+Generation Status
+
+---
+
+## Progress Widget
+
+Displays
+
+Current Step
+
+Total Steps
+
+Percent Complete
+
+Should always remain visible.
+
+---
+
+## Status Indicator
+
+Displays
+
+Database
+
+Logging
+
+Workflow
+
+QR Generator
+
+Green
+
+Connected
+
+Yellow
+
+Waiting
+
+Red
+
+Error
+
+---
+
+# 12. Widget Naming Standards
+
+The project should use consistent names.
+
+Avoid generic names like
+
+button1
+
+label2
+
+textbox
+
+Use descriptive names instead.
+
+---
+
+Buttons
+
+btn_new_test
+
+btn_next
+
+btn_previous
+
+btn_repeat
+
+btn_cancel
+
+btn_finish
+
+btn_history
+
+btn_settings
+
+btn_backup
+
+btn_restore
+
+---
+
+Labels
+
+lbl_operator
+
+lbl_order
+
+lbl_serial
+
+lbl_mac1
+
+lbl_mac2
+
+lbl_status
+
+lbl_elapsed
+
+lbl_command
+
+---
+
+Input Fields
+
+txt_order
+
+txt_serial
+
+txt_mac
+
+---
+
+QR
+
+img_qr
+
+lbl_qr_command
+
+---
+
+Tables
+
+tbl_history
+
+tbl_devices
+
+tbl_audit
+
+---
+
+Progress
+
+progress_workflow
+
+---
+
+Cards
+
+card_session
+
+card_status
+
+card_device
+
+card_network
+
+---
+
+# 13. PyQt Architecture
+
+The application should follow a layered architecture.
+
+```
+
+Application
+
+↓
+
+MainWindow
+
+↓
+
+Navigation
+
+↓
+
+Pages
+
+↓
+
+Workflow Engine
+
+↓
+
+Services
+
+↓
+
+Repositories
+
+↓
+
+Database
+
+```
+
+---
+
+# Recommended Folder Structure
+
+```
+src/
+
+ems_opg/
+
+ui/
+
+main_window.py
+
+pages/
+
+home_page.py
+
+testing_page.py
+
+history_page.py
+
+settings_page.py
+
+dialogs/
+
+edit_device_dialog.py
+
+edit_order_dialog.py
+
+edit_serial_dialog.py
+
+widgets/
+
+session_panel.py
+
+status_bar.py
+
+progress_widget.py
+
+qr_display.py
+
+device_card.py
+
+navigation_bar.py
+
+styles/
+
+theme.qss
+
+resources/
+
+icons/
+
+images/
+
+```
+
+---
+
+# Main Window
+
+Responsibilities
+
+Application startup
+
+Navigation
+
+Window management
+
+Theme loading
+
+Nothing else.
+
+No workflow logic.
+
+---
+
+# Home Page
+
+Responsibilities
+
+Start Test
+
+Navigate
+
+Display application status
+
+---
+
+# Testing Page
+
+Responsibilities
+
+Display workflow
+
+Display QR
+
+Show session
+
+Forward operator actions
+
+No QR generation.
+
+No database work.
+
+---
+
+# History Page
+
+Responsibilities
+
+Display previous devices
+
+Search
+
+Export
+
+No editing.
+
+---
+
+# Settings Page
+
+Responsibilities
+
+Configuration
+
+Maintenance
+
+Manual corrections
+
+Database tools
+
+---
+
+# Reusable Widgets
+
+Session Panel
+
+Used on
+
+Testing
+
+History
+
+Manual Correction Dialog
+
+Displays
+
+Order
+
+Serial
+
+MAC
+
+Operator
+
+Status
+
+Elapsed Time
+
+---
+
+QR Widget
+
+Displays
+
+QR image
+
+Current command
+
+Validation status
+
+Generation timestamp
+
+---
+
+Progress Widget
+
+Displays
+
+Current workflow position.
+
+Can be reused by future workflows.
+
+---
+
+# 14. Signal / Slot Architecture
+
+Every operator action should emit a signal.
+
+Signals should never talk directly to repositories.
+
+Example
+
+```
+
+Next Button
+
+↓
+
+Testing Page
+
+↓
+
+Workflow Engine
+
+↓
+
+QR Service
+
+↓
+
+Update UI
+
+```
+
+---
+
+Example
+
+```
+
+Scan MAC
+
+↓
+
+Validation Service
+
+↓
+
+MAC Repository
+
+↓
+
+Assign Second MAC
+
+↓
+
+Workflow Engine
+
+↓
+
+Update Session Panel
+
+↓
+
+Generate QR
+
+```
+
+---
+
+Example
+
+```
+
+Finish
+
+↓
+
+Workflow Engine
+
+↓
+
+Device Service
+
+↓
+
+Audit Service
+
+↓
+
+Logger
+
+↓
+
+Return Home
+
+```
+
+---
+
+# Signals
+
+Recommended Signals
+
+newTestRequested
+
+nextRequested
+
+previousRequested
+
+repeatRequested
+
+finishRequested
+
+cancelRequested
+
+historyRequested
+
+settingsRequested
+
+workflowChanged
+
+sessionUpdated
+
+qrUpdated
+
+deviceUpdated
+
+databaseError
+
+validationError
+
+workflowCompleted
+
+---
+
+# 15. Backend Integration
+
+The UI should never know how anything works.
+
+The UI only asks for actions.
+
+Example
+
+Wrong
+
+```
+
+button.clicked
+
+↓
+
+session.commit()
+
+```
+
+Correct
+
+```
+
+button.clicked
+
+↓
+
+workflow_engine.next()
+
+↓
+
+device_service.complete_step()
+
+↓
+
+repository.update()
+
+↓
+
+database
+
+```
+
+---
+
+# UI → Backend Relationships
+
+MainWindow
+
+↓
+
+WorkflowEngine
+
+TestingPage
+
+↓
+
+WorkflowSession
+
+↓
+
+QRService
+
+↓
+
+DeviceService
+
+↓
+
+AuditService
+
+↓
+
+Repositories
+
+↓
+
+Database
+
+---
+
+# Service Responsibilities
+
+Workflow Engine
+
+Controls workflow.
+
+QR Service
+
+Generates QR images.
+
+Device Service
+
+Device validation.
+
+Device updates.
+
+Order Service
+
+Order creation.
+
+Order lookup.
+
+Audit Service
+
+Every database modification.
+
+Every operator action.
+
+Configuration Manager
+
+Reads config.
+
+Never writes workflow state.
+
+Logger
+
+Application logs.
+
+Error logs.
+
+Operator logs.
+
+Workflow logs.

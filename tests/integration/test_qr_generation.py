@@ -6,7 +6,7 @@ These tests verify that:
 1. QR commands are generated correctly.
 2. MAC placeholders are replaced.
 3. PNG images are written to cache/qr.
-4. Images can be scanned manually.
+4. The generated QR result metadata is populated correctly.
 5. A detailed log is written to logs/qr_generation_test.log.
 """
 
@@ -61,8 +61,38 @@ def qr_service():
 
 
 # ---------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------
+
+def assert_generated_qr(result, expected_name, expected_fragments):
+    assert result.path.exists()
+    assert result.path.suffix == ".png"
+    assert result.filename == f"{expected_name}.png"
+    assert result.path.name == f"{expected_name}.png"
+    assert result.path.parent == paths.qr_cache
+
+    for fragment in expected_fragments:
+        assert fragment in result.command
+
+
+# ---------------------------------------------------------------------
 # Test 1
 # ---------------------------------------------------------------------
+
+def test_login_password_generation(qr_service):
+    logger.info("=" * 70)
+    logger.info("TEST: Login and Password Generation")
+    logger.info("=" * 70)
+
+    username_result = qr_service.create_step1()
+    password_result = qr_service.create_step2()
+
+    result1 = qr_service.generator.generate(username_result.command, "step1")
+    result2 = qr_service.generator.generate(password_result.command, "step2")
+
+    assert_generated_qr(result1, "step1", ["root"])
+    assert_generated_qr(result2, "step2", ["default"])
+
 
 def test_multi_step_generation(qr_service):
 
@@ -81,12 +111,18 @@ def test_multi_step_generation(qr_service):
     logger.info("Command:")
     logger.info(result.command)
 
-    assert result.path.exists()
-    assert result.path.suffix == ".png"
-
-    assert "ls /dev/sd[a-e]" in result.command
-    assert "loopback" in result.command
-    assert "ethtool" in result.command
+    assert_generated_qr(
+        result,
+        "functional_test",
+        [
+            "ls /dev/sd[a-e]",
+            "loopback",
+            "ethtool",
+            "ifconfig",
+            "echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness",
+            "emd -i sysfs -c 4",
+        ],
+    )
 
     logger.info("PASS\n")
 
@@ -120,10 +156,15 @@ def test_mac_generation(qr_service):
     logger.info("Command:")
     logger.info(result.command)
 
-    assert result.path.exists()
-
-    assert f"ethaddr={mac1}" in result.command
-    assert f"eth1addr={mac2}" in result.command
+    assert_generated_qr(
+        result,
+        "mac_programming",
+        [
+            f"ethaddr={mac1}",
+            f"eth1addr={mac2}",
+            "setfset -u",
+        ],
+    )
 
     assert "{mac1}" not in result.command
     assert "{mac2}" not in result.command
@@ -164,17 +205,56 @@ def test_complete_workflow(qr_service):
     logger.info("Command:")
     logger.info(result.command)
 
-    assert result.path.exists()
-
-    assert "ls /dev/sd[a-e]" in result.command
-    assert "loopback" in result.command
-    assert "ethtool" in result.command
-
-    assert f"ethaddr={mac1}" in result.command
-    assert f"eth1addr={mac2}" in result.command
+    assert_generated_qr(
+        result,
+        "complete_test",
+        [
+            "ls /dev/sd[a-e]",
+            "loopback",
+            "ethtool",
+            "ifconfig",
+            "echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness",
+            "emd -i sysfs -c 4",
+            f"ethaddr={mac1}",
+            f"eth1addr={mac2}",
+        ],
+    )
 
     assert "{mac1}" not in result.command
     assert "{mac2}" not in result.command
+
+    logger.info("PASS\n")
+
+
+# ---------------------------------------------------------------------
+# Test 4
+# ---------------------------------------------------------------------
+
+def test_step10_generation(qr_service):
+
+    logger.info("=" * 70)
+    logger.info("TEST: Step 10 Workflow")
+    logger.info("=" * 70)
+
+    command = qr_service.create_step11()
+
+    result = qr_service.generator.generate(
+        command,
+        "step10",
+    )
+
+    logger.info("Output File : %s", result.path)
+    logger.info("Command:")
+    logger.info(result.command)
+
+    assert_generated_qr(
+        result,
+        "step10",
+        [
+            "setfset | grep eth0",
+            "setfset | grep eth1",
+        ],
+    )
 
     logger.info("PASS\n")
 

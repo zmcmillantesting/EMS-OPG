@@ -33,17 +33,15 @@ class QRValidator:
 
             "ls /dev/sd",
 
-            "loopback /dev/port0[2-4]",
-
-            "loopback /dev/port0[5-8]",
+            "loopback",
 
             "ifconfig",
 
             "ethtool",
 
-            "root",
+            "echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness",
 
-            "default",
+            "emd -i sysfs -c 4",
 
         ]
 
@@ -63,7 +61,13 @@ class QRValidator:
 
             return ValidationResult(False, errors)
 
-        if not command.strip():
+        if not isinstance(command, str):
+
+            errors.append("Command must be a string.")
+
+            return ValidationResult(False, errors)
+
+        if not command:
 
             errors.append("Command is empty.")
 
@@ -176,13 +180,62 @@ class QRValidator:
 
         )
 
-    def validate_step10(self, command:str) -> ValidationResult:
+    def validate_step8(self, command:str) -> ValidationResult:
+        result = self.validate(command)
+
+        errors = result.errors.copy()
+
+        if "emd -i  sysfs -c 4" not in command:
+            errors.append("Invalid step8 command.")
+
+        return ValidationResult(
+
+            valid=len(errors) == 0,
+
+            errors=errors,
+
+        )
+
+
+    def validate_step11(self, command:str) -> ValidationResult:
         result = self.validate(command)
 
         errors = result.errors.copy()
 
         if "setfset | grep eth0 && setfset | grep eth1" not in command:
             errors.append("Invalid step10 command.")
+
+        return ValidationResult(
+
+            valid=len(errors) == 0,
+
+            errors=errors,
+
+        )
+
+    def validate_user(self, command:str) -> ValidationResult:
+        result = self.validate(command)
+
+        errors = result.errors.copy()
+
+        if "root" not in command:
+            errors.append("Invalid user command.")
+
+        return ValidationResult(
+
+            valid=len(errors) == 0,
+
+            errors=errors,
+
+        )
+
+    def validate_password(self, command:str) -> ValidationResult:
+        result = self.validate(command)
+
+        errors = result.errors.copy()
+
+        if "default" not in command:
+            errors.append("Invalid password command.")
 
         return ValidationResult(
 
