@@ -58,8 +58,8 @@ def main():
         device1 = Device(
             order_number=order.order_number,
             serial_number="SN000001",
-            first_mac_address="00:11:22:33:44:55",
-            second_mac_address="00:11:22:33:44:56",
+            ethaddr_id="00:11:22:33:44:55",
+            ethaddr1_id="00:11:22:33:44:56",
             used=True,
             test_result="Pass",
             operator="Zach",
@@ -68,8 +68,8 @@ def main():
         device2 = Device(
             order_number=order.order_number,
             serial_number="SN000002",
-            first_mac_address="00:11:22:33:44:56",
-            second_mac_address="00:11:22:33:44:57",
+            ethaddr_id="00:11:22:33:44:56",
+            ethaddr1_id="00:11:22:33:44:57",
             used=True,
             test_result="Fail",
             operator="Zach",
@@ -122,8 +122,8 @@ def main():
         for device in db_order.devices:
             print(
                 device.serial_number,
-                device.first_mac_address,
-                device.second_mac_address,
+                device.ethaddr_id,
+                device.ethaddr1_id,
                 device.test_result,
             )
 

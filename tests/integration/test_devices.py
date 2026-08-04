@@ -15,8 +15,8 @@ def test_create_device(session):
     device = Device(
         order_number=order.order_number,
         serial_number="SN001",
-        first_mac_address="00:11:22:33:44:55",
-        second_mac_address="00:11:22:33:44:56",
+        ethaddr_id="00:11:22:33:44:55",
+        ethaddr1_id="00:11:22:33:44:56",
         used=True,
         test_result="Pass",
         operator="Tester",
@@ -43,8 +43,8 @@ def test_update_device(session):
     device = Device(
         order_number=order.order_number,
         serial_number="SN002",
-        first_mac_address="00:11:22:33:44:56",
-        second_mac_address="00:11:22:33:44:57",
+        ethaddr_id="00:11:22:33:44:56",
+        ethaddr1_id="00:11:22:33:44:57",
         used=False,
         test_result="Fail",
         operator="Tester",
@@ -76,8 +76,8 @@ def test_assign_order_to_device(session):
     device = Device(
         order_number=order.order_number,
         serial_number="SN003",
-        first_mac_address="00:11:22:33:44:57",
-        second_mac_address="00:11:22:33:44:58",
+        ethaddr_id="00:11:22:33:44:57",
+        ethaddr1_id="00:11:22:33:44:58",
         used=False,
         test_result="Pending",
         operator="Importer",

@@ -26,7 +26,7 @@ DB_DIR = PROJECT_ROOT / "database"
 LOG_DIR = PROJECT_ROOT / "logs"
 BACKUP_DIR = PROJECT_ROOT / "backups"
 RESOURCE_DIR = PROJECT_ROOT / "resources"
-PROJECT_ROOT = Path(__file__).resolve().parentsp[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_FILE = PROJECT_ROOT / "config" / "config.json"
 
 # ==========================================================

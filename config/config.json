@@ -36,26 +36,16 @@
         "confirm_before_finish": true,
         "allow_cancel": true
     },
-
     "qr_commands": {
         "step3": "ls /dev/sd[a-e]",
-
-        "step4": "timeout 2s loopback /dev/port0[2-4] -q", 
-
+        "step4": "timeout 2s loopback /dev/port0[2-4] -q",
         "step5": "timeout 2s loopback /dev/port0[5-8] -q",
-
         "step6": "ifconfig eth1 up && sleep 5 && ethtool eth1",
-
         "step7": "emd -i sysfc",
-        
         "step8": "setfset -u ethaddr={mac1}",
-        
         "step9": "setfset -u eth1addr={mac2}",
-        
         "step10": "echo \"MAC1: {mac1}\" && echo \"MAC2: {mac2}\""
-
     },
-
     "combined_steps": {
         "functional_test": [
             "step3",
@@ -63,12 +53,10 @@
             "step4",
             "step6"
         ],
-
         "combined_macs": [
             "step8",
             "step9"
         ],
-
         "complete_test": [
             "step3",
             "step4",
@@ -79,5 +67,4 @@
             "step10"
         ]
     }
-
 }

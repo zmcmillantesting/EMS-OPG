@@ -18,8 +18,8 @@ def test_duplicate_mac_fails(session):
     session.add(Device(
         order_number=order.order_number,
         serial_number="SN1",
-        first_mac_address="AA:BB:CC:DD:EE:FF",
-        second_mac_address="BB:CC:DD:EE:FF:AA",
+        ethaddr_id="AA:BB:CC:DD:EE:FF",
+        ethaddr1_id="BB:CC:DD:EE:FF:AA",
         used=True,
         test_result="Pass",
         operator="Tester",
@@ -30,8 +30,8 @@ def test_duplicate_mac_fails(session):
     session.add(Device(
         order_number=order.order_number,
         serial_number="SN2",
-        first_mac_address="AA:BB:CC:DD:EE:FF",
-        second_mac_address="CC:DD:EE:FF:AA:BB",
+        ethaddr_id="AA:BB:CC:DD:EE:FF",
+        ethaddr1_id="CC:DD:EE:FF:AA:BB",
         used=True,
         test_result="Pass",
         operator="Tester",

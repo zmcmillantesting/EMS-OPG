@@ -16,8 +16,8 @@ def test_order_has_devices(session):
         Device(
             order_number=order.order_number,
             serial_number="SN1",
-            first_mac_address="00:11:22:33:44:01",
-            second_mac_address="00:11:22:33:44:02",
+            ethaddr_id="00:11:22:33:44:01",
+            ethaddr1_id="00:11:22:33:44:02",
             used=True,
             test_result="Pass",
             operator="Tester",
@@ -25,8 +25,8 @@ def test_order_has_devices(session):
         Device(
             order_number=order.order_number,
             serial_number="SN2",
-            first_mac_address="00:11:22:33:44:02",
-            second_mac_address="00:11:22:33:44:03",
+            ethaddr_id="00:11:22:33:44:02",
+            ethaddr1_id="00:11:22:33:44:03",
             used=True,
             test_result="Pass",
             operator="Tester",
