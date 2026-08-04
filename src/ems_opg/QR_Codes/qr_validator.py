@@ -95,6 +95,14 @@ class QRValidator:
                 "Malformed command contains &&&."
             )
 
+        #
+        # Unresolved MAC address placeholders 
+        #
+
+        if "{mac1}" in command or "{mac2}" in command:
+            errors.append(
+                "Unresolved MAC address placeholders: {mac1} or {mac2}")
+
         return ValidationResult(
 
             valid=len(errors) == 0,
@@ -152,9 +160,25 @@ class QRValidator:
                 "Missing MAC address assignment: eth1addr"
             )
 
-        if r"{mac1}" or r"{mac2}" in command:
+        if "{mac1}" in command or "{mac2}" in command:
             errors.append(
                 "Unresolved MAC address placeholders: {mac1} or {mac2}")
+
+        return ValidationResult(
+
+            valid=len(errors) == 0,
+
+            errors=errors,
+
+        )
+
+    def validate_step10(self, command:str) -> ValidationResult:
+        result = self.validate(command)
+
+        errors = result.errors.copy()
+
+        if "setfset | grep eth0 && setfset | grep eth1" not in command:
+            errors.append("Invalid step10 command.")
 
         return ValidationResult(
 
