@@ -37,6 +37,8 @@
         "allow_cancel": true
     },
     "qr_commands": {
+        "step1": "root",
+        "step2": "default",
         "step3": "ls /dev/sd[a-e]",
         "step4": "timeout 2s loopback /dev/port0[2-4] -q",
         "step5": "timeout 2s loopback /dev/port0[5-8] -q",

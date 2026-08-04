@@ -14,12 +14,33 @@ class QRService:
         self.config = ConfigurationManager(paths.config_file)
         self.validator = QRValidator()
 
-    # def create_step3(self):
+    def create_step1(self):
+        command = self.config.get_qr_command("step1"),
 
-    #     return self.generator.generate(
-    #         qr_templates.STEP3,
-    #         "step3",
-    #     )
+        validation = self.validator.validate_step1(command)
+        if not validation.valid:
+            raise QRValidationError(
+                "\n".join(validation.errors)
+            )
+
+        return self.generator.generate(
+            command,
+            "step1",
+        )
+
+    def create_step2(self):
+        command = self.config.get_qr_command("step2")
+
+        validation = self.validator.validate_step2(command)
+        if not validation.valid:
+            raise QRValidationError(
+                "\n".join(validation.errors)
+            )
+        return self.generator.generate(
+            command,
+            "step2",
+        )
+
 
     # def create_step8(self, mac1):
 
