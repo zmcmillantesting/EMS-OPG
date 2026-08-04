@@ -1,16 +1,16 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class WorkflowState(Enum):
 
-    IDLE = "Idle"
+    IDLE = auto()
 
-    ORDER_SELECTED = "Order Selected"
+    ORDER_SELECTED = auto() 
 
-    DEVICE_SELECTED = "Device Selected"
+    DEVICE_SELECTED = auto()
 
-    TESTING = "Testing"
+    TESTING = auto()
 
-    COMPLETE = "Complete"
+    COMPLETE = auto()
 
-    ERROR = "Error"
+    ERROR = auto()

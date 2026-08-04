@@ -1,11 +1,28 @@
+from dataclasses import dataclass, field
+from datetime import datetime
+
+
+@dataclass
 class WorkflowSession:
 
-    def __init__(self):
+    operator: str = ""
 
-        self.order = None
+    order_number: str = ""
 
-        self.device = None
+    serial_number: str = ""
 
-        self.operator = None
+    mac1: str = ""
 
-        self.current_step = 0
+    mac2: str = ""
+
+    current_step: int = 0
+
+    total_steps: int = 8
+
+    started: datetime = field(default_factory=datetime.now)
+
+    finished: datetime | None = None
+
+    cancelled: bool = False
+
+    completed: bool = False
