@@ -1,0 +1,19 @@
+.search-bar {
+
+    display: flex;
+
+    gap: 10px;
+
+}
+
+.history-table {
+
+    width: 100%;
+
+}
+
+.history-table th {
+
+    background: var(--secondary);
+
+}

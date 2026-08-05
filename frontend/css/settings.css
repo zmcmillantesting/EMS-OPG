@@ -1,0 +1,13 @@
+.settings-grid {
+
+    display: grid;
+
+    gap: 20px;
+
+}
+
+.settings-card {
+
+    padding: 20px;
+
+}
