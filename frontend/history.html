@@ -1,47 +1,64 @@
-<body class="page">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS-OPG — History</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/history.css">
+</head>
+<body class="page page-history">
 
-<header>
+    <header id="header-placeholder"></header>
 
-    EMS-OPG
+    <main class="history-main">
+        <section class="history-header">
+            <h1 class="page-title">History</h1>
+            <p class="page-subtitle">Search completed devices and traceability records</p>
+        </section>
 
-</header>
+        <section class="search-bar card">
+            <input
+                id="search"
+                class="input search-input"
+                type="search"
+                placeholder="Search by order, serial, MAC, or operator..."
+            >
+            <button id="search-button" class="button button-primary" type="button">Search</button>
+            <button id="export-button" class="button button-secondary" type="button">Export CSV</button>
+        </section>
 
-<main>
+        <section class="history-table-wrapper card">
+            <table id="history-table" class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Order</th>
+                        <th>Serial</th>
+                        <th>MAC 1</th>
+                        <th>MAC 2</th>
+                        <th>Operator</th>
+                        <th>Result</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                </tbody>
+            </table>
+            <p id="history-empty" class="history-empty hidden">No records found.</p>
+        </section>
 
-    <section>
+        <nav class="history-actions">
+            <a href="index.html" class="button button-secondary">Return Home</a>
+        </nav>
+    </main>
 
-        <h1>
+    <footer id="footer-placeholder"></footer>
 
-            History
-
-        </h1>
-
-    </section>
-
-    <section>
-
-        <input
-
-            id="search"
-
-            placeholder="Search..."
-
-        >
-
-    </section>
-
-    <section>
-
-        <table id="history-table">
-
-        </table>
-
-    </section>
-
-</main>
-
-<footer>
-
-</footer>
-
+    <script src="js/common.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/history.js"></script>
 </body>
+</html>

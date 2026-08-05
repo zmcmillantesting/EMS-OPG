@@ -1,97 +1,35 @@
-<body class="page">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS-OPG — Testing</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/testing.css">
+</head>
+<body class="page page-testing">
 
-<header>
+    <header id="header-placeholder"></header>
 
-    <div>
+    <main class="testing-main">
+        <section class="workflow-header">
+            <h1 id="workflow-name" class="workflow-title">Functional Test</h1>
+            <p id="step-indicator" class="step-indicator">Step 1 of 8</p>
+        </section>
 
-        EMS-OPG
+        <div id="command-panel-placeholder"></div>
 
-    </div>
+        <div id="qr-panel-placeholder"></div>
 
-    <button id="settings">
+        <div id="navigation-placeholder"></div>
+    </main>
 
-        ⚙
+    <footer id="footer-placeholder"></footer>
 
-    </button>
-
-</header>
-
-<main>
-
-    <section class="workflow">
-
-        <h1>
-
-            Functional Test
-
-        </h1>
-
-        <p>
-
-            Step 2 of 4
-
-        </p>
-
-    </section>
-
-    <section class="command-card">
-
-        <h2>
-
-            Current Bash Command
-
-        </h2>
-
-        <pre id="current-command">
-
-timeout 2s loopback /dev/port0[2-4] -q
-
-        </pre>
-
-    </section>
-
-    <section class="qr-panel">
-
-        <img
-
-            id="qr-image"
-
-            src=""
-
-            alt="QR Code"
-
-        >
-
-    </section>
-
-    <nav class="navigation">
-
-        <button id="previous">
-
-            Previous
-
-        </button>
-
-        <button id="home">
-
-            Home
-
-        </button>
-
-        <button id="next">
-
-            Next
-
-        </button>
-
-    </nav>
-
-</main>
-
-<footer>
-
-    Database Connected
-
-</footer>
-
+    <script src="js/common.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/testing.js"></script>
 </body>
+</html>

@@ -1,14 +1,17 @@
-:root{
-    --primary:#2e7d32;
-    --background:#f8f9fa;
-    --card:#ffffff;
-    --border:#e1e6eb;
-    --danger:#d32f2f;
-    --warning:#f9a825;
-    --info:#1976d2;
-    --text:#2c3e50;
+:root {
+    --primary: #2e7d32;
+    --secondary: #f2f4f6;
+    --background: #f8f9fa;
+    --card: #ffffff;
+    --border: #e1e6eb;
+    --danger: #d32f2f;
+    --warning: #f9a825;
+    --info: #1976d2;
+    --text: #2c3e50;
+    --text-secondary: #667085;
+    --success: #2e7d32;
 
-    --font-main: 'Segoe UI', Arial, sans-serif;
+    --font-main: "Segoe UI", Arial, sans-serif;
     --font-code: Consolas, monospace;
 
     --space-xs: 8px;
@@ -17,11 +20,70 @@
     --space-lg: 32px;
     --space-xl: 48px;
 
-    --radius: 6px; 
+    --radius: 6px;
 }
 
-main {
-    max-width: 1400px;
-    margin: auto;
-    padding: 32px;
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-main);
+    font-size: 16px;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+    margin: 0;
+    font-weight: 600;
+}
+
+p {
+    margin: 0;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select {
+    font-family: inherit;
+    font-size: 16px;
+}
+
+.page-title {
+    font-size: 28px;
+    color: var(--text);
+}
+
+.page-subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-top: var(--space-xs);
+}
+
+.status-success {
+    color: var(--success);
+}
+
+.status-warning {
+    color: var(--warning);
+}
+
+.status-error {
+    color: var(--danger);
+}
+
+.hidden {
+    display: none !important;
 }

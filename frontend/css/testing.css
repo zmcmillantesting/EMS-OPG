@@ -1,38 +1,51 @@
-.workflow-title {
+.testing-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    max-width: 900px;
+    margin: 0 auto;
+}
 
+.workflow-header {
     text-align: center;
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--border);
+}
 
+.workflow-title {
+    font-size: 28px;
+    margin-bottom: var(--space-xs);
+}
+
+.step-indicator {
+    font-size: 18px;
+    color: var(--text-secondary);
+}
+
+.command-card {
+    width: 100%;
 }
 
 .command-section {
-
-    margin-bottom: 30px;
-
+    margin-bottom: var(--space-lg);
 }
 
 .qr-section {
-
     display: flex;
-
     justify-content: center;
-
-    margin-top: 30px;
-
 }
 
-.navigation {
+@media (max-width: 480px) {
+    .navigation {
+        flex-direction: column;
+    }
 
-    display: flex;
+    .navigation .button {
+        max-width: none;
+    }
 
-    justify-content: space-between;
-
-    margin-top: 40px;
-
-}
-
-.qr-image {
-    
-    width: 400px;
-
-    height: 400px;
+    .qr-image {
+        width: 280px;
+        height: 280px;
+    }
 }
