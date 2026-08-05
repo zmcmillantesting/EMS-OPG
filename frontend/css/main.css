@@ -1,0 +1,21 @@
+:root{
+    --primary:#2e7d32;
+    --background:#f8f9fa;
+    --card:#ffffff;
+    --border:#e1e6eb;
+    --danger:#d32f2f;
+    --warning:#f9a825;
+    --info:#1976d2;
+    --text:#2c3e50;
+
+    --font-main: 'Segoe UI', Arial, sans-serif;
+    --font-code: Consolas, monospace;
+
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 20px;
+    --space-lg: 32px;
+    --space-xl: 48px;
+
+    --radius: 6px; 
+}
