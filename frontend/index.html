@@ -1,53 +1,52 @@
-<body class="page">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS-OPG — Home</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/home.css">
+</head>
+<body class="page page-home">
 
-<header>
+    <header id="header-placeholder"></header>
 
-    <div class="logo">
+    <main class="home-main">
+        <section class="home-card card">
+            <h1 class="page-title">EMS Operations Production Gateway</h1>
+            <p class="page-subtitle">Ready to begin device testing</p>
+            <button id="start-test" class="button button-primary start-button" type="button">
+                New Test
+            </button>
+        </section>
 
-        EMS-OPG
+        <section class="home-grid">
+            <a href="history.html" class="button button-secondary home-nav-button">History</a>
+            <a href="settings.html" class="button button-secondary home-nav-button">Settings</a>
+        </section>
 
-    </div>
+        <section class="home-status card">
+            <div class="status-row">
+                <span class="status-label">Database</span>
+                <span id="home-database-status" class="status-value status-success">Connected</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Devices Today</span>
+                <span id="home-devices-count" class="status-value">—</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Version</span>
+                <span id="home-version" class="status-value">1.0.0</span>
+            </div>
+        </section>
+    </main>
 
-</header>
+    <footer id="footer-placeholder"></footer>
 
-<main>
-
-    <section class="home-card">
-
-        <h1>Production Gateway</h1>
-
-        <button id="start-test">
-
-            Start New Test
-
-        </button>
-
-    </section>
-
-    <section class="home-grid">
-
-        <button>
-
-            History
-
-        </button>
-
-        <button>
-
-            Settings
-
-        </button>
-
-    </section>
-
-</main>
-
-<footer>
-
-    <span>Database Connected</span>
-
-    <span>Ready</span>
-
-</footer>
-
+    <script src="js/common.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/home.js"></script>
 </body>
+</html>

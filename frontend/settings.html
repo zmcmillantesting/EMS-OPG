@@ -1,63 +1,108 @@
-<body class="page">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS-OPG — Settings</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/settings.css">
+</head>
+<body class="page page-settings">
 
-<header>
+    <header id="header-placeholder"></header>
 
-    EMS-OPG
+    <main class="settings-main">
+        <section class="settings-header">
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Configuration and maintenance tools</p>
+        </section>
 
-</header>
+        <div class="settings-grid">
+            <section class="settings-card card">
+                <h2 class="card-title">Database</h2>
+                <div class="settings-actions">
+                    <button id="backup-button" class="button button-secondary" type="button">Backup</button>
+                    <button id="restore-button" class="button button-secondary" type="button">Restore</button>
+                    <button id="verify-button" class="button button-secondary" type="button">Verify Database</button>
+                </div>
+            </section>
 
-<main>
+            <section class="settings-card card">
+                <h2 class="card-title">Logging</h2>
+                <div class="settings-actions">
+                    <label class="field-label" for="log-level">Log Level</label>
+                    <select id="log-level" class="input select-input">
+                        <option value="DEBUG">DEBUG</option>
+                        <option value="INFO" selected>INFO</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="ERROR">ERROR</option>
+                    </select>
+                    <button id="open-logs-button" class="button button-secondary" type="button">Open Logs</button>
+                </div>
+            </section>
 
-    <h1>
+            <section class="settings-card card">
+                <h2 class="card-title">Workflow</h2>
+                <div class="settings-actions">
+                    <button id="reload-config-button" class="button button-secondary" type="button">Reload Config</button>
+                    <button id="regenerate-cache-button" class="button button-secondary" type="button">Regenerate Cache</button>
+                </div>
+            </section>
 
-        Settings
+            <section class="settings-card card settings-card-wide">
+                <h2 class="card-title">Manual Corrections</h2>
+                <p class="card-description">Search for a device and apply supervised corrections. All changes are audit logged.</p>
 
-    </h1>
+                <form id="correction-form" class="correction-form">
+                    <div class="form-row">
+                        <label class="field-label" for="correction-serial">Serial Number</label>
+                        <input id="correction-serial" class="input" type="text" placeholder="Search by serial number" required>
+                        <button id="lookup-device-button" class="button button-secondary" type="button">Lookup</button>
+                    </div>
 
-    <section class="settings-grid">
+                    <div id="correction-fields" class="correction-fields hidden">
+                        <div class="form-row">
+                            <label class="field-label" for="correction-order">Order Number</label>
+                            <input id="correction-order" class="input" type="text">
+                        </div>
+                        <div class="form-row">
+                            <label class="field-label" for="correction-new-serial">Serial Number</label>
+                            <input id="correction-new-serial" class="input" type="text">
+                        </div>
+                        <div class="form-row">
+                            <label class="field-label" for="correction-operator">Operator</label>
+                            <input id="correction-operator" class="input" type="text">
+                        </div>
+                        <div class="form-row">
+                            <label class="field-label" for="correction-mac1">MAC 1</label>
+                            <input id="correction-mac1" class="input" type="text">
+                        </div>
+                        <div class="form-row">
+                            <label class="field-label" for="correction-mac2">MAC 2</label>
+                            <input id="correction-mac2" class="input" type="text">
+                        </div>
+                        <div class="form-row correction-actions">
+                            <button id="save-correction-button" class="button button-primary" type="submit">Save Corrections</button>
+                            <button id="reset-mac-button" class="button button-danger" type="button">Reset MAC</button>
+                        </div>
+                    </div>
+                </form>
 
-        <div class="card">
-
-            Configuration
-
+                <p id="correction-message" class="correction-message hidden"></p>
+            </section>
         </div>
 
-        <div class="card">
+        <nav class="settings-actions-bar">
+            <a href="index.html" class="button button-secondary">Return Home</a>
+        </nav>
+    </main>
 
-            Workflow
+    <footer id="footer-placeholder"></footer>
 
-        </div>
-
-        <div class="card">
-
-            Logging
-
-        </div>
-
-        <div class="card">
-
-            Database
-
-        </div>
-
-        <div class="card">
-
-            Manual Corrections
-
-        </div>
-
-        <div class="card">
-
-            Backup
-
-        </div>
-
-    </section>
-
-</main>
-
-<footer>
-
-</footer>
-
+    <script src="js/common.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/settings.js"></script>
 </body>
+</html>
