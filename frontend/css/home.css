@@ -1,0 +1,15 @@
+.home-grid {
+
+    display: grid;
+
+    gap: 20px;
+
+}
+
+.start-button {
+
+    font-size: 22px;
+
+    height: 70px;
+
+}

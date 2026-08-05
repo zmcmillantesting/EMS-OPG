@@ -1,0 +1,31 @@
+.workflow-title {
+
+    text-align: center;
+
+}
+
+.command-section {
+
+    margin-bottom: 30px;
+
+}
+
+.qr-section {
+
+    display: flex;
+
+    justify-content: center;
+
+    margin-top: 30px;
+
+}
+
+.navigation {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-top: 40px;
+
+}
