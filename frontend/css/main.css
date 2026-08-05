@@ -19,3 +19,9 @@
 
     --radius: 6px; 
 }
+
+main {
+    max-width: 1400px;
+    margin: auto;
+    padding: 32px;
+}
