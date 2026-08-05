@@ -1,0 +1,24 @@
+
+=== Full Database Flow Test ===
+Starting full database flow test
+Created order PO-9001
+
+=== Order Setup ===
+Loaded MAC pool entries
+
+=== Device Setup ===
+Created primary and secondary devices
+
+=== Reservation Flow ===
+Reserved device SN-9001
+Recorded audit status: PASS
+Secondary reservation failed as expected: MAC address has already been used.
+
+=== Summary ===
+Order: PO-9001
+Primary device serial: SN-9001
+Secondary device serial: SN-9002
+Primary device used: True
+Secondary device used: False
+Audit entries recorded: 1
+Completed full database flow test

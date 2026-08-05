@@ -37,31 +37,37 @@
         "allow_cancel": true
     },
     "qr_commands": {
+        "step1": "root",
+        "step2": "default",
         "step3": "ls /dev/sd[a-e]",
         "step4": "timeout 2s loopback /dev/port0[2-4] -q",
         "step5": "timeout 2s loopback /dev/port0[5-8] -q",
         "step6": "ifconfig eth1 up && sleep 5 && ethtool eth1",
-        "step7": "emd -i sysfc",
-        "step8": "setfset -u ethaddr={mac1}",
-        "step9": "setfset -u eth1addr={mac2}",
-        "step10": "setfset | grep eth0 && setfset | grep eth1"
+        "step7": "echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness",
+        "step8": "emd -i sysfs -c 4",
+        "step9": "setfset -u ethaddr={mac1}",
+        "step10": "setfset -u eth1addr={mac2}",
+        "step11": "setfset | grep eth0 && setfset | grep eth1"
     },
     "combined_steps": {
         "functional_test": [
             "step3",
-            "step5",
             "step4",
+            "step5",
+            "step7",
+            "step8",
             "step6"
         ],
         "combined_macs": [
-            "step8",
-            "step9"
+            "step9",
+            "step10"
         ],
         "complete_test": [
             "step3",
             "step4",
             "step5",
             "step6",
+            "step7",
             "step8",
             "step9",
             "step10"

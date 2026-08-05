@@ -14,29 +14,47 @@ class QRService:
         self.config = ConfigurationManager(paths.config_file)
         self.validator = QRValidator()
 
-    # def create_step3(self):
+    def create_step1(self):
+        command = self.config.get_qr_command("step1")
 
-    #     return self.generator.generate(
-    #         qr_templates.STEP3,
-    #         "step3",
-    #     )
+        validation = self.validator.validate_user(command)
+        if not validation.valid:
+            raise QRValidationError(
+                "\n".join(validation.errors)
+            )
 
-    # def create_step8(self, mac1):
+        return self.generator.generate(
+            command,
+            "step1",
+        )
 
-    #     command = qr_templates.STEP8.format(
-    #         mac1=mac1,
-    #     )
+    def create_step2(self):
+        command = self.config.get_qr_command("step2")
 
-    #     validation = self.validator.validate_step8(command)
-    #     if not validation.valid:
-    #         raise QRValidationError(
-    #             "\n".join(validation.errors)
-    #         )
+        validation = self.validator.validate_password(command)
+        if not validation.valid:
+            raise QRValidationError(
+                "\n".join(validation.errors)
+            )
+        return self.generator.generate(
+            command,
+            "step2",
+        )
 
-    #     return self.generator.generate(
-    #         command,
-    #         "step8",
-    #     )
+
+    def create_step8(self):
+
+        command = self.config.get_qr_command("step8")
+        validation = self.validator.validate_step8(command)
+        if not validation.valid:
+            raise QRValidationError(
+                "\n".join(validation.errors)
+            )
+
+        return self.generator.generate(
+            command,
+            "step8",
+        )
 
     # def create_step9(self, mac2):
 
@@ -94,10 +112,10 @@ class QRService:
 
         return command
 
-    def create_step10(self):
-        command = self.config.get_qr_command("step10")
+    def create_step11(self):
+        command = self.config.get_qr_command("step11")
 
-        validation = self.validator.validate_step10(command)
+        validation = self.validator.validate_step11(command)
         if not validation.valid:
             raise QRValidationError(
                 "\n".join(validation.errors)
