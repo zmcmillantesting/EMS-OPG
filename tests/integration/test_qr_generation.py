@@ -147,7 +147,7 @@ def test_mac_generation(qr_service):
 
     result = qr_service.generator.generate(
         command,
-        "step4",
+        "step5",
     )
 
     logger.info("Output File : %s", result.path)
@@ -158,7 +158,7 @@ def test_mac_generation(qr_service):
 
     assert_generated_qr(
         result,
-        "step4",
+        "step5",
         [
             f"ethaddr={mac1}",
             f"eth1addr={mac2}",
@@ -182,7 +182,7 @@ def test_step_4_generation(qr_service):
     logger.info("=" * 70)
     
     command = qr_service.create_step8()
-    result = qr_service.generator.generate(command, "step4",)
+    result = qr_service.generator.generate(command.command, "step4",)
 
     logger.info("Output File : %s", result.path)
     logger.info("Command:")
