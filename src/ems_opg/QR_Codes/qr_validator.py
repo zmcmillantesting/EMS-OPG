@@ -154,19 +154,14 @@ class QRValidator:
 
         errors = result.errors.copy()
 
-        # Check for ethaddr and eth1addr
+        # Check for ethaddr= and ethaddr1=
 
-        if "ethaddr=" not in command:
-
-            errors.append(
-                "Missing MAC address assignment: ethaddr"
-            )
-
-        if "eth1addr=" not in command:
+        if "ethaddr=" not in command and "ethaddr1=" not in command:
 
             errors.append(
-                "Missing MAC address assignment: eth1addr"
+                "Missing MAC address assignment: eth0 and/or eth1"
             )
+
 
         if "{mac1}" in command or "{mac2}" in command:
             errors.append(
@@ -185,7 +180,7 @@ class QRValidator:
 
         errors = result.errors.copy()
 
-        if "emd -i  sysfs -c 4" not in command:
+        if "emd -i sysfs -c 4" not in command:
             errors.append("Invalid step8 command.")
 
         return ValidationResult(
@@ -197,7 +192,7 @@ class QRValidator:
         )
 
 
-    def validate_step11(self, command:str) -> ValidationResult:
+    def validate_step10(self, command:str) -> ValidationResult:
         result = self.validate(command)
 
         errors = result.errors.copy()

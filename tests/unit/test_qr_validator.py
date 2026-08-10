@@ -110,6 +110,8 @@ def test_functional_workflow_passes(validator):
         "timeout 2s loopback /dev/port0[2-4] -q && "
         "timeout 2s loopback /dev/port0[5-8] -q && "
         "ifconfig eth1 up && sleep 5 && ethtool eth1"
+        "echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness"
+        "emd -i sysfs -c 4"
     )
 
     result = validator.validate_functional_workflow(command)

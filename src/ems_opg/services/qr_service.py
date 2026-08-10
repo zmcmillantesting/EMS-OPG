@@ -115,7 +115,7 @@ class QRService:
     def create_step11(self):
         command = self.config.get_qr_command("step11")
 
-        validation = self.validator.validate_step11(command)
+        validation = self.validator.validate_step10(command)
         if not validation.valid:
             raise QRValidationError(
                 "\n".join(validation.errors)
