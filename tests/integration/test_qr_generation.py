@@ -104,7 +104,7 @@ def test_multi_step_generation(qr_service):
 
     result = qr_service.generator.generate(
         command,
-        "functional_test",
+        "step3",
     )
 
     logger.info("Output File : %s", result.path)
@@ -113,7 +113,7 @@ def test_multi_step_generation(qr_service):
 
     assert_generated_qr(
         result,
-        "functional_test",
+        "step3",
         [
             "ls /dev/sd[a-e]",
             "loopback",
@@ -147,7 +147,7 @@ def test_mac_generation(qr_service):
 
     result = qr_service.generator.generate(
         command,
-        "mac_programming",
+        "step4",
     )
 
     logger.info("Output File : %s", result.path)
@@ -158,7 +158,7 @@ def test_mac_generation(qr_service):
 
     assert_generated_qr(
         result,
-        "mac_programming",
+        "step4",
         [
             f"ethaddr={mac1}",
             f"eth1addr={mac2}",
@@ -173,9 +173,61 @@ def test_mac_generation(qr_service):
 
 
 # ---------------------------------------------------------------------
-# Test 3
+# Test 4
 # ---------------------------------------------------------------------
 
+def test_step_4_generation(qr_service):
+    logger.info("=" * 70)
+    logger.info("TEST: Step 4 workflow")
+    logger.info("=" * 70)
+    
+    command = qr_service.create_step8()
+    result = qr_service.generator.generate(command, "step4",)
+
+    logger.info("Output File : %s", result.path)
+    logger.info("Command:")
+    logger.info(result.command)
+    
+    assert_generated_qr(
+        result,
+        "step4",
+        [
+            "emd -i sysfs -c 4"
+        ],
+    )
+    logger.info("PASS\n")
+# ---------------------------------------------------------------------
+# Test 5
+# ---------------------------------------------------------------------
+
+def test_step10_generation(qr_service):
+
+    logger.info("=" * 70)
+    logger.info("TEST: Step 10 Workflow")
+    logger.info("=" * 70)
+
+    command = qr_service.create_step11()
+
+    result = qr_service.generator.generate(
+        command,
+        "step6",
+    )
+
+    logger.info("Output File : %s", result.path)
+    logger.info("Command:")
+    logger.info(result.command)
+
+    assert_generated_qr(
+        result,
+        "step6",
+        [
+            "setfset | grep eth0",
+            "setfset | grep eth1",
+        ],
+    )
+
+    logger.info("PASS\n")
+    
 def test_complete_workflow(qr_service):
 
     logger.info("=" * 70)
@@ -225,93 +277,6 @@ def test_complete_workflow(qr_service):
 
     logger.info("PASS\n")
 
-
-# ---------------------------------------------------------------------
-# Test 4
-# ---------------------------------------------------------------------
-
-def test_step10_generation(qr_service):
-
-    logger.info("=" * 70)
-    logger.info("TEST: Step 10 Workflow")
-    logger.info("=" * 70)
-
-    command = qr_service.create_step11()
-
-    result = qr_service.generator.generate(
-        command,
-        "step10",
-    )
-
-    logger.info("Output File : %s", result.path)
-    logger.info("Command:")
-    logger.info(result.command)
-
-    assert_generated_qr(
-        result,
-        "step10",
-        [
-            "setfset | grep eth0",
-            "setfset | grep eth1",
-        ],
-    )
-
-    logger.info("PASS\n")
-
-def test_qr_walkthrough(qr_service):
-    """
-    Test the generation of QR codes for the entire walkthrough.
-    """
-
-    STEP1_COMMAND = qr_service.create_step1()
-    STEP2_COMMAND = qr_service.create_step2()
-    STEP3_COMMAND = qr_service.multi_step()
-    STEP4_COMMAND = qr_service.create_step8() # needs to run again after multi_step
-    STEP5_COMMAND = qr_service.create_macs("00:11:22:33:44:55", "66:77:88:99:AA:BB")
-    STEP6_COMMAND = qr_service.create_step11()
-
-    logger.info("TEST: Step 1")
-    logger.info("=" * 70)
-    assert_generated_qr(STEP1_COMMAND, "step1", ["root"])
-    logger.info("=" * 70)
-
-    logger.info("TEST: Step 2")
-    logger.info("=" * 70)
-    assert_generated_qr(STEP2_COMMAND, "step2", ["default"])
-    logger.info("=" * 70)
-
-    logger.info("TEST: Functional Test")
-    logger.info("=" * 70)
-    assert_generated_qr(STEP3_COMMAND, "functional_test", [
-        "ls /dev/sd[a-e]",
-        "timeout 2s loopback /dev/port0[2-4] -q",
-        "timeout 2s loopback /dev/port0[5-8] -q",
-        "ifconfig eth1 up",
-        "sleep 5",
-        "ethtool eth1",
-        "echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness",
-        "emd -i sysfs -c 4"
-    ],)
-    logger.info("=" * 70)
-
-    logger.info("TEST: Step 4 (config step 8)")
-    logger.info("=" * 70)
-    assert_generated_qr(STEP4_COMMAND, "step8", ["emd -i sysfs -c 4"])
-    logger.info("=" * 70)
-
-    logger.info("TEST: Step 5 (MAC programming)")
-    logger.info("=" * 70)
-    assert_generated_qr(STEP5_COMMAND, "mac_programming", [
-        "ethaddr=00:11:22:33:44:55",
-        "eth1addr=66:77:88:99:AA:BB"
-    ])
-    logger.info("=" * 70)
-
-    logger.info("TEST: Step 6 (config step 11)")
-    logger.info("=" * 70)
-    assert_generated_qr(STEP6_COMMAND, "step11", ["step11"])
-    logger.info("=" * 70)
-    
 
 
 # ---------------------------------------------------------------------
