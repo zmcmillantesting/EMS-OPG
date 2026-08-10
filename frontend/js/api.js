@@ -153,10 +153,10 @@ function findDeviceBySerial(serial) {
 function findDeviceByMac(mac) {
     const normalized = mac.toLowerCase();
     return MOCK_HISTORY.find(
-        record.ethaddr_id.toLowerCase() === normalized ||
-        record.eth1addr_id.toLowerCase() === normalized
+        (record) =>
+            record.ethaddr_id.toLowerCase() === normalized ||
+            record.eth1addr_id.toLowerCase() === normalized
     );
-    
 }
 
 const mockApi = {
@@ -321,6 +321,8 @@ const mockApi = {
         if (!device) {
             return Promise.reject(new Error("Device not found"));
         }
+
+        return Promise.resolve({ device });
     },
 
     updateDevice(serial, updates) {

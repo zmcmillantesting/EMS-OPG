@@ -54,15 +54,6 @@ async function lookupDevice() {
         return;
     }
 
-async function lookupDeviceBySerial() {
-    const serialInput = document.getElementById("correction-serial");
-    const serial = serialInput?.value.trim();
-
-    if (!serial) {
-        showMessage("Enter a Serial address to lookup.", "error");
-    }
-}
-    
     try {
         const result = await api.lookupDevice(serial);
         populateCorrectionForm(result.device);
@@ -82,10 +73,11 @@ async function lookupDeviceByMac() {
 
     if (!mac) {
         showMessage("Enter a MAC address to lookup.", "error");
+        return;
     }
 
     try {
-        const result = await api.lookupDevice(mac);
+        const result = await api.lookupMac(mac);
         populateCorrectionForm(result.device);
         activeDeviceSerial = result.device.serial_number;
         setVisible("correction-fields", true);
