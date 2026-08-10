@@ -6,25 +6,21 @@
 const API_BASE = "/api";
 
 const WORKFLOW_STEPS = [
-    { name: "Check Drives", commandKey: "step3" },
-    { name: "Loopback Ports 2-4", commandKey: "step4" },
-    { name: "Loopback Ports 5-8", commandKey: "step5" },
-    { name: "Initialize Ethernet", commandKey: "step6" },
-    { name: "System Information", commandKey: "step8" },
-    { name: "Program MAC Address 1", commandKey: "step9", usesMac1: true },
-    { name: "Program MAC Address 2", commandKey: "step10", usesMac2: true },
-    { name: "Verify MAC Addresses", commandKey: "step11" },
+    { name: "username", commandKey: "step1" },
+    { name: "password", commandKey: "step2" },
+    { name: "multi-step", commandKey: "step3" },
+    { name: "emd -i sysfs -c 4", commandKey: "step4" },
+    { name: "MAC Addresses", commandKey: "step5" },
+    { name: "Verify MAC Addresses", commandKey: "step6" },
 ];
 
 const QR_COMMANDS = {
-    step3: "ls /dev/sd[a-e]",
-    step4: "timeout 2s loopback /dev/port0[2-4] -q",
-    step5: "timeout 2s loopback /dev/port0[5-8] -q",
-    step6: "ifconfig eth1 up && sleep 5 && ethtool eth1",
-    step8: "emd -i sysfs -c 4",
-    step9: "setfset -u ethaddr={mac1}",
-    step10: "setfset -u eth1addr={mac2}",
-    step11: "setfset | grep eth0 && setfset | grep eth1",
+    step1: "root",
+    step2: "default",
+    step3: "ls /dev/sd[a-e]; timeout 2s loopback /dev/port0[2-4] -q; timeout 2s loopback /dev/port0[5-8] -q;  emd -i sysfs -c 4; ifconfig eth1 up && sleep 5 && ethtool eth1",
+    step4: "emd -i sysfs -c 4",
+    step5: "setfset -u ethaddr={ethaddr} && setfset -u eth1addr={eth1addr}",
+    step6: "setfset | grep eth0 && setfset | grep eth1",
 };
 
 const MOCK_HISTORY = [
