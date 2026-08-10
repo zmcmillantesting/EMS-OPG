@@ -44,7 +44,7 @@ Production Network
 
 ┌──────────────────────────┐
 │                          │
-│ PyQt Workflow Application│
+│   CSS/HTML/JS Frontend   │
 │                          │
 └──────────────┬───────────┘
                │
@@ -99,10 +99,16 @@ Operator Confirms Completion
 Display Next QR Code
         │
         ▼
-Repeat Until Final Step
+Repeat four times
         │
         ▼
-Enter Device Information
+Scan MAC address label
+        │
+        ▼
+Verify both mac addresses are correct (should be sequential however there may be outliers)
+        │
+        ▼
+Enter Device Information (Serial Number Label)
         │
         ▼
 Review Summary
@@ -189,6 +195,7 @@ Once validated, the record is saved to the database.
 Before a session may be completed, the application should verify:
 
 - Production order selected
+- Order QTY remaining vs QTY completed
 - Serial Number entered
 - MAC Address entered
 - Required workflow steps completed

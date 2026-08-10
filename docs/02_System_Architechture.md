@@ -59,14 +59,20 @@ Application Displays Next QR Code
 
 ↓
 
-Repeat Until Complete
+Operator scanned MAC Address label
+
+↓
+Generate QR Code with scanned MAC Address and next one (each board recives two MACs)
+
+↓
 
 ↓
 
 Operator Records
 
+• Order Number
 • Serial Number
-• MAC Address
+• MAC Addresses
 • Notes
 
 ↓
