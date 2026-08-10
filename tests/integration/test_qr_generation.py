@@ -120,7 +120,6 @@ def test_multi_step_generation(qr_service):
             "ethtool",
             "ifconfig",
             "echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness",
-            "emd -i sysfs -c 4",
         ],
     )
 
