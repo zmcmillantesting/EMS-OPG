@@ -19,7 +19,7 @@ const QR_COMMANDS = {
     step2: "default",
     step3: "ls /dev/sd[a-e]; timeout 2s loopback /dev/port0[2-4] -q; timeout 2s loopback /dev/port0[5-8] -q;  emd -i sysfs -c 4; ifconfig eth1 up && sleep 5 && ethtool eth1",
     step4: "emd -i sysfs -c 4",
-    step5: "setfset -u ethaddr={ethaddr} && setfset -u eth1addr={eth1addr}",
+    step5: "setfset -u ethaddr={mac1} && setfset -u eth1addr={mac2}",
     step6: "setfset | grep eth0 && setfset | grep eth1",
 };
 
@@ -162,11 +162,11 @@ const mockApi = {
 
     startSession(payload) {
         mockSession = {
-            operator: payload.operator || "Operator",
-            order_number: payload.order_number || "000000",
-            serial_number: payload.serial_number || "SN000",
-            mac1: payload.mac1 || "00:60:47:12:34:AA",
-            mac2: payload.mac2 || "00:60:47:12:34:AB",
+            operator: payload.operator || "",
+            order_number: payload.order_number || "",
+            serial_number: payload.serial_number || "",
+            mac1: payload.mac1 || "",
+            mac2: payload.mac2 || "",
             current_step: 0,
             total_steps: WORKFLOW_STEPS.length,
             completed: false,
@@ -176,6 +176,33 @@ const mockApi = {
         return Promise.resolve({
             session: { ...mockSession },
             step: buildStepPayload(mockSession),
+        });
+    },
+
+    setMacAddresses(mac1, mac2) {
+        if (!mockSession) {
+            return Promise.reject(new Error("No active session"));
+        }
+        
+        mockSession.mac1 = mac1
+        mockSession.mac2 = mac2
+
+        return Promise.resolve({
+            session: { ...mockSession },
+        step: buildStepPayload(mockSession),
+         });
+    },
+
+    finishSession(serialNumber) {
+        if (!mockSession) {
+            return Promise.reject(new Error("No active session"));
+        }
+
+        mockSession.serial_number = serialNumber;
+
+        return Promise.resolve({
+            session: { ...mockSession },
+            message: "Device saved to trace log",
         });
     },
 
@@ -214,7 +241,9 @@ const mockApi = {
             return Promise.reject(new Error("No active session"));
         }
 
-        if (mockSession.current_step > 0) {
+        if (mockSession.completed) {
+            mockSession.completed = false;
+        } else if (mockSession.current_step > 0) {
             mockSession.current_step -= 1;
         }
 
@@ -372,10 +401,24 @@ const api = {
         );
     },
 
-    previousStep() {
+     previousStep() {
+         return withFallback(
+             () => request("/workflow/previous", { method: "POST" }),
+             () => mockApi.previousStep()
+         );
+     },
+
+    setMacAddresses(mac1, mac2) {
         return withFallback(
-            () => request("/workflow/previous", { method: "POST" }),
-            () => mockApi.previousStep()
+            () => request("/workflow/mac", { method: "PUT", body: JSON.stringify({ mac1, mac2 }) }),
+            () => mockApi.setMacAddresses(mac1, mac2)
+        );
+    },
+
+    finishSession(serialNumber) {
+        return withFallback(
+            () => request("/session/finish", { method: "POST", body: JSON.stringify({ serial_number: serialNumber }) }),
+            () => mockApi.finishSession(serialNumber)
         );
     },
 

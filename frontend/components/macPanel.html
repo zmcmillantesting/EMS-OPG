@@ -1,0 +1,50 @@
+<section class="phase-panel">
+    <div class="panel-header">
+        <h1 class="panel-title">MAC Addresses</h1>
+        <p class="panel-sub">Scan the first MAC label — the second is assigned automatically</p>
+    </div>
+
+    <div class="card" id="mac-scan-card">
+        <h2 class="card-title">Scan MAC 1</h2>
+        <div class="input-row">
+            <div class="input-group">
+                <label class="field-label" for="mac1-input">MAC 1</label>
+                <input class="input" id="mac1-input" type="text" placeholder="00:60:47:12:34:AA">
+            </div>
+            <button id="mac-assign" class="button button-primary" type="button">Assign &amp; Generate</button>
+        </div>
+        <p class="scan-hint">Focus stays in this field — a barcode scan types the label directly, no mouse click required.</p>
+    </div>
+
+    <div id="mac-result" class="mac-result hidden">
+        <div class="qr-panel qr-panel-lg"><img id="mac-qr-image" src="" alt="MAC assignment QR code" class="qr-image"></div>
+
+        <details class="details-panel">
+            <summary>Show MAC details</summary>
+            <div class="details-body">
+                <div class="mac-grid">
+                    <div class="mac-card">
+                        <div class="mac-role">MAC 1 · Scanned</div>
+                        <div class="mac-value" id="mac1-value">—</div>
+                        <div class="mac-origin">From device label</div>
+                    </div>
+                    <div class="mac-card">
+                        <div class="mac-role">MAC 2 · Auto-Assigned</div>
+                        <div class="mac-value" id="mac2-value">—</div>
+                        <div class="mac-origin">Next address in the MAC pool</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">Current Command</h2>
+                    <pre class="command-box" id="mac-command"></pre>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <div class="nav-row">
+        <button id="mac-prev" class="button button-secondary" type="button">Previous</button>
+        <button id="mac-next" class="button button-primary" type="button" disabled>Next</button>
+    </div>
+</section>

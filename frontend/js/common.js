@@ -8,6 +8,10 @@ const PAGE_COMPONENTS = {
     navigation: "components/navigation.html",
     qrPanel: "components/qr_panel.html",
     commandPanel: "components/command_panel.html",
+    orderOperatorPanel: "components/order_operator_panel.html",
+    macPanel: "components/macPanel.html",
+    verificationPanel: "components/verificationPanel.html",
+    serialPanel: "components/serialPanel",
 };
 
 /**
@@ -48,6 +52,10 @@ async function loadTestingComponents() {
         loadComponent("command-panel-placeholder", PAGE_COMPONENTS.commandPanel),
         loadComponent("qr-panel-placeholder", PAGE_COMPONENTS.qrPanel),
         loadComponent("navigation-placeholder", PAGE_COMPONENTS.navigation),
+        loadComponent("order-operator-panel-placeholder", PAGE_COMPONENTS.orderOperatorPanel),
+        loadComponent("mac-placeholder", PAGE_COMPONENTS.macPanel),
+        loadComponent("verification-placeholder", PAGE_COMPONENTS.verificationPanel),
+        loadComponent("serial-placeholder", PAGE_COMPONENTS.serialPanel),
     ]);
 }
 

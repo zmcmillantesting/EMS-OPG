@@ -1,0 +1,28 @@
+<section class="phase-panel">
+    <div class="panel-header">
+        <h1 class="panel-title">Verification</h1>
+        <p class="panel-sub">Scan to confirm both addresses were written correctly</p>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">Current Command</h2>
+        <pre class="command-box" id="verification-command"></pre>
+    </div>
+
+    <div class="qr-panel"><img id="verification-qr-image" src="" alt="Verification QR code" class="qr-image"></div>
+
+    <div class="confirm-row">
+        <input type="checkbox" id="verify-confirm">
+        <label for="verify-confirm">Operator confirms the scan output matches MAC 1 and MAC 2</label>
+    </div>
+
+    <div class="chip-row">
+        <span class="status-chip" id="chip-mac1">MAC 1 Verified</span>
+        <span class="status-chip" id="chip-mac2">MAC 2 Verified</span>
+    </div>
+
+    <div class="nav-row">
+        <button id="verification-prev" class="button button-secondary" type="button">Previous</button>
+        <button id="verification-next" class="button button-primary" type="button" disabled>Next</button>
+    </div>
+</section>

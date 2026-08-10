@@ -118,6 +118,11 @@
     background: #ffffff;
 }
 
+.qr-panel-lg .gr-image {
+    width: 560px;
+    height: 560px;
+}
+
 .navigation {
     display: flex;
     justify-content: space-between;
