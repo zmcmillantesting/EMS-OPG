@@ -41,7 +41,7 @@ class QRService:
             "step2",
         )
 
-
+# config step 8
     def create_step8(self):
 
         command = self.config.get_qr_command("step8")
@@ -53,7 +53,7 @@ class QRService:
 
         return self.generator.generate(
             command,
-            "step8",
+            "step4", # config step 8 but naming it step 4 due to workflow on operator side will be step 4
         )
 
     # def create_step9(self, mac2):

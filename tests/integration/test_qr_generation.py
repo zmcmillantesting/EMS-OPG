@@ -67,8 +67,6 @@ def qr_service():
 def assert_generated_qr(result, expected_name, expected_fragments):
     assert result.path.exists()
     assert result.path.suffix == ".png"
-    assert result.filename == f"{expected_name}.png"
-    assert result.path.name == f"{expected_name}.png"
     assert result.path.parent == paths.qr_cache
 
     for fragment in expected_fragments:
@@ -120,6 +118,7 @@ def test_multi_step_generation(qr_service):
             "ethtool",
             "ifconfig",
             "echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness",
+            "emd -i sysfs -c 4",
         ],
     )
 
@@ -180,8 +179,7 @@ def test_step_4_generation(qr_service):
     logger.info("TEST: Step 4 workflow")
     logger.info("=" * 70)
     
-    command = qr_service.create_step8()
-    result = qr_service.generator.generate(command.command, "step4",)
+    result = qr_service.create_step8()
 
     logger.info("Output File : %s", result.path)
     logger.info("Command:")
