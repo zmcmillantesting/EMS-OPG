@@ -11,7 +11,7 @@ const PAGE_COMPONENTS = {
     orderOperatorPanel: "components/order_operator_panel.html",
     macPanel: "components/macPanel.html",
     verificationPanel: "components/verificationPanel.html",
-    serialPanel: "components/serialPanel",
+    serialPanel: "components/serialPanel.html",
 };
 
 /**
@@ -52,7 +52,7 @@ async function loadTestingComponents() {
         loadComponent("command-panel-placeholder", PAGE_COMPONENTS.commandPanel),
         loadComponent("qr-panel-placeholder", PAGE_COMPONENTS.qrPanel),
         loadComponent("navigation-placeholder", PAGE_COMPONENTS.navigation),
-        loadComponent("order-operator-panel-placeholder", PAGE_COMPONENTS.orderOperatorPanel),
+        loadComponent("order-operator-placeholder", PAGE_COMPONENTS.orderOperatorPanel),
         loadComponent("mac-placeholder", PAGE_COMPONENTS.macPanel),
         loadComponent("verification-placeholder", PAGE_COMPONENTS.verificationPanel),
         loadComponent("serial-placeholder", PAGE_COMPONENTS.serialPanel),
