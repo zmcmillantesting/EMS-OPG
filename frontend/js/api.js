@@ -30,7 +30,7 @@ const MOCK_HISTORY = [
         order_number: "123456",
         serial_number: "SN001",
         ethaddr_id: "00:60:47:12:34:01",
-        ethaddr1_id: "00:60:47:12:34:02",
+        eth1addr_id: "00:60:47:12:34:02",
         operator: "Zach",
         test_result: "PASS",
         used: true,
@@ -41,7 +41,7 @@ const MOCK_HISTORY = [
         order_number: "123457",
         serial_number: "SN002",
         ethaddr_id: "00:60:47:12:34:03",
-        ethaddr1_id: "00:60:47:12:34:04",
+        eth1addr_id: "00:60:47:12:34:04",
         operator: "Vanessa",
         test_result: "PASS",
         used: true,
@@ -52,7 +52,7 @@ const MOCK_HISTORY = [
         order_number: "123456",
         serial_number: "SN003",
         ethaddr_id: "00:60:47:12:34:05",
-        ethaddr1_id: "00:60:47:12:34:06",
+        eth1addr_id: "00:60:47:12:34:06",
         operator: "Zach",
         test_result: "FAIL",
         used: false,
@@ -133,7 +133,7 @@ function filterHistory(query) {
             record.order_number,
             record.serial_number,
             record.ethaddr_id,
-            record.ethaddr1_id,
+            record.eth1addr_id,
             record.operator,
             record.test_result,
         ]
@@ -148,6 +148,21 @@ function findDeviceBySerial(serial) {
     return MOCK_HISTORY.find(
         (record) => record.serial_number.toLowerCase() === serial.toLowerCase()
     );
+}
+
+function findDeviceByMac(mac) {
+    if (mac === record.ethaddr_id) {
+        return MOCK_HISTORY.find(
+            (record) => record.ethaddr_id.toLowerCase() === mac.toLowerCase(),
+        )
+    } else if (mac === record.eth1addr_id) {
+        return MOCK_HISTORY.find(
+            (record) => record.eth1addr_id.toLowerCase() === mac.toLowerCase(),
+        )
+    } else {
+        return Promise.reject(new Error("No Mac found"));
+    }
+    
 }
 
 const mockApi = {
@@ -285,7 +300,7 @@ const mockApi = {
             record.order_number,
             record.serial_number,
             record.ethaddr_id,
-            record.ethaddr1_id || "",
+            record.eth1addr_id || "",
             record.operator,
             record.test_result,
             record.used ? "Used" : "Available",
@@ -318,7 +333,7 @@ const mockApi = {
             serial_number: updates.serial_number ?? device.serial_number,
             operator: updates.operator ?? device.operator,
             ethaddr_id: updates.mac1 ?? device.ethaddr_id,
-            ethaddr1_id: updates.mac2 ?? device.ethaddr1_id,
+            eth1addr_id: updates.mac2 ?? device.eth1addr_id,
         });
 
         return Promise.resolve({ device, message: "Device updated successfully." });
@@ -447,6 +462,13 @@ const api = {
         return withFallback(
             () => request(`/devices/${encodeURIComponent(serial)}`),
             () => mockApi.lookupDevice(serial)
+        );
+    },
+
+    lookupMac(mac) {
+        return withFallback(
+            () => request(`mac/${encodeURIComponent(mac)}`),
+            () => mockApi.lookupMac(mac)
         );
     },
 
