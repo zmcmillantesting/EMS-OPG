@@ -25,6 +25,7 @@ function bindSettingsActions() {
     }
 
     bindClick("lookup-device-button", lookupDevice);
+    bindClick("lookup-mac-button", lookupDeviceByMac);
 
     const correctionForm = document.getElementById("correction-form");
     if (correctionForm) {
@@ -53,8 +54,38 @@ async function lookupDevice() {
         return;
     }
 
+async function lookupDeviceBySerial() {
+    const serialInput = document.getElementById("correction-serial");
+    const serial = serialInput?.value.trim();
+
+    if (!serial) {
+        showMessage("Enter a Serial address to lookup.", "error");
+    }
+}
+    
     try {
         const result = await api.lookupDevice(serial);
+        populateCorrectionForm(result.device);
+        activeDeviceSerial = result.device.serial_number;
+        setVisible("correction-fields", true);
+        showMessage(`Loaded device ${result.device.serial_number}.`, "success");
+    } catch (error) {
+        setVisible("correction-fields", false);
+        activeDeviceSerial = null;
+        showMessage("Device not found.", "error");
+    }
+}
+
+async function lookupDeviceByMac() {
+    const macInput = document.getElementById("correction-mac");
+    const mac = macInput?.value.trim();
+
+    if (!mac) {
+        showMessage("Enter a MAC address to lookup.", "error");
+    }
+
+    try {
+        const result = await api.lookupDevice(mac);
         populateCorrectionForm(result.device);
         activeDeviceSerial = result.device.serial_number;
         setVisible("correction-fields", true);
@@ -71,7 +102,7 @@ function populateCorrectionForm(device) {
     setFieldValue("correction-new-serial", device.serial_number);
     setFieldValue("correction-operator", device.operator);
     setFieldValue("correction-mac1", device.ethaddr_id);
-    setFieldValue("correction-mac2", device.ethaddr1_id || "");
+    setFieldValue("correction-mac2", device.eth1addr_id || "");
 }
 
 async function saveCorrections(event) {

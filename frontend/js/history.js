@@ -65,7 +65,7 @@ function renderHistoryTable(records) {
                 <td>${escapeHtml(record.order_number)}</td>
                 <td>${escapeHtml(record.serial_number)}</td>
                 <td class="mono">${escapeHtml(record.ethaddr_id)}</td>
-                <td class="mono">${escapeHtml(record.ethaddr1_id || "—")}</td>
+                <td class="mono">${escapeHtml(record.eth1addr_id || "—")}</td>
                 <td>${escapeHtml(record.operator)}</td>
                 <td class="${record.test_result === "PASS" ? "result-pass" : "result-fail"}">${escapeHtml(record.test_result)}</td>
                 <td>${record.used ? "Used" : "Available"}</td>

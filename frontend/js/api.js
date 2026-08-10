@@ -151,17 +151,11 @@ function findDeviceBySerial(serial) {
 }
 
 function findDeviceByMac(mac) {
-    if (mac === record.ethaddr_id) {
-        return MOCK_HISTORY.find(
-            (record) => record.ethaddr_id.toLowerCase() === mac.toLowerCase(),
-        )
-    } else if (mac === record.eth1addr_id) {
-        return MOCK_HISTORY.find(
-            (record) => record.eth1addr_id.toLowerCase() === mac.toLowerCase(),
-        )
-    } else {
-        return Promise.reject(new Error("No Mac found"));
-    }
+    const normalized = mac.toLowerCase();
+    return MOCK_HISTORY.find(
+        record.ethaddr_id.toLowerCase() === normalized ||
+        record.eth1addr_id.toLowerCase() === normalized
+    );
     
 }
 
@@ -322,6 +316,13 @@ const mockApi = {
         return Promise.resolve({ device });
     },
 
+    lookupMac(mac) {
+        const device = findDeviceByMac(mac);
+        if (!device) {
+            return Promise.reject(new Error("Device not found"));
+        }
+    },
+
     updateDevice(serial, updates) {
         const device = findDeviceBySerial(serial);
         if (!device) {
@@ -467,7 +468,7 @@ const api = {
 
     lookupMac(mac) {
         return withFallback(
-            () => request(`mac/${encodeURIComponent(mac)}`),
+            () => request(`/mac/${encodeURIComponent(mac)}`),
             () => mockApi.lookupMac(mac)
         );
     },
