@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from src.ems_opg.config.config_manager import ConfigurationManager
-from src.ems_opg.core.paths_manager import PathManager
+from ems_opg.config.config_manager import ConfigurationManager
+from ems_opg.core.paths_manager import PathManager
 
 config = ConfigurationManager(
     Path("config/config.json")
@@ -10,7 +10,7 @@ config = ConfigurationManager(
 def test_config_manager_load():
     assert config.application["name"] == "EMS-OPG"
     assert config.application["version"] == "1.0.0"
-    assert config.database["filename"] == "traceability_db.db"
+    assert config.database["filename"] == "ems_opg.db"
     assert config.logging["level"] == "INFO"
     assert config.backup["directory"] == "backup"
 

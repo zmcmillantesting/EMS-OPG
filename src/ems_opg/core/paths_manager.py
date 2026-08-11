@@ -22,7 +22,7 @@ class PathManager:
         # Files
         #
         self.config_file = self.config_dir / "config.json"
-        self.database_file = self.database_dir / "traceability_db.db"
+        self.database_file = self.database_dir / "ems_opg.db"
 
     def create_directories(self):
 

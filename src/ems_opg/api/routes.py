@@ -178,7 +178,7 @@ def register_routes(app, application):
                 device_service = DeviceService(db_session)
                 device_service.reserve_device(
                     ethaddr_id=engine.session.mac1,
-                    eth1ddr_id=engine.session.mac2,
+                    eth1addr_id=engine.session.mac2,
                     order_number=engine.session.order_number,
                     serial_number=serial_number,
                     operator=engine.session.operator,
@@ -227,7 +227,7 @@ def register_routes(app, application):
         return jsonify({
             "message": f"QR cache cleared ({removed} file(s)). "
             "Images will regenerate the next time each step is displayed."
-        }), 500
+        })
 
     @api_bp.route("/database/verify", methods=["POST"])
     def verify_database():
@@ -251,5 +251,23 @@ def register_routes(app, application):
         shutil.copy2(source, destination)
 
         return jsonify({"message": f"Database backed up to {destination.name}."})
+
+    @api_bp.route("/database/restore", methods=["POST"])
+    def restore_database():
+        backups = sorted(
+            application.paths.backup_dir.glob("ems_opg_*.db"),
+            key=lambda path: path.stat().st_mtime,
+        )
+
+        if not backups:
+            return jsonify({"error": "No backups found to restore."}), 404
+
+        latest = backups[-1]
+        shutil.copy2(latest, DATABASE_FILE)
+
+        return jsonify({
+            "message": f"Database restored from {latest.name}. "
+            "Restart the server to ensure the change takes effect."
+        })
 
     app.register_blueprint(api_bp)
