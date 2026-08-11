@@ -55,7 +55,7 @@ class DeviceRepository:
         ).all()
 
     def list_by_order(self, order_number):
-        return self.sesion.scalars(
+        return self.session.scalars(
             select(Device).where(Device.order_number == order_number)
         ).all()
 
