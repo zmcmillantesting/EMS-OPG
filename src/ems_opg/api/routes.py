@@ -1,15 +1,17 @@
 from datetime import UTC, datetime
-
+import logging, shutil
 from flask import Blueprint, jsonify, request
 
 from ems_opg.core.constants import APP_VERSION
 from ems_opg.database.database import DatabaseManager
+from ems_opg.database.engine import DATABASE_FILE
 from ems_opg.database.models import Device
 from ems_opg.services.device_service import DeviceService
 from ems_opg.services.qr_service import QRService
 from ems_opg.workflow.workflow_engine import WorkflowEngine
 from ems_opg.workflow.workflow_state import WorkflowState
 
+LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR"}
 
 def session_dict(session):
     return {
@@ -176,7 +178,7 @@ def register_routes(app, application):
                 device_service = DeviceService(db_session)
                 device_service.reserve_device(
                     ethaddr_id=engine.session.mac1,
-                    eth1addr_id=engine.session.mac2,
+                    eth1ddr_id=engine.session.mac2,
                     order_number=engine.session.order_number,
                     serial_number=serial_number,
                     operator=engine.session.operator,
@@ -195,5 +197,59 @@ def register_routes(app, application):
     def session_cancel():
         engine.cancel()
         return jsonify({"success": True})
+
+    @api_bp.route("/logging/level", methods=["PUT"])
+    def set_logging_level():
+        payload = request.get_json(silent=True) or {}
+        level = (payload.get("level") or "").strip().upper()
+
+        if level not in LOG_LEVELS:
+            return jsonify({"error": f"Unknown log level: {level}"}), 400
+
+        return jsonify({"message": f"Log level set to {level}."})
+
+    @api_bp.route("/config/reload", methods=["POST"])
+    def reload_config():
+        try:
+            application.config.load()
+        except Exception as error:
+            return jsonify({"error": f"Unable to reload configuration"}), 500
+
+        return jsonify({"message": "Configuration reloaded"})
+
+    @api_bp.route("/cache/regenerate", methods=["POST"])
+    def regenerate_cache():
+        removed = 0
+        for qr_file in application.paths.qr_cache.glob("*.png"):
+            qr_file.unlink()
+            removed += 1
+
+        return jsonify({
+            "message": f"QR cache cleared ({removed} file(s)). "
+            "Images will regenerate the next time each step is displayed."
+        }), 500
+
+    @api_bp.route("/database/verify", methods=["POST"])
+    def verify_database():
+        db = DatabaseManager()
+
+        if db.health_check():
+            return jsonify({"message": "Database verification passed"})
+
+        return jsonify({"error": "Databse verification failed - unable to connect."}), 404
+
+    @api_bp.route("/database/backup", methods=["POST"])
+    def backup_database():
+        source = DATABASE_FILE
+
+        if not source.exists():
+            return jsonify({"error": "No database file found to back up"}), 404
+
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+        destination = application.paths.backup_dir / f"ems_opg_{timestamp}.db"
+
+        shutil.copy2(source, destination)
+
+        return jsonify({"message": f"Database backed up to {destination.name}."})
 
     app.register_blueprint(api_bp)

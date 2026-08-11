@@ -6,7 +6,7 @@
     },
     "database": {
         "type": "sqlite",
-        "filename": "traceability_db.db",
+        "filename": "ems_opg.db",
         "auto_backup": true
     },
     "logging": {
