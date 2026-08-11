@@ -389,6 +389,13 @@ const mockApi = {
     setLogLevel(level) {
         return Promise.resolve({ message: `Log level set to ${level}.` });
     },
+
+    provisionOrder(payload) {
+        return Promise.resolve({ message: `Provisioned ${payload.quantity} device(s) for order
+            ${payload.order_number}.`,
+    });
+    },
+
 };
 
 async function withFallback(liveCall, mockCall) {
@@ -556,6 +563,16 @@ const api = {
                     body: JSON.stringify({ level }),
                 }),
             () => mockApi.setLogLevel(level)
+        );
+    },
+
+    provisionOrder(payload) {
+        return withFallback(
+            () => request("/orders/provision", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            }),
+            () => mockApi.provisionOrder(payload)
         );
     },
 };

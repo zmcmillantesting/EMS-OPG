@@ -7,6 +7,7 @@ from ems_opg.database.database import DatabaseManager
 from ems_opg.database.engine import DATABASE_FILE
 from ems_opg.database.models import Device
 from ems_opg.services.device_service import DeviceService
+from ems_opg.services.order_service import OrderService
 from ems_opg.services.qr_service import QRService
 from ems_opg.workflow.workflow_engine import WorkflowEngine
 from ems_opg.workflow.workflow_state import WorkflowState
@@ -105,6 +106,31 @@ def register_routes(app, application):
             "workflowReady": True,
             "devicesToday": devices_today,
         })
+
+    @api_bp.route("/orders/provision", methods=["POST"])
+    def provision_order():
+        payload = request.get_json(silent=True) or {}
+        order_number = (payload.get("order_number") or "").strip()
+        part_number = (payload.get("part_number") or "").strip()
+
+        if not order_number or not part_number:
+            return jsonify({"error": "order_number and part_number are required"}), 400
+
+        try:
+            quantity = int(payload.get("quantity"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "quantity must be a whole number."}), 400
+
+        db = DatabaseManager()
+
+        try:
+            with db.session() as db_session:
+                order_service = OrderService(db_session)
+                result = order_service.provision_order(order_number, part_number, quantity)
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 409
+
+        return jsonify({"message": result["message"]}), 201
 
     @api_bp.route("/session/start", methods=["POST"])
     def session_start():

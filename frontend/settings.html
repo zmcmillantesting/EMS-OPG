@@ -52,6 +52,28 @@
             </section>
 
             <section class="settings-card card settings-card-wide">
+                <h2 class="card-title">Order Provisioning</h2>
+                <p class="card-description">Create an order and reserve MAC
+                    address pairs from the pool for each device.</p>
+
+                <form id="provision-form" class="correction-form">
+                    <div class="form-row">
+                        <label class="field-label" for="provision-order">Order Number</label>
+                        <input type="text" class="input" id="provision-order" placeholder="Order Number" required>
+                    </div>
+                    <div class="form-row">
+                        <label class="field-label" for="provision-part">Part Number</label>
+                        <input type="text" class="input" id="provision-part" placeholder="Part Number" required>
+                    </div>
+                    <div class="form-row correction actions">
+                        <button id="provision-order-button" class="button button-primary" type="submit">Provision Devices</button>
+                    </div>
+                </form>
+
+                <p id="provision-message" class="correction-message hidden"></p>
+            </section>
+
+            <section class="settings-card card settings-card-wide">
                 <h2 class="card-title">Manual Corrections</h2>
                 <p class="card-description">Search for a device and apply supervised corrections. All changes are audit logged.</p>
 

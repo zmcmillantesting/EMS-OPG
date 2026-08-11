@@ -54,6 +54,11 @@ class DeviceRepository:
             select(Device).where(Device.used.is_(False))
         ).all()
 
+    def list_by_order(self, order_number):
+        return self.sesion.scalars(
+            select(Device).where(Device.order_number == order_number)
+        ).all()
+
     def assign_order(self, device, order_number, serial_number, operator):
         if device.used:
             raise ValueError("MAC address has already been used.")
