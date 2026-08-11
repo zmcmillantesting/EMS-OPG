@@ -104,7 +104,7 @@ class Device(Base):
         index=True,
     )
 
-    ethaddr1_id: Mapped[str] = mapped_column(
+    eth1addr_id: Mapped[str] = mapped_column(
         String(17),
         unique =True,
         nullable=True,
