@@ -20,6 +20,14 @@ def create_app(application):
     def qr_image(filename):
         return send_from_directory(application.paths.qr_cache, filename)
 
-    register_routes(app, application)
+    @app.route("/logs/<path:filename")
+    def log_file(filename):
+        return send_from_directory(
+            application.paths.logs_dir,
+            filename,
+            mimetype="text/plain",
+        )
 
+    register_routes(app, application)
+    
     return app

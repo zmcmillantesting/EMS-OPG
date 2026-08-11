@@ -10,13 +10,13 @@ class DeviceService:
     def reserve_device(
         self,
         ethaddr_id,
-        ethaddr1_id,
+        eth1addr_id,
         order_number,
         serial_number,
         operator,
     ):
 
-        device = self.repository.get_by_mac(ethaddr_id, ethaddr1_id)
+        device = self.repository.get_by_mac(ethaddr_id, eth1addr_id)
 
         if device is None:
 

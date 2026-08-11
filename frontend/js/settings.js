@@ -15,7 +15,7 @@ function bindSettingsActions() {
     bindClick("verify-button", () => runAction(() => api.verifyDatabase()));
     bindClick("reload-config-button", () => runAction(() => api.reloadConfig()));
     bindClick("regenerate-cache-button", () => runAction(() => api.regenerateCache()));
-    bindClick("open-logs-button", () => showMessage("Log folder: logs/", "success"));
+    bindClick("open-logs-button", () => window.open("/logs/application.log", "_blank"));
 
     const logLevel = document.getElementById("log-level");
     if (logLevel) {

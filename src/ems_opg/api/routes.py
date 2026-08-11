@@ -176,7 +176,7 @@ def register_routes(app, application):
                 device_service = DeviceService(db_session)
                 device_service.reserve_device(
                     ethaddr_id=engine.session.mac1,
-                    ethaddr1_id=engine.session.mac2,
+                    eth1addr_id=engine.session.mac2,
                     order_number=engine.session.order_number,
                     serial_number=serial_number,
                     operator=engine.session.operator,

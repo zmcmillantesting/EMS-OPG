@@ -25,7 +25,7 @@ class LoggerManager:
         self.logger.setLevel(
             getattr(
                 logging,
-                self.config.logging.level.upper()
+                self.config.logging["level"].upper()
             )
         )
 
@@ -61,12 +61,12 @@ class LoggerManager:
         # File
         #
 
-        log_file = self.paths.logs / "application.log"
+        log_file = self.paths.logs_dir / "application.log"
 
         file_handler = RotatingFileHandler(
             filename=log_file,
-            maxBytes=self.config.logging.max_log_size_mb * 1024 * 1024,
-            backupCount=self.config.logging.backup_count,
+            maxBytes=self.config.logging["max_log_size_mb"] * 1024 * 1024,
+            backupCount=self.config.logging["backup_count"],
             encoding="utf-8"
         )
 
