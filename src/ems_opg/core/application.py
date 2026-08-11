@@ -1,7 +1,9 @@
 import errno
-from src.ems_opg.app_logging.logger import Logger 
-from src.ems_opg.config.config_manager import ConfigurationManager
-from src.ems_opg.core.paths_manager import PathManager
+import os
+
+from ems_opg.app_logging.logger import Logger
+from ems_opg.config.config_manager import ConfigurationManager
+from ems_opg.core.paths_manager import PathManager
 
 class Application:
 
@@ -20,16 +22,20 @@ class Application:
         from ems_opg.api.server import create_app
 
         app = create_app(self)
+        port = int(os.environ.get("EMS_OPG_PORT", 5000))
+
         try:
-            app.run(host="127.0.0.1", port=5000)
+            app.run(host="127.0.0.1", port=port)
         except OSError as error:
             if error.errno == errno.EADDRINUSE:
                 self.logger.error(
-                    "Port 5000 is already in use - a previous server is "
+                    "Port %s is already in use - a previous server is "
                     "likely still running. Stop it before running a new "
-                    "one (Linux/macOS): `lsof -ti:5000 | xargs kill`; " 
-                    "Windows PowerShell:" \
-                    " `Stop-Process -Id (Get-NetTCPConnection -LocalPort 5000).OwningProcess`"
+                    "one (Linux/macOS): `lsof -ti:%s | xargs kill`; "
+                    "Windows PowerShell: "
+                    "`Stop-Process -Id (Get-NetTCPConnection -LocalPort %s).OwningProcess`. "
+                    "Or run on a different port: `EMS_OPG_PORT=5001 python app.py`",
+                    port, port, port,
                 )
                 raise SystemExit(1) from error
             raise
