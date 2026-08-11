@@ -8,19 +8,15 @@ class WorkflowEngine:
 
     STEP_NAMES = [
 
-        "Check Drives",
+        "Username",
 
-        "Loopback Ports 2-4",
+        "Password",
 
-        "Loopback Ports 5-8",
-
-        "Initialize Ethernet",
+        "Functional Test",
 
         "System Information",
 
-        "Program MAC Address 1",
-
-        "Program MAC Address 2",
+        "Mac Addresses",
 
         "Verify MAC Addresses",
 
@@ -38,9 +34,6 @@ class WorkflowEngine:
         self,
         operator,
         order_number,
-        serial_number,
-        mac1,
-        mac2,
     ):
 
         self.session = WorkflowSession(
@@ -49,12 +42,6 @@ class WorkflowEngine:
 
             order_number=order_number,
 
-            serial_number=serial_number,
-
-            mac1=mac1,
-
-            mac2=mac2,
-
             current_step=0,
 
         )
@@ -62,6 +49,22 @@ class WorkflowEngine:
         self.state = WorkflowState.TESTING
 
     # --------------------------------------------------
+
+    def set_mac_addresses(self, mac1, mac2):
+        if self.state != WorkflowState.TESTING:
+            return
+
+        self.session.mac1 = mac1
+        self.session.mac2 = mac2
+
+    # --------------------------------------------------
+
+
+    def finish(self, serial_number):
+        self.session.serial_number = serial_number
+
+    # --------------------------------------------------
+
 
     def next_step(self):
 
@@ -80,7 +83,11 @@ class WorkflowEngine:
 
     def previous_step(self):
 
-        if self.session.current_step > 0:
+        if self.state == WorkflowState.COMPLETE:
+            self.session.completed = False
+            self.state = WorkflowState.TESTING
+
+        elif self.session.current_step > 0:
 
             self.session.current_step -= 1
 

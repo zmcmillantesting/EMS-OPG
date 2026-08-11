@@ -8,6 +8,7 @@ Requires-Dist: qrcode
 Requires-Dist: segno
 Requires-Dist: pillow
 Requires-Dist: SQLAlchemy>=2.0
+Requires-Dist: Flask>=3.0
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: pytest-cov; extra == "dev"

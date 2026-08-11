@@ -17,7 +17,7 @@ class WorkflowSession:
 
     current_step: int = 0
 
-    total_steps: int = 8
+    total_steps: int = 6
 
     started: datetime = field(default_factory=datetime.now)
 

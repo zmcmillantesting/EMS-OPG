@@ -55,7 +55,7 @@ def test_full_database_flow_with_audit_log(session):
         order_number=order.order_number,
         serial_number="",
         ethaddr_id="00:11:22:33:44:55",
-        ethaddr1_id="00:11:22:33:44:56",
+        eth1addr_id="00:11:22:33:44:56",
         operator="",
         test_result="Pending",
         used=False,
@@ -67,7 +67,7 @@ def test_full_database_flow_with_audit_log(session):
         order_number=order.order_number,
         serial_number="SN-9002",
         ethaddr_id="00:11:22:33:44:57",
-        ethaddr1_id="00:11:22:33:44:58",
+        eth1addr_id="00:11:22:33:44:58",
         operator="",
         test_result="Pending",
         used=False,
@@ -79,7 +79,7 @@ def test_full_database_flow_with_audit_log(session):
 
     reserved_device = device_service.reserve_device(
         ethaddr_id="00:11:22:33:44:55",
-        ethaddr1_id="00:11:22:33:44:56",
+        eth1addr_id="00:11:22:33:44:56",
         order_number=order.order_number,
         serial_number="SN-9001",
         operator="Technician A",
@@ -109,7 +109,7 @@ def test_full_database_flow_with_audit_log(session):
     try:
         device_service.reserve_device(
             ethaddr_id="00:11:22:33:44:55",
-            ethaddr1_id="00:11:22:33:44:56",
+            eth1addr_id="00:11:22:33:44:56",
             order_number=order.order_number,
             serial_number="SN-9002",
             operator="Technician B",

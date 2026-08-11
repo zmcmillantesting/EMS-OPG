@@ -13,4 +13,6 @@ class WorkflowState(Enum):
 
     COMPLETE = auto()
 
+    CANCELLED = auto()
+
     ERROR = auto()

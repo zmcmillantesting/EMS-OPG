@@ -59,7 +59,7 @@ def main():
             order_number=order.order_number,
             serial_number="SN000001",
             ethaddr_id="00:11:22:33:44:55",
-            ethaddr1_id="00:11:22:33:44:56",
+            eth1addr_id="00:11:22:33:44:56",
             used=True,
             test_result="Pass",
             operator="Zach",
@@ -69,7 +69,7 @@ def main():
             order_number=order.order_number,
             serial_number="SN000002",
             ethaddr_id="00:11:22:33:44:56",
-            ethaddr1_id="00:11:22:33:44:57",
+            eth1addr_id="00:11:22:33:44:57",
             used=True,
             test_result="Fail",
             operator="Zach",
@@ -123,7 +123,7 @@ def main():
             print(
                 device.serial_number,
                 device.ethaddr_id,
-                device.ethaddr1_id,
+                device.eth1addr_id,
                 device.test_result,
             )
 

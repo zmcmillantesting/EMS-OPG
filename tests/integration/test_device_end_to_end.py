@@ -36,7 +36,7 @@ def test_reserve_device_end_to_end():
         order_number="100001",
         serial_number="",
         ethaddr_id=1,
-        ethaddr1_id=2,
+        eth1addr_id=2,
         operator="",
         test_result="",
         used=False,
@@ -51,7 +51,7 @@ def test_reserve_device_end_to_end():
 
     reserved = service.reserve_device(
         ethaddr_id=1,
-        ethaddr1_id=2,
+        eth1addr_id=2,
         order_number="100001",
         serial_number="SER123456",
         operator="Zach",

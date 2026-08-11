@@ -9,11 +9,11 @@ class DeviceRepository:
     def __init__(self, session):
         self.session = session
 
-    def get_by_mac(self, ethaddr, ethaddr1):
+    def get_by_mac(self, ethaddr, eth1addr):
         return self.session.scalar(
             select(Device)
             .where(Device.ethaddr_id == ethaddr)
-            .where(Device.ethaddr1_id == ethaddr1)
+            .where(Device.eth1addr_id == eth1addr)
         )
 
     def get_by_serial(self, serial):
