@@ -19,4 +19,4 @@ class Application:
         from ems_opg.api.server import create_app
 
         app = create_app(self)
-        app.run(host="127.0.0.1", port=5000, debug=self.config.get("debug", False))
+        app.run(host="127.0.0.1", port=5000)
