@@ -191,7 +191,7 @@ async function handleOrderOperatorContinue() {
         render(result.step);
     } catch (error) {
         console.error("Unable to start session:", error);
-        alert("Unable to start a new test session.");
+        alert(error.message || "Unable to start a new test session.");
     }
 }
 
@@ -293,7 +293,7 @@ async function handleMacAssign() {
         document.getElementById("mac-next").disabled = false;
     } catch (error) {
         console.error("Unable to assign MAC addresses:", error);
-        alert("Unable to assign MAC addresses.");
+        alert(error.message || "Unable to assign MAC addresses.");
     }
 }
 
@@ -346,7 +346,7 @@ async function handleFinish() {
         await api.finishSession(serial);
     } catch (error) {
         console.error("Unable to save device:", error);
-        alert("Unable to save this device.");
+        alert(error.message || "Unable to save this device.");
         return;
     }
 

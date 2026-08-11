@@ -29,13 +29,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sqlalchemy import inspect, select
+from sqlalchemy import select
 
-from src.ems_opg.database.base import Base
-from src.ems_opg.database.engine import engine
-from src.ems_opg.database.init_db import init_database
-from src.ems_opg.database.models import Device, Order
-from src.ems_opg.database.session import SessionLocal
+from ems_opg.database.base import Base
+from ems_opg.database.engine import engine
+from ems_opg.database.models import MACAddressPool
+from ems_opg.database.session import SessionLocal
 
 
 # ---------------------------------------------------------------------------
@@ -128,33 +127,18 @@ def load_csv(path: Path) -> list[str]:
 
 
 def ensure_database_schema() -> None:
-    """Create or refresh the database schema if it is stale."""
+    """
+    Make sure the mac_address_pool table exists.
 
-    inspector = inspect(engine)
-    tables = set(inspector.get_table_names())
+    This only ever creates missing tables - it never drops or recreates
+    existing ones. This script's job is to import MAC addresses; wiping
+    orders/devices/audit_log as a side effect of that would be a very
+    surprising way to lose real data. If the schema genuinely needs to be
+    recreated, run `python -m ems_opg.database.init_db --recreate`
+    explicitly.
+    """
 
-    if "devices" not in tables or "orders" not in tables:
-        logger.info("Initializing database schema")
-        Base.metadata.drop_all(bind=engine)
-        init_database()
-        return
-
-    device_columns = {column["name"] for column in inspector.get_columns("devices")}
-    required_columns = {
-        "order_number",
-        "serial_number",
-        "mac_address",
-        "used",
-        "test_result",
-        "operator",
-        "timestamp",
-        "post_test_changes",
-    }
-
-    if not required_columns.issubset(device_columns):
-        logger.warning("Detected an outdated device schema; recreating database tables")
-        Base.metadata.drop_all(bind=engine)
-        init_database()
+    Base.metadata.create_all(bind=engine)
 
 
 # ---------------------------------------------------------------------------
@@ -198,42 +182,24 @@ def main():
 
         try:
 
-            order = session.scalar(
-                select(Order).where(Order.order_number == "MAC_IMPORT")
+            existing_macs = set(
+                session.scalars(select(MACAddressPool.mac_address))
             )
-
-            if order is None:
-                order = Order(
-                    order_number="MAC_IMPORT",
-                    part_number="MAC_POOL",
-                    status="Open",
-                )
-                session.add(order)
-                session.flush()
 
             for mac in csv_macs:
 
-                exists = session.scalar(
-                    select(Device).where(
-                        Device.mac_address == mac
-                    )
-                )
-
-                if exists:
+                if mac in existing_macs:
                     duplicates += 1
                     continue
 
                 session.add(
-                    Device(
-                        order_number=order.order_number,
-                        serial_number=mac.replace(":", ""),
+                    MACAddressPool(
                         mac_address=mac,
                         used=False,
-                        test_result="Pending",
-                        operator="Imported",
                     )
                 )
 
+                existing_macs.add(mac)
                 inserted += 1
 
             session.commit()
@@ -254,18 +220,11 @@ def main():
 
         logger.info("Beginning verification...")
 
-        missing = []
+        pool_macs = set(
+            session.scalars(select(MACAddressPool.mac_address))
+        )
 
-        for mac in csv_macs:
-
-            exists = session.scalar(
-                select(Device).where(
-                    Device.mac_address == mac
-                )
-            )
-
-            if exists is None:
-                missing.append(mac)
+        missing = [mac for mac in csv_macs if mac not in pool_macs]
 
         if missing:
 

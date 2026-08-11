@@ -62,6 +62,8 @@ const MOCK_HISTORY = [
 let mockSession = null;
 let useMock = false;
 
+class ApiUnreachableError extends Error {}
+
 async function request(path, options = {}) {
     const config = {
         headers: {
@@ -71,22 +73,32 @@ async function request(path, options = {}) {
         ...options,
     };
 
+    let response;
+
     try {
-        const response = await fetch(`${API_BASE}${path}`, config);
-
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
-
-        if (response.status === 204) {
-            return null;
-        }
-
-        return response.json();
+        response = await fetch(`${API_BASE}${path}`, config);
     } catch (error) {
-        useMock = true;
-        throw error;
+        throw new ApiUnreachableError(error.message);
     }
+
+    if (!response.ok) {
+        let message = `API error: ${response.status}`;
+        try {
+            const body = await response.json()
+            if (body && body.error) {
+                message = body.error;
+            }
+        } catch {
+
+        }
+        throw new Error(message);
+    }
+
+    if (response.status === 204) {
+        return null;
+    }
+
+    return response.json();
 }
 
 function formatCommand(commandKey, session) {
@@ -118,8 +130,10 @@ function buildStepPayload(session) {
 }
 
 function buildQrUrl(command) {
-    const encoded = encodeURIComponent(command);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encoded}`;
+    const qr = qrcode(0, "L");
+    qr.addData(command || "");
+    qr.make();
+    return qr.createDataURL(8, 16)
 }
 
 function filterHistory(query) {
@@ -384,9 +398,12 @@ async function withFallback(liveCall, mockCall) {
 
     try {
         return await liveCall();
-    } catch {
-        useMock = true;
-        return mockCall();
+    } catch (error) {
+        if (error instanceof ApiUnreachableError) {
+            useMock = true;
+            return mockCall();
+        }
+        throw error;
     }
 }
 
