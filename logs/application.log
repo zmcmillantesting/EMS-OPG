@@ -381,3 +381,93 @@ FROM devices
 2026-08-11 12:43:21,883 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 12:43:21] "[31m[1mPUT /api/logging/level HTTP/1.1[0m" 405 -
 2026-08-11 12:43:22,756 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 12:43:22] "GET /logs/application.log HTTP/1.1" 200 -
 2026-08-11 13:49:20,223 | INFO     | root            | Server stopped
+2026-08-11 14:41:56,267 | INFO     | root            | ======================================================================
+2026-08-11 14:41:56,268 | INFO     | root            | Logger initialized.
+2026-08-11 14:41:56,268 | INFO     | root            | Log file: /home/zmcmillan/projects/emsSolutions/EMS-OPG/logs/application.log
+2026-08-11 14:41:56,268 | INFO     | root            | ======================================================================
+2026-08-11 14:41:56,268 | INFO     | root            | Application initialized.
+2026-08-11 14:41:57,063 | INFO     | werkzeug        | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-08-11 14:41:57,063 | INFO     | werkzeug        | [33mPress CTRL+C to quit[0m
+2026-08-11 14:42:02,210 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:02] "[36mGET /settings.html HTTP/1.1[0m" 304 -
+2026-08-11 14:42:02,312 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:02] "[36mGET /css/main.css HTTP/1.1[0m" 304 -
+2026-08-11 14:42:02,323 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:02] "[36mGET /css/layout.css HTTP/1.1[0m" 304 -
+2026-08-11 14:42:02,332 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:02] "[36mGET /css/components.css HTTP/1.1[0m" 304 -
+2026-08-11 14:42:02,341 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:02] "[36mGET /css/settings.css HTTP/1.1[0m" 304 -
+2026-08-11 14:42:02,351 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:02] "[36mGET /js/common.js HTTP/1.1[0m" 304 -
+2026-08-11 14:42:02,362 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:02] "[36mGET /js/api.js HTTP/1.1[0m" 304 -
+2026-08-11 14:42:02,368 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:02] "[36mGET /js/settings.js HTTP/1.1[0m" 304 -
+2026-08-11 14:42:03,029 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:03] "[36mGET /components/header.html HTTP/1.1[0m" 304 -
+2026-08-11 14:42:03,035 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:03] "[36mGET /components/footer.html HTTP/1.1[0m" 304 -
+2026-08-11 14:42:03,079 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:03] "[33mGET /api/v1/courses?per_page=2 HTTP/1.1[0m" 404 -
+2026-08-11 14:42:03,206 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:03] "[33mGET /d2l/api/lp/1.0/enrollments/myenrollments/?orgUnitTypeId=3 HTTP/1.1[0m" 404 -
+2026-08-11 14:42:03,220 | INFO     | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-08-11 14:42:03,223 | INFO     | sqlalchemy.engine.Engine | SELECT 1
+2026-08-11 14:42:03,224 | INFO     | sqlalchemy.engine.Engine | [generated in 0.00110s] ()
+2026-08-11 14:42:03,226 | INFO     | sqlalchemy.engine.Engine | COMMIT
+2026-08-11 14:42:03,243 | INFO     | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-08-11 14:42:03,249 | INFO     | sqlalchemy.engine.Engine | SELECT devices.id AS devices_id, devices.order_number AS devices_order_number, devices.serial_number AS devices_serial_number, devices.ethaddr_id AS devices_ethaddr_id, devices.eth1addr_id AS devices_eth1addr_id, devices.used AS devices_used, devices.test_result AS devices_test_result, devices.operator AS devices_operator, devices.timestamp AS devices_timestamp, devices.created_at AS devices_created_at, devices.updated_at AS devices_updated_at, devices.post_test_changes AS devices_post_test_changes 
+FROM devices
+2026-08-11 14:42:03,250 | INFO     | sqlalchemy.engine.Engine | [generated in 0.00102s] ()
+2026-08-11 14:42:03,254 | INFO     | sqlalchemy.engine.Engine | COMMIT
+2026-08-11 14:42:03,256 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:03] "GET /api/status HTTP/1.1" 200 -
+2026-08-11 14:42:03,412 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:03] "[33mGET /login/token.php HTTP/1.1[0m" 404 -
+2026-08-11 14:42:06,512 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:06] "POST /api/database/backup HTTP/1.1" 200 -
+2026-08-11 14:42:12,308 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:12] "[31m[1mPOST /api/database/restore HTTP/1.1[0m" 405 -
+2026-08-11 14:42:18,713 | INFO     | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-08-11 14:42:18,713 | INFO     | sqlalchemy.engine.Engine | SELECT 1
+2026-08-11 14:42:18,713 | INFO     | sqlalchemy.engine.Engine | [cached since 15.49s ago] ()
+2026-08-11 14:42:18,714 | INFO     | sqlalchemy.engine.Engine | COMMIT
+2026-08-11 14:42:18,714 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:18] "POST /api/database/verify HTTP/1.1" 200 -
+2026-08-11 14:42:22,319 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:22] "POST /api/config/reload HTTP/1.1" 200 -
+2026-08-11 14:42:24,125 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:24] "[35m[1mPOST /api/cache/regenerate HTTP/1.1[0m" 500 -
+2026-08-11 14:42:31,311 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /settings.html HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,348 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /css/main.css HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,355 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /css/components.css HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,356 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /css/layout.css HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,361 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /js/common.js HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,360 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /css/settings.css HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,367 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /js/api.js HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,369 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /js/settings.js HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,432 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /components/header.html HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,462 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "[36mGET /components/footer.html HTTP/1.1[0m" 304 -
+2026-08-11 14:42:31,486 | INFO     | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-08-11 14:42:31,487 | INFO     | sqlalchemy.engine.Engine | SELECT 1
+2026-08-11 14:42:31,488 | INFO     | sqlalchemy.engine.Engine | [cached since 28.26s ago] ()
+2026-08-11 14:42:31,488 | INFO     | sqlalchemy.engine.Engine | COMMIT
+2026-08-11 14:42:31,490 | INFO     | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-08-11 14:42:31,490 | INFO     | sqlalchemy.engine.Engine | SELECT devices.id AS devices_id, devices.order_number AS devices_order_number, devices.serial_number AS devices_serial_number, devices.ethaddr_id AS devices_ethaddr_id, devices.eth1addr_id AS devices_eth1addr_id, devices.used AS devices_used, devices.test_result AS devices_test_result, devices.operator AS devices_operator, devices.timestamp AS devices_timestamp, devices.created_at AS devices_created_at, devices.updated_at AS devices_updated_at, devices.post_test_changes AS devices_post_test_changes 
+FROM devices
+2026-08-11 14:42:31,491 | INFO     | sqlalchemy.engine.Engine | [cached since 28.24s ago] ()
+2026-08-11 14:42:31,491 | INFO     | sqlalchemy.engine.Engine | COMMIT
+2026-08-11 14:42:31,492 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:31] "GET /api/status HTTP/1.1" 200 -
+2026-08-11 14:42:33,690 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:42:33] "GET /logs/application.log HTTP/1.1" 200 -
+2026-08-11 14:43:23,036 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:43:23] "POST /api/config/reload HTTP/1.1" 200 -
+2026-08-11 14:43:24,429 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:43:24] "[35m[1mPOST /api/cache/regenerate HTTP/1.1[0m" 500 -
+2026-08-11 14:43:27,931 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:43:27] "[31m[1mPOST /api/database/restore HTTP/1.1[0m" 405 -
+2026-08-11 14:47:11,969 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:11] "[36mGET /settings.html HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,016 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /css/main.css HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,027 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /css/components.css HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,032 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /css/settings.css HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,033 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /css/layout.css HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,042 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /js/api.js HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,038 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /js/common.js HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,046 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /js/settings.js HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,068 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[33mGET /api/v1/courses?per_page=2 HTTP/1.1[0m" 404 -
+2026-08-11 14:47:12,098 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /components/header.html HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,173 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[36mGET /components/footer.html HTTP/1.1[0m" 304 -
+2026-08-11 14:47:12,244 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[33mGET /d2l/api/lp/1.0/enrollments/myenrollments/?orgUnitTypeId=3 HTTP/1.1[0m" 404 -
+2026-08-11 14:47:12,320 | INFO     | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-08-11 14:47:12,323 | INFO     | sqlalchemy.engine.Engine | SELECT 1
+2026-08-11 14:47:12,324 | INFO     | sqlalchemy.engine.Engine | [cached since 309.1s ago] ()
+2026-08-11 14:47:12,325 | INFO     | sqlalchemy.engine.Engine | COMMIT
+2026-08-11 14:47:12,329 | INFO     | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-08-11 14:47:12,331 | INFO     | sqlalchemy.engine.Engine | SELECT devices.id AS devices_id, devices.order_number AS devices_order_number, devices.serial_number AS devices_serial_number, devices.ethaddr_id AS devices_ethaddr_id, devices.eth1addr_id AS devices_eth1addr_id, devices.used AS devices_used, devices.test_result AS devices_test_result, devices.operator AS devices_operator, devices.timestamp AS devices_timestamp, devices.created_at AS devices_created_at, devices.updated_at AS devices_updated_at, devices.post_test_changes AS devices_post_test_changes 
+FROM devices
+2026-08-11 14:47:12,332 | INFO     | sqlalchemy.engine.Engine | [cached since 309.1s ago] ()
+2026-08-11 14:47:12,335 | INFO     | sqlalchemy.engine.Engine | COMMIT
+2026-08-11 14:47:12,337 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "GET /api/status HTTP/1.1" 200 -
+2026-08-11 14:47:12,391 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:12] "[33mGET /login/token.php HTTP/1.1[0m" 404 -
+2026-08-11 14:47:20,267 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:20] "POST /api/database/backup HTTP/1.1" 200 -
+2026-08-11 14:47:22,267 | INFO     | werkzeug        | 127.0.0.1 - - [11/Aug/2026 14:47:22] "[31m[1mPOST /api/database/restore HTTP/1.1[0m" 405 -
+2026-08-11 14:56:57,625 | INFO     | root            | Server stopped
