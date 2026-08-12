@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_
 
 from ems_opg.database.models import Device, Order
 
@@ -90,18 +90,6 @@ class DeviceRepository:
         return self.session.scalars(
             select(Device).where(Device.order_number == order_number)
         ).all()
-
-    def next_serial_number(self):
-        iso_year, iso_week, _ = datetime.now(UTC).isocalendar()
-        prefix = f"EM{iso_year:04d}{iso_week:02d}"
-
-        count = self.session.scalar(
-            select(func.count())
-            .select_from(Device)
-            .where(Device.serial_number.like(f"{prefix}%"))
-        )
-
-        return f"{prefix}{(count or 0) + 1:04d}"
 
     def assign_order(self, device, order_number, serial_number, operator):
         if device.used:

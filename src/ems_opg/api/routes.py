@@ -207,6 +207,15 @@ def register_routes(app, application):
     def session_finish():
         if not session_active():
             return jsonify({"error": "No active session"}), 404
+        
+        payload = request.get_json(silent=True) or {}
+        serial_number = (payload.get("serial_number") or "").strip()
+        
+        if not serial_number:
+            return jsonify({"error": "serial_number is required."}), 400
+        
+        if not is_valid_serial_number(serial_number):
+            return jsonify({"error": "Serial number must be formatted to EMyyyyww0000."}), 400
 
         db = DatabaseManager()
 
@@ -217,7 +226,7 @@ def register_routes(app, application):
                     ethaddr_id=engine.session.mac1,
                     eth1addr_id=engine.session.mac2,
                     order_number=engine.session.order_number,
-                    serial_number= device_service.repository.next_serial_number(),
+                    serial_number=device_service.repository.next_serial_number(),
                     operator=engine.session.operator,
                 )
         except ValueError as error:
