@@ -16,7 +16,7 @@ function bindSettingsActions() {
     bindClick("reload-config-button", () => runAction(() => api.reloadConfig()));
     bindClick("regenerate-cache-button", () => runAction(() => api.regenerateCache()));
     bindClick("open-logs-button", () => {
-        const level = document.getElementById("log_level")?.value || "";
+        const level = document.getElementById("log-level")?.value || "";
         const query = level ? `?level=${encodeURIComponent(level)}` : "";
         window.open(`/logs/application.log${query}`, "_blank");
     });
