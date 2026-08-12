@@ -15,7 +15,11 @@ function bindSettingsActions() {
     bindClick("verify-button", () => runAction(() => api.verifyDatabase()));
     bindClick("reload-config-button", () => runAction(() => api.reloadConfig()));
     bindClick("regenerate-cache-button", () => runAction(() => api.regenerateCache()));
-    bindClick("open-logs-button", () => window.open("/logs/application.log", "_blank"));
+    bindClick("open-logs-button", () => {
+        const level = document.getElementById("log_level")?.value || "";
+        const query = level ? `?level=${encodeURIComponent(level)}` : "";
+        window.open(`/logs/application.log${query}`, "_blank");
+    });
 
     const logLevel = document.getElementById("log-level");
     if (logLevel) {

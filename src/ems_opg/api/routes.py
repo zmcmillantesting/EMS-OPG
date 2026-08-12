@@ -279,6 +279,18 @@ def register_routes(app, application):
 
         if level not in LOG_LEVELS:
             return jsonify({"error": f"Unknown log level: {level}"}), 400
+        
+        numeric_level = getattr(logging, level)
+        root_logger = logging.getLogger()
+        root_logger.setLevel(numeric_level)
+        
+        # Some libraries (sqlalchemy's echo=True, werkzeug's dev server) set
+        # their own logger level, which would otherwise override an inherited
+        # root level. Setting the level on the root's handlers instead filters
+        # everything that reaches them, regardless of the originating logger.
+        for handler in root_logger.handlers:
+            handler.setLevel(numeric_level)
+        
 
         return jsonify({"message": f"Log level set to {level}."})
 
@@ -427,6 +439,12 @@ def register_routes(app, application):
                 return jsonify({"error": "Device not found"}), 404
 
             repo.mark_unused(device)
+            
+            mac_repo = MacAddressRepository(db_session)
+            for mac_address in (device.ethaddr_id, device.eth1addr_id):
+                pool_entry = mac_repo.get_by_mac(mac_address)
+                if pool_entry is not None:
+                    mac_repo.mark_unused(pool_entry)
 
             audit_repo = AuditRepository(db_session)
             audit_repo.create(AuditLog(
