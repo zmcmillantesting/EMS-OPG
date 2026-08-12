@@ -6,7 +6,6 @@
 const PHASES = ["order", "qr", "mac", "verification", "serial"];
 
 const STAGE_META = {
-    order: { title: "Order & Operator", sub: "Start" },
     qr: { title: "Test QR Codes", sub: "Steps 1–4" },
     mac: { title: "MAC Addresses", sub: "Step 5" },
     verification: { title: "Verification", sub: "Step 6" },
@@ -14,7 +13,6 @@ const STAGE_META = {
 };
 
 const PHASE_PLACEHOLDER_IDS = {
-    order: "order-operator-placeholder",
     qr: "qr-steps-placeholder",
     mac: "mac-placeholder",
     verification: "verification-placeholder",
@@ -25,15 +23,16 @@ let currentSession = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
     await initPage();
-    await loadTestingComponents();
-    bindActions();
 
     currentSession = loadSession();
 
     if (!currentSession) {
-        render(null);
+        navigateTo("index.html");
         return;
     }
+
+    await loadTestingComponents();
+    bindActions();
 
     try {
         const result = await api.getWorkflow();
@@ -43,14 +42,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
         console.error("Unable to load workflow:", error);
         clearSession();
-        currentSession = null;
-        render(null);
+        navigateTo("index.html")
     }
 });
 
 function bindActions() {
-    bindClick("order-operator-continue", handleOrderOperatorContinue);
-
     bindClick("previous-button", handlePrevious);
     bindClick("next-button", handleNext);
     bindClick("home-button", () => navigateTo("index.html"));
@@ -127,7 +123,6 @@ function renderResetDevicePanel(result) {
 /* ---------- Phase derivation & shared rendering ---------- */
 
 function derivePhase(session) {
-    if (!session) return "order";
     if (session.completed) return "serial";
     if (session.current_step <= 3) return "qr";
     if (session.current_step === 4) return "mac";
@@ -218,34 +213,6 @@ async function handleNext() {
         render(result.step);
     } catch (error) {
         console.error("Unable to advance workflow:", error);
-    }
-}
-
-/* ---------- Phase 0: Order & Operator ---------- */
-
-async function handleOrderOperatorContinue() {
-    const orderInput = document.getElementById("order-input");
-    const operatorInput = document.getElementById("operator-input");
-    const order = orderInput.value.trim();
-    const operator = operatorInput.value.trim();
-
-    if (!order) {
-        orderInput.focus();
-        return;
-    }
-    if (!operator) {
-        operatorInput.focus();
-        return;
-    }
-
-    try {
-        const result = await api.startSession({ order_number: order, operator });
-        currentSession = result.session;
-        saveSession(currentSession);
-        render(result.step);
-    } catch (error) {
-        console.error("Unable to start session:", error);
-        alert(error.message || "Unable to start a new test session.");
     }
 }
 
@@ -430,6 +397,6 @@ async function startNextUnit() {
     } catch (error) {
         console.error("Unable to start the next unit:", error);
         currentSession = null;
-        render(null);
+        navigateTo("index.html")
     }
 }

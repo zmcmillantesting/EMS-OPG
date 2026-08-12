@@ -16,10 +16,20 @@
     <main class="home-main">
         <section class="home-card card">
             <h1 class="page-title">EMS Operations Production Gateway</h1>
-            <p class="page-subtitle">Ready to begin device testing</p>
-            <button id="start-test" class="button button-primary start-button" type="button">
-                New Test
-            </button>
+            <p class="page-subtitles">Enter you operator ID and select an order to begin device testing</p>
+            <form id="start-test-form" class="start-test-form">
+                <div class="form-row">
+                    <label class="field-label" for="operator-input">Operator ID</label>
+                    <input class="input" id="operator-input" type="text" placeholder="1234" autofocus>
+                </div>
+
+                <div class="form-row">
+                    <label class="field-label" for="order-input">Order Number</label>
+                    <input type="text" class="input" id="order-input" placeholder="e.g. 123456.1">
+                </div>
+
+                <button id="start-test" class="button button-primary start-button" type="submit">Start Test</button>
+            </form>
         </section>
 
         <section class="home-grid">

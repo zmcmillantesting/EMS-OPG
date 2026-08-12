@@ -426,7 +426,18 @@ const mockApi = {
             message: `Provisioned ${payload.quantity} device(s) for order ${payload.order_number}.`,
         });
     },
+
+    getOpenOrders() {
+        return Promise.resolve({
+            orders: [
+                { order_number: "12345.6", part_number: "Demo Part A", quantity: 10, completed: 3},
+                { order_number: "54321.1", part_number: "Demo Part B", quantity: 5, completed: 1},
+            ],
+        });
+    },
 };
+
+
 
 async function withFallback(liveCall, mockCall) {
     if (useMock) {
@@ -615,6 +626,13 @@ const api = {
         return withFallback(
             () => request("/orders/provision", { method: "POST", body: JSON.stringify(payload) }),
             () => mockApi.provisionOrder(payload)
+        );
+    },
+
+    getOpenOrders() {
+        return withFallback(
+            () => request("/orders/open"),
+            () => mockApi.getOpenOrders()
         );
     },
 };

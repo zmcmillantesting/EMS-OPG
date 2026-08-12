@@ -12,6 +12,7 @@ from ems_opg.database.models import AuditLog, Device
 from ems_opg.repositories.audit_repository import AuditRepository
 from ems_opg.repositories.device_repository import DeviceRepository
 from ems_opg.repositories.mac_address_repository import MacAddressRepository
+from ems_opg.repositories.order_repository import OrderRepository
 from ems_opg.services.device_service import DeviceService
 from ems_opg.services.order_service import OrderService
 from ems_opg.services.qr_service import QRService
@@ -151,6 +152,30 @@ def register_routes(app, application):
             return jsonify({"error": str(error)}), 409
 
         return jsonify({"message": result["message"]}), 201
+    
+    @api_bp.route("/orders/open", methods=["GET"])
+    def get_open_orders():
+        db = DatabaseManager()
+
+        with db.session() as db_session:
+            order_repo = OrderRepository(db_session)
+            device_repo = DeviceRepository(db_session)
+
+            open_orders = []
+            for order in order_repo.list_all_orders():
+                devices = device_repo.list_by_order(order.order_number)
+                completed = sum(1 for device in devices if device.used)
+
+                if completed < order.quantity:
+                    open_orders.append({
+                        "order_number": order.order_number,
+                        "part_number": order.part_number,
+                        "quantity": order.quantity,
+                        "completed": completed,
+                    })
+
+            return jsonify({"orders": open_orders})
+
 
     @api_bp.route("/session/start", methods=["POST"])
     def session_start():
