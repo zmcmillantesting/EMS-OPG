@@ -489,8 +489,10 @@ const api = {
 
     finishSession() {
         return withFallback(
-            () => request("/session/finish", { method: "POST"}),
-            () => mockApi.finishSession()
+            () => request("/session/finish", { method: "POST", body: JSON.stringify({
+                serial_number : serialNumber
+            }) }),
+            () => mockApi.finishSession(serialNumber)
         );
     },
 

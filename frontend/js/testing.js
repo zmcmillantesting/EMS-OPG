@@ -402,17 +402,29 @@ function renderSerialPhase() {
     document.getElementById("finish-order").textContent = currentSession.order_number || "—";
     document.getElementById("finish-mac1").textContent = currentSession.mac1 || "—";
     document.getElementById("finish-mac2").textContent = currentSession.mac2 || "—";
-    document.getElementById("finish-serial").textContent = "-";
+    document.getElementById("serial-input").value = "";
     document.getElementById("repeat-banner").classList.remove("is-visible");
     document.getElementById("serial-finish").disabled = false;
     document.getElementById("serial-prev").disabled = false;
 }
 
 async function handleFinish() {
-    let result;
+    const serialInput = document.getElementById("serial-input");
+    const serial = serialInput.value.trim();
+
+    if (!serial) {
+        serialInput.focus();
+        return;
+    }
+
+    if (!isValidSerialNumber(serial)) {
+        alert("Serial number must be formatted as EMyyyyww0000.");
+        serialInput.focus();
+        return;
+    }
 
     try {
-        result = await api.finishSession();
+        await api.finishSession(serial)
     } catch (error) {
         console.error("Unable to save device:", error);
         alert(error.message || "Unable to save this device.");
