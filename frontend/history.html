@@ -50,6 +50,27 @@
             <p id="history-empty" class="history-empty hidden">No records found.</p>
         </section>
 
+                <section class="history-header">
+            <h1 class="page-title">MAC Address Pool</h1>
+            <p class="page-subtitle">All MAC addresses from the client-provided range, and what each is assigned to</p>
+        </section>
+
+        <section class="history-table-wrapper card">
+            <table id="mac-pool-table" class="history-table">
+                <thead>
+                    <tr>
+                        <th>MAC Address</th>
+                        <th>Status</th>
+                        <th>Order</th>
+                        <th>Serial</th>
+                    </tr>
+                </thead>
+                <tbody id="mac-pool-body">
+                </tbody>
+            </table>
+            <p id="mac-pool-empty" class="history-empty hidden">No MAC addresses loaded.</p>
+        </section>
+
         <nav class="history-actions">
             <a href="index.html" class="button button-secondary">Return Home</a>
         </nav>

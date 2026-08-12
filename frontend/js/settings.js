@@ -60,6 +60,11 @@ async function provisionOrder(event) {
         return;
     }
 
+    if (!isValidOrderNumber(orderNumber)) {
+        showProvisionMessage("Order number must be formateed as 0000.0 or 00000.0", "error");
+        return;
+    }
+
     try {
         const result = await api.provisionOrder({
             order_number: orderNumber,
@@ -143,18 +148,32 @@ async function saveCorrections(event) {
         return;
     }
 
+    const reason = getFieldValue("correction-reason");
+    if (!reason) {
+        showMessage("A reason is required for manual corrections.", "error")
+        return;
+    }
+
+    const newSerial = getFieldValue("correction-new-serial");
+    if (!isValidSerialNumber(newSerial)) {
+        showMessage("Serial number must be formatted as EMyyyyww0000.", "error");
+        return;
+    }
+
     const updates = {
         order_number: getFieldValue("correction-order"),
         serial_number: getFieldValue("correction-new-serial"),
         operator: getFieldValue("correction-operator"),
         mac1: getFieldValue("correction-mac1"),
         mac2: getFieldValue("correction-mac2"),
+        reason,
     };
 
     try {
         const result = await api.updateDevice(activeDeviceSerial, updates);
         activeDeviceSerial = result.device.serial_number;
         populateCorrectionForm(result.device);
+        setFieldValue("correction-reason", "")
         showMessage(result.message, "success");
     } catch (error) {
         showMessage(error.message || "Unable to save corrections.", "error");
@@ -167,13 +186,20 @@ async function resetMac() {
         return;
     }
 
+    const reason = getFieldValue("correction-reason");
+    if (!reason) {
+        showMessage("A reason is required to reset a MAC address.", "error");
+        return;
+    }
+
     if (!confirm(`Reset MAC used status for ${activeDeviceSerial}?`)) {
         return;
     }
 
     try {
-        const result = await api.resetMac(activeDeviceSerial);
+        const result = await api.resetMac(activeDeviceSerial, serial);
         populateCorrectionForm(result.device);
+        setFieldValue("correction-reason, ")
         showMessage(result.message, "success");
     } catch (error) {
         showMessage(error.message || "Unable to reset MAC.", "error");

@@ -1,3 +1,4 @@
+from ems_opg.core.validators import is_valid_order_number
 from ems_opg.database.models import Device, Order
 from ems_opg.repositories.device_repository import DeviceRepository
 from ems_opg.repositories.mac_address_repository import MacAddressRepository
@@ -13,6 +14,12 @@ class OrderService:
         self.devices = DeviceRepository(session)
 
     def provision_order(self, order_number, part_number, quantity):
+        if not is_valid_order_number(order_number):
+            raise ValueError(
+                "Order number must be formatted as 0000.0 or 00000.0 "
+                "(4-5 digits, a decimal point, then exactly one digit)."
+
+            )
         if quantity < 1:
             raise ValueError("Quantity must be at least 1.")
 

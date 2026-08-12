@@ -15,6 +15,17 @@
 
     <nav class="stage-nav" id="stage-nav" aria-label="Test workflow stages"></nav>
 
+    <div class="reset-device-bar">
+        <button id="reset-device-toggle" class="button button-secondary" type="button">Reset Device</button>
+    </div>
+
+    <section id="reset-device-panel" class="reset-device-panel card hidden">
+        <h2 class="card-title">Reset Device</h2>
+        <p class="card-description">Not part of the standard testing process — scan when a device needs to be reset.</p>
+        <pre id="reset-device-instructions" class="reset-instructions"></pre>
+        <div id="reset-device-steps" class="reset-device-steps"></div>
+    </section>
+
     <main class="testing-main">
 
         <div id="order-operator-placeholder" class="phase"></div>

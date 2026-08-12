@@ -59,7 +59,7 @@
                 <form id="provision-form" class="correction-form">
                     <div class="form-row">
                         <label class="field-label" for="provision-order">Order Number</label>
-                        <input type="text" class="input" id="provision-order" placeholder="Order Number" required>
+                        <input type="text" class="input" id="provision-order" placeholder="e.g. 12345.6" required>
                     </div>
                     <div class="form-row">
                         <label class="field-label" for="provision-part">Part Number</label>
@@ -84,13 +84,13 @@
                 <form id="correction-form" class="correction-form">
                     <div class="form-row">
                         <label class="field-label" for="correction-serial">Serial Number</label>
-                        <input id="correction-serial" class="input" type="text" placeholder="Search by serial number" required>
+                        <input id="correction-serial" class="input" type="text" placeholder="Search by serial number">
                         <button id="lookup-device-button" class="button button-secondary" type="button">Lookup Serial</button>
                     </div>
 
                     <div class="form-row">
                         <label class="field-label" for="correction-mac">Mac Address</label>
-                        <input id="correction-mac" class="input" type="text" placeholder="Search by MAC Address" required>
+                        <input id="correction-mac" class="input" type="text" placeholder="Search by MAC Address">
                         <button id="lookup-mac-button" class="button button-secondary" type="button">Lookup MAC</button>
                     </div>
 
@@ -114,6 +114,10 @@
                         <div class="form-row">
                             <label class="field-label" for="correction-mac2">MAC 2</label>
                             <input id="correction-mac2" class="input" type="text">
+                        </div>
+                        <div class="form-row">
+                            <label class="field-label" for="correction-reason">Reason for Correction</label>
+                            <input id="correction-reason" class="input" type="text" placeholder="Required - briefly explain why this correction is being made" required>
                         </div>
                         <div class="form-row correction-actions">
                             <button id="save-correction-button" class="button button-primary" type="submit">Save Corrections</button>

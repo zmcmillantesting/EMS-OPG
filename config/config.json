@@ -47,7 +47,10 @@
         "step8": "emd -i sysfs -c 4",
         "step9": "setfset -u ethaddr={mac1}",
         "step10": "setfset -u eth1addr={mac2}",
-        "step11": "setfset | grep eth0 && setfset | grep eth1"
+        "step11": "setfset | grep eth0 && setfset | grep eth1",
+        "reset_step1": "set do_factory_setup 1",
+        "reset_step2": "saveenv",
+        "reset_step3": "reset"
     },
     "combined_steps": {
         "functional_test": [
@@ -70,7 +73,8 @@
             "step7",
             "step8",
             "step9",
-            "step10"
+            "step10",
+            "step11"
         ]
     }
 }

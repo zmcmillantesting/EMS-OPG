@@ -68,7 +68,82 @@ function bindActions() {
 
     bindClick("serial-prev", handlePrevious);
     bindClick("serial-finish", handleFinish);
+function bindActions() {
+    bindClick("order-operator-continue", handleOrderOperatorContinue);
+
+    bindClick("previous-button", handlePrevious);
+    bindClick("next-button", handleNext);
+    bindClick("home-button", () => navigateTo("index.html"));
+
+    bindClick("mac-assign", handleMacAssign);
+    bindClick("mac-prev", handlePrevious);
+    bindClick("mac-next", handleNext);
+
+    const verifyCheckbox = document.getElementById("verify-confirm");
+    if (verifyCheckbox) {
+        verifyCheckbox.addEventListener("change", handleVerifyChange);
+    }
+    bindClick("verification-prev", handlePrevious);
+    bindClick("verification-next", handleNext);
+
+    bindClick("serial-prev", handlePrevious);
+    bindClick("serial-finish", handleFinish);
+
+    bindClick("reset-device-toggle", handleResetDeviceToggle);
 }
+
+/* ---------- Reset Device (static, not part of the standard workflow) ---------- */
+
+let resetDeviceLoaded = false;
+
+async function handleResetDeviceToggle() {
+    const panel = document.getElementById("reset-device-panel");
+    if (!panel) return;
+
+    const showing = panel.classList.contains("hidden");
+    setVisible("reset-device-panel", showing);
+
+    if (showing && !resetDeviceLoaded) {
+        try {
+            const result = await api.getResetDeviceSteps();
+            renderResetDevicePanel(result);
+            resetDeviceLoaded = true;
+        } catch (error) {
+            console.error("Unable to load reset device steps:", error);
+        }
+    }
+}
+
+function renderResetDevicePanel(result) {
+    const instructionsEl = document.getElementById("reset-device-instructions");
+    if (instructionsEl) {
+        instructionsEl.textContent = result.instructions;
+    }
+
+    const stepsEl = document.getElementById("reset-device-steps");
+    if (!stepsEl) return;
+
+    stepsEl.innerHTML = ""
+
+    result.steps.forEach((step, index) => {
+        const stepEl = document.createElement("div");
+        stepEl.className = "reset-device-step";
+
+        const commandEl = document.createElement("p");
+        commandEl.className = "reset-device-step-command";
+        commandEl.textContent = `${index + 1}. ${step.command}`;
+
+        const imageEl = document.createElement("img")
+        imageEl.className = "qr-image";
+        imageEl.src = step.qr_url;
+        imageEl.alt = `QR Code for ${step.command}`;
+
+        stepEl.appendChild(commandEl);
+        stepEl.appendChild(imageEl);
+        stepsEl.appendChild(stepsEl);
+    })
+}}
+
 
 /* ---------- Phase derivation & shared rendering ---------- */
 
@@ -327,29 +402,24 @@ function renderSerialPhase() {
     document.getElementById("finish-order").textContent = currentSession.order_number || "—";
     document.getElementById("finish-mac1").textContent = currentSession.mac1 || "—";
     document.getElementById("finish-mac2").textContent = currentSession.mac2 || "—";
-    document.getElementById("serial-input").value = "";
+    document.getElementById("finish-serial").textContent = "-";
     document.getElementById("repeat-banner").classList.remove("is-visible");
     document.getElementById("serial-finish").disabled = false;
     document.getElementById("serial-prev").disabled = false;
 }
 
 async function handleFinish() {
-    const serialInput = document.getElementById("serial-input");
-    const serial = serialInput.value.trim();
-
-    if (!serial) {
-        serialInput.focus();
-        return;
-    }
+    let result;
 
     try {
-        await api.finishSession(serial);
+        result = await api.finishSession();
     } catch (error) {
         console.error("Unable to save device:", error);
         alert(error.message || "Unable to save this device.");
         return;
     }
 
+    document.getElementById("finish-serial").textContent = result.serial_number || "-";
     document.getElementById("repeat-banner").classList.add("is-visible");
     document.getElementById("serial-finish").disabled = true;
     document.getElementById("serial-prev").disabled = true;

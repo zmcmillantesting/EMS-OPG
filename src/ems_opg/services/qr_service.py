@@ -122,4 +122,15 @@ class QRService:
             )
         return command
 
+    # Reset Device sequence - static, not part of the numbered step workflow.
+    def create_reset_sequence(self):
+        steps =[]
+        for key in ("reset_step1", "reset_step2", "reset_step3"):
+            command = self.config.get_qr_command(key)
+            result = self.generator.generate(command, key)
+            steps.append({
+                "command": result.command,
+                "qr_url": f"/qr/{result.filename}"
+            })
+        return steps
         

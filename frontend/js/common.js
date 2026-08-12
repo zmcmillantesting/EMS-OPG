@@ -14,6 +14,17 @@ const PAGE_COMPONENTS = {
     serialPanel: "components/serialPanel.html",
 };
 
+const ORDER_NUMBER_PATTERN = /^\d{4,5}\.\d$/;
+const SERIAL_NUMBER_PATTERN = /^EM\d{10}$/;
+
+function isValidOrderNumber(value) {
+    return ORDER_NUMBER_PATTERN.test(value || "")
+}
+
+function isValidSerialNumber(value) {
+    return SERIAL_NUMBER_PATTERN.text(value || "")
+}
+
 /**
  * Load an HTML component into a placeholder element.
  */

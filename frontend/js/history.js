@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initPage();
     bindHistoryActions();
     await loadHistory("");
+    await loadMacPool();
 });
 
 function bindHistoryActions() {
@@ -99,3 +100,55 @@ function escapeHtml(value) {
     div.textContent = value ?? "";
     return div.innerHTML;
 }
+
+function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value ?? "";
+    return div.innerHTML;
+}
+
+async function loadMacPool() {
+    const tbody = document.getElementById("mac-pool-body");
+    const emptyMessage = document.getElementById("mac-pool-empty");
+
+    if (!tbody) {
+        return;
+    }
+
+    try {
+        const result = await api.getMacPool();
+        renderMacPoolTable(result.records);
+
+        if (emptyMessage) {
+            emptyMessage.classList.toggle("hidden", result.records.length > 0);
+        }
+    } catch (error) {
+        console.error("Unable to load MAC address pool:", error);
+        tbody.innerHTML = "";
+        if (emptyMessage) {
+            emptyMessage.classList.remove("hidden");
+            emptyMessage.textContent = "Unable to load the MAC address pool.";
+        }
+    }
+}
+
+function renderMacPoolTable(records) {
+    const tbody = document.getElementById("mac-pool-body");
+    if (!tbody) {
+        return;
+    }
+
+    tbody.innerHTML = records
+        .map(
+            (record) => `
+            <tr>
+                <td class="mono">${escapeHtml(record.mac_address)}</td>
+                <td>${record.used ? "Used" : "Available"}</td>
+                <td>${escapeHtml(record.order_number || "—")}</td>
+                <td>${escapeHtml(record.serial_number || "—")}</td>
+            </tr>
+        `
+        )
+        .join("");
+}
+
