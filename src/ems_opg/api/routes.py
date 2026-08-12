@@ -1,11 +1,13 @@
 from datetime import UTC, datetime
-import logging, shutil
+import logging, shutil, csv, io
 from flask import Blueprint, jsonify, request
 
 from ems_opg.core.constants import APP_VERSION
 from ems_opg.database.database import DatabaseManager
 from ems_opg.database.engine import DATABASE_FILE
-from ems_opg.database.models import Device
+from ems_opg.database.models import AuditLog, Device
+from ems_opg.repositories.audit_repository import AuditRepository
+from ems_opg.repositories.device_repository import DeviceRepository
 from ems_opg.services.device_service import DeviceService
 from ems_opg.services.order_service import OrderService
 from ems_opg.services.qr_service import QRService
@@ -25,6 +27,19 @@ def session_dict(session):
         "total_steps": session.total_steps,
         "completed": session.completed,
         "cancelled": session.cancelled,
+    }
+
+def device_dict(device):
+    return {
+        "id": device.id,
+        "order_number": device.order_number,
+        "serial_number": device.serial_number,
+        "ethaddr_id": device.ethaddr_id,
+        "eth1addr_id": device.eth1addr_id,
+        "used": device.used,
+        "test_result": device.test_result,
+        "operator": device.operator,
+        "timestamp": device.timestamp.isoformat() if device.timestamp else None,
     }
 
 
@@ -296,28 +311,138 @@ def register_routes(app, application):
             "Restart the server to ensure the change takes effect."
         })
 
-    @api_bp.route("/api/devices", methods=["GET"])
-    def api_devices_get():
-        pass
+    @api_bp.route("/devices/<serial>", methods=["GET"])
+    def get_device(serial):
+        db = DatabaseManager()
 
-    @api_bp.route("/api/devices/:serial", methods=["PUT"])
-    def set_api_device_serial():
-        pass
+        with db.session() as db_session:
+            repo = DeviceRepository(db_session)
+            device = repo.get_by_serial(serial)
 
-    @api_bp.route("/api/devices/:serial/reset-mac", methods=["POST"])
-    def api_reset_macs():
-        pass
+            if device is None:
+                return jsonify({"error": "Device not found"}), 404
 
-    @api_bp.route("/api/mac/:mac", methods=["GET"])
-    def get_api_mac():
-        pass
+            return jsonify({"device": device_dict(device)})
 
-    @api_bp.route("/api/history?q=", methods=["GET"])
-    def get_api_history():
-        pass
+    @api_bp.route("/devices/<serial>", methods=["PUT"])
+    def update_deivce(serial):
+        payload = request.get_json(silent=True) or {}
 
-    @api_bp.route("/api/history/export", methods=["GET"])
-    def get_api_history():
-        pass
+        order_number = (payload.get("order_number") or "").strip()
+        new_serial = (payload.get("serial_number") or "").strip()
+        operator = (payload.get("operator") or "").strip()
+        mac1 = (payload.get("mac1") or "").strip()
+        mac2 = (payload.get("mac2") or "").strip()
+
+        if not order_number or not new_serial or not mac1:
+            return jsonify({"error": "order_number, serial_number, and mac1 are required"})
+
+        db = DatabaseManager()
+
+        with db.session() as db_session:
+            repo = DeviceRepository(db_session)
+            device = repo.get_by_serial(serial)
+
+            if device is None:
+                return jsonify({"error": "Device not found"}), 404
+
+            if new_serial != device.serial_number and repo.get_by_serial(new_serial) is not None:
+                return jsonify({"error": "Serial number already exists."}), 409
+
+            before = device_dict(device)
+
+            device.order_number = order_number
+            device.serial_number = new_serial
+            device.operator = operator
+            device.ethaddr_id = mac1
+            device.eth1addr_id = mac2 or None
+
+            audit_repo = AuditRepository(db_session)
+            audit_repo.create(AuditLog(
+                operator=operator or "Unknown",
+                action="Manual Correction",
+                details=f"Device {before['serial_number']} corrected by {operator or 'unknown'}."
+            ))
+
+            return jsonify({
+                "device": device_dict(device),
+                "message": "Device updated successfully.",
+            })
+
+
+    @api_bp.route("/devices/<serial>/reset-mac", methods=["POST"])
+    def reset_device_mac(serial):
+        db = DatabaseManager()
+
+        with db.session() as db_session:
+            repo = DeviceRepository(db_session)
+            device = repo.get_by_serial(serial)
+
+            if device is None:
+                return jsonify({"error": "Device not found"}), 404
+
+            repo.mark_used(device)
+
+            audit_repo = AuditRepository(db_session)
+            audit_repo.create(AuditLog(
+                operator=device.operator or "unknown",
+                actions="MAC Reset",
+                details=f"MAC used-states reset for device {device.serial_number}",
+            ))
+
+            return jsonify({
+                "device": device_dict(device),
+                "message": "MAC reset successfully",
+            })
+
+    @api_bp.route("/mac/<mac>", methods=["GET"])
+    def get_device_by_mac(mac):
+        db = DatabaseManager()
+
+        with db.session as db_session:
+            repo = DeviceRepository(db_session)
+            device = repo.get_by_mac(mac)
+
+            if device is None:
+                return jsonify({"error": "Device not found"}), 404
+
+            return jsonify({"device": device_dict(device)})
+
+    @api_bp.route("/history", methods=["GET"])
+    def get_history():
+        query = (request.args.get("q") or "").strip()
+        db = DatabaseManager()
+
+        with db.session as db_session:
+            repo = DeviceRepository(db_session)
+            devices = repo.search(query) if query else repo.list_all()
+
+            return jsonify({"records": [device_dict(d) for d in devices]})
+
+    @api_bp.route("/history/export", methods=["GET"])
+    def export_history():
+        db = DatabaseManager()
+
+        with db.session as db_session:
+            repo = DeviceRepository(db_session)
+            devices = repo.list_all()
+
+            buffer = io.StringIO()
+            writer = csv.writer(buffer)
+            writer.writerow(["Date", "Order", "Serial", "MAC1", "MAC2", "Operator", "Result", "Status"])
+
+            for d in devices:
+                writer.writerow([
+                    d.timestamp.isoformat() if d.timestamp else "",
+                    d.order_number,
+                    d.serial_number,
+                    d.ethaddr_id,
+                    d.eth1addr_id or "",
+                    d.operator,
+                    d.test_results,
+                    "Used" if d.used else "Available",
+                ])
+
+                return jsonify({"csv": buffer.getvalue(), "filename": "ems-opg-history.csv"})
 
     app.register_blueprint(api_bp)

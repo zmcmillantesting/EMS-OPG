@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from ems_opg.database.models import Device, Order
 
@@ -22,6 +22,38 @@ class DeviceRepository:
                 Device.serial_number == serial
             )
         )
+
+    def get_by_single_mac(self, mac):
+        return self.session.scalar(
+            select(Device).where(
+                or_(
+                    Device.ethaddr_id == mac,
+                    Device.eth1addr_id == mac,
+                )
+            )
+        )
+
+    def list_all(self):
+        return self.session.scalars(
+            select(Device).order_by(Device.timestamp.desc())
+        ).all()
+
+    def search(self, query):
+        pattern = f"%{query.lower()}%"
+        return self.session.scalars(
+            select(Device)
+            .where(
+                or_(
+                    Device.order_number.ilike(pattern),
+                    Device.serial_number.ilike(pattern),
+                    Device.ethaddr_id.ilike(pattern),
+                    Device.eth1addr_id.ilike(pattern),
+                    Device.operator.ilike(pattern),
+                    Device.test_result.ilike(pattern),
+                )
+            )
+            .order_by(Device.timestamp.desc())
+        ).all()
 
     def create(self, device):
         self.session.add(device)
