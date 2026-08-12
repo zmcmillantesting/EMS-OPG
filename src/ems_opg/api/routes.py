@@ -1,5 +1,7 @@
+import csv
+import io
 from datetime import UTC, datetime
-import logging, shutil, csv, io
+import logging, shutil
 from flask import Blueprint, jsonify, request
 
 from ems_opg.core.constants import APP_VERSION
@@ -30,6 +32,7 @@ def session_dict(session):
         "completed": session.completed,
         "cancelled": session.cancelled,
     }
+
 
 def device_dict(device):
     return {
@@ -207,15 +210,15 @@ def register_routes(app, application):
     def session_finish():
         if not session_active():
             return jsonify({"error": "No active session"}), 404
-        
+
         payload = request.get_json(silent=True) or {}
         serial_number = (payload.get("serial_number") or "").strip()
-        
+
         if not serial_number:
-            return jsonify({"error": "serial_number is required."}), 400
-        
+            return jsonify({"error": "serial_number is required"}), 400
+
         if not is_valid_serial_number(serial_number):
-            return jsonify({"error": "Serial number must be formatted to EMyyyyww0000."}), 400
+            return jsonify({"error": "Serial number must be formatted as EMyyyyww0000."}), 400
 
         db = DatabaseManager()
 
@@ -226,7 +229,7 @@ def register_routes(app, application):
                     ethaddr_id=engine.session.mac1,
                     eth1addr_id=engine.session.mac2,
                     order_number=engine.session.order_number,
-                    serial_number=device_service.repository.next_serial_number(),
+                    serial_number=serial_number,
                     operator=engine.session.operator,
                 )
         except ValueError as error:
@@ -237,7 +240,7 @@ def register_routes(app, application):
         return jsonify({
             "session": session_dict(engine.session),
             "message": "Device saved to traceability log.",
-            "serial_number": serial_number
+            "serial_number": serial_number,
         })
 
     @api_bp.route("/session/cancel", methods=["POST"])
@@ -331,7 +334,7 @@ def register_routes(app, application):
             return jsonify({"device": device_dict(device)})
 
     @api_bp.route("/devices/<serial>", methods=["PUT"])
-    def update_deivce(serial):
+    def update_device(serial):
         payload = request.get_json(silent=True) or {}
 
         order_number = (payload.get("order_number") or "").strip()
@@ -342,13 +345,14 @@ def register_routes(app, application):
         reason = (payload.get("reason") or "").strip()
 
         if not order_number or not new_serial or not mac1:
-            return jsonify({"error": "order_number, serial_number, and mac1 are required"})
+            return jsonify({"error": "order_number, serial_number, and mac1 are required"}), 400
 
         if not reason:
-            return jsonify({"error": "A reason is required for manual correction"}), 400
+            return jsonify({"error": "A reason is required for manual corrections."}), 400
 
         if not is_valid_serial_number(new_serial):
             return jsonify({"error": "Serial number must be formatted as EMyyyyww0000."}), 400
+
         db = DatabaseManager()
 
         with db.session() as db_session:
@@ -371,7 +375,7 @@ def register_routes(app, application):
 
             audit_repo = AuditRepository(db_session)
             audit_repo.create(AuditLog(
-                operator=operator or "Unknown",
+                operator=operator or "unknown",
                 action="Manual Correction",
                 details=f"Device {before['serial_number']} corrected by {operator or 'unknown'}. Reason: {reason}",
             ))
@@ -381,7 +385,6 @@ def register_routes(app, application):
                 "message": "Device updated successfully.",
             })
 
-
     @api_bp.route("/devices/<serial>/reset-mac", methods=["POST"])
     def reset_device_mac(serial):
         payload = request.get_json(silent=True) or {}
@@ -389,6 +392,7 @@ def register_routes(app, application):
 
         if not reason:
             return jsonify({"error": "A reason is required to reset a MAC address."}), 400
+
         db = DatabaseManager()
 
         with db.session() as db_session:
@@ -398,27 +402,27 @@ def register_routes(app, application):
             if device is None:
                 return jsonify({"error": "Device not found"}), 404
 
-            repo.mark_used(device)
+            repo.mark_unused(device)
 
             audit_repo = AuditRepository(db_session)
             audit_repo.create(AuditLog(
                 operator=device.operator or "unknown",
-                actions="MAC Reset",
-                details=f"MAC used-states reset for device {device.serial_number}. Reason: {reason}",
+                action="MAC Reset",
+                details=f"MAC used-status reset for device {device.serial_number}. Reason: {reason}",
             ))
 
             return jsonify({
                 "device": device_dict(device),
-                "message": "MAC reset successfully",
+                "message": "MAC reset successfully.",
             })
 
     @api_bp.route("/mac/<mac>", methods=["GET"])
     def get_device_by_mac(mac):
         db = DatabaseManager()
 
-        with db.session as db_session:
+        with db.session() as db_session:
             repo = DeviceRepository(db_session)
-            device = repo.get_by_mac(mac)
+            device = repo.get_by_single_mac(mac)
 
             if device is None:
                 return jsonify({"error": "Device not found"}), 404
@@ -430,7 +434,7 @@ def register_routes(app, application):
         query = (request.args.get("q") or "").strip()
         db = DatabaseManager()
 
-        with db.session as db_session:
+        with db.session() as db_session:
             repo = DeviceRepository(db_session)
             devices = repo.search(query) if query else repo.list_all()
 
@@ -440,7 +444,7 @@ def register_routes(app, application):
     def export_history():
         db = DatabaseManager()
 
-        with db.session as db_session:
+        with db.session() as db_session:
             repo = DeviceRepository(db_session)
             devices = repo.list_all()
 
@@ -456,17 +460,17 @@ def register_routes(app, application):
                     d.ethaddr_id,
                     d.eth1addr_id or "",
                     d.operator,
-                    d.test_results,
+                    d.test_result,
                     "Used" if d.used else "Available",
                 ])
 
-                return jsonify({"csv": buffer.getvalue(), "filename": "ems-opg-history.csv"})
+            return jsonify({"csv": buffer.getvalue(), "filename": "ems-opg-history.csv"})
 
-    @api_bp.route("/mac-pool", methods={"GET"})
+    @api_bp.route("/mac-pool", methods=["GET"])
     def get_mac_pool():
         db = DatabaseManager()
 
-        with db.session as db_session:
+        with db.session() as db_session:
             mac_repo = MacAddressRepository(db_session)
             device_repo = DeviceRepository(db_session)
 
@@ -480,8 +484,8 @@ def register_routes(app, application):
                     "serial_number": device.serial_number if device else None,
                 })
 
-                return jsonify({"records": records})
-            
+            return jsonify({"records": records})
+
     @api_bp.route("/reset-device", methods=["GET"])
     def get_reset_device():
         steps = qr_service.create_reset_sequence()
@@ -491,11 +495,10 @@ def register_routes(app, application):
             "1. Press and hold the erase button\n\n"
             "2. With button pressed, apply power\n\n"
             "3. Once text is seen press any arrow key to cancel the boot "
-            "(only a few seconds to do so)"
+            "(only a few seconds to do so)\n\n"
             "4. scan the following barcodes"
         )
 
         return jsonify({"instructions": instructions, "steps": steps})
-
 
     app.register_blueprint(api_bp)

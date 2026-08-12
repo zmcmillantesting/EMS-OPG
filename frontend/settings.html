@@ -53,21 +53,20 @@
 
             <section class="settings-card card settings-card-wide">
                 <h2 class="card-title">Order Provisioning</h2>
-                <p class="card-description">Create an order and reserve MAC
-                    address pairs from the pool for each device.</p>
+                <p class="card-description">Create an order and reserve MAC address pairs from the pool for each device.</p>
 
                 <form id="provision-form" class="correction-form">
                     <div class="form-row">
                         <label class="field-label" for="provision-order">Order Number</label>
-                        <input type="text" class="input" id="provision-order" placeholder="e.g. 12345.6" required>
+                        <input id="provision-order" class="input" type="text" placeholder="e.g. 12345.6" required>
                     </div>
                     <div class="form-row">
                         <label class="field-label" for="provision-part">Part Number</label>
-                        <input type="text" class="input" id="provision-part" placeholder="Part Number" required>
+                        <input id="provision-part" class="input" type="text" placeholder="Part number" required>
                     </div>
                     <div class="form-row">
                         <label class="field-label" for="provision-quantity">Quantity</label>
-                        <input type="number" class="input" id="provision-quantity" type="number" min="1" value="1" required>
+                        <input id="provision-quantity" class="input" type="number" min="1" value="1" required>
                     </div>
                     <div class="form-row correction-actions">
                         <button id="provision-order-button" class="button button-primary" type="submit">Provision Devices</button>
@@ -117,7 +116,7 @@
                         </div>
                         <div class="form-row">
                             <label class="field-label" for="correction-reason">Reason for Correction</label>
-                            <input id="correction-reason" class="input" type="text" placeholder="Required - briefly explain why this correction is being made" required>
+                            <input id="correction-reason" class="input" type="text" placeholder="Required — briefly explain why this correction is being made" required>
                         </div>
                         <div class="form-row correction-actions">
                             <button id="save-correction-button" class="button button-primary" type="submit">Save Corrections</button>

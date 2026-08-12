@@ -6,14 +6,6 @@
     margin: 0 auto;
 }
 
-.testing-main {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-lg);
-    max-width: 900px;
-    margin: 0 auto;
-}
-
 /* ---------- Reset Device (static, outside the numbered workflow) ---------- */
 
 .reset-device-bar {

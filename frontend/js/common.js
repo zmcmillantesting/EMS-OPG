@@ -18,11 +18,11 @@ const ORDER_NUMBER_PATTERN = /^\d{4,5}\.\d$/;
 const SERIAL_NUMBER_PATTERN = /^EM\d{10}$/;
 
 function isValidOrderNumber(value) {
-    return ORDER_NUMBER_PATTERN.test(value || "")
+    return ORDER_NUMBER_PATTERN.test(value || "");
 }
 
 function isValidSerialNumber(value) {
-    return SERIAL_NUMBER_PATTERN.text(value || "")
+    return SERIAL_NUMBER_PATTERN.test(value || "");
 }
 
 /**

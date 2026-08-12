@@ -68,26 +68,6 @@ function bindActions() {
 
     bindClick("serial-prev", handlePrevious);
     bindClick("serial-finish", handleFinish);
-function bindActions() {
-    bindClick("order-operator-continue", handleOrderOperatorContinue);
-
-    bindClick("previous-button", handlePrevious);
-    bindClick("next-button", handleNext);
-    bindClick("home-button", () => navigateTo("index.html"));
-
-    bindClick("mac-assign", handleMacAssign);
-    bindClick("mac-prev", handlePrevious);
-    bindClick("mac-next", handleNext);
-
-    const verifyCheckbox = document.getElementById("verify-confirm");
-    if (verifyCheckbox) {
-        verifyCheckbox.addEventListener("change", handleVerifyChange);
-    }
-    bindClick("verification-prev", handlePrevious);
-    bindClick("verification-next", handleNext);
-
-    bindClick("serial-prev", handlePrevious);
-    bindClick("serial-finish", handleFinish);
 
     bindClick("reset-device-toggle", handleResetDeviceToggle);
 }
@@ -123,7 +103,7 @@ function renderResetDevicePanel(result) {
     const stepsEl = document.getElementById("reset-device-steps");
     if (!stepsEl) return;
 
-    stepsEl.innerHTML = ""
+    stepsEl.innerHTML = "";
 
     result.steps.forEach((step, index) => {
         const stepEl = document.createElement("div");
@@ -133,17 +113,16 @@ function renderResetDevicePanel(result) {
         commandEl.className = "reset-device-step-command";
         commandEl.textContent = `${index + 1}. ${step.command}`;
 
-        const imageEl = document.createElement("img")
+        const imageEl = document.createElement("img");
         imageEl.className = "qr-image";
         imageEl.src = step.qr_url;
         imageEl.alt = `QR Code for ${step.command}`;
 
         stepEl.appendChild(commandEl);
         stepEl.appendChild(imageEl);
-        stepsEl.appendChild(stepsEl);
-    })
-}}
-
+        stepsEl.appendChild(stepEl);
+    });
+}
 
 /* ---------- Phase derivation & shared rendering ---------- */
 
@@ -424,14 +403,13 @@ async function handleFinish() {
     }
 
     try {
-        await api.finishSession(serial)
+        await api.finishSession(serial);
     } catch (error) {
         console.error("Unable to save device:", error);
         alert(error.message || "Unable to save this device.");
         return;
     }
 
-    document.getElementById("finish-serial").textContent = result.serial_number || "-";
     document.getElementById("repeat-banner").classList.add("is-visible");
     document.getElementById("serial-finish").disabled = true;
     document.getElementById("serial-prev").disabled = true;

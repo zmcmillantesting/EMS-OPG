@@ -36,7 +36,7 @@ function bindSettingsActions() {
 
     const provisionForm = document.getElementById("provision-form");
     if (provisionForm) {
-        provisionForm.addEventListener("submit", provisionOrder)
+        provisionForm.addEventListener("submit", provisionOrder);
     }
 }
 
@@ -47,21 +47,21 @@ async function provisionOrder(event) {
     const partNumber = getFieldValue("provision-part");
     const quantity = parseInt(getFieldValue("provision-quantity"), 10);
 
-    const messageE1 = document.getElementById("provision-message");
+    const messageEl = document.getElementById("provision-message");
     const showProvisionMessage = (text, type) => {
-        if (!messageE1) return;
-        messageE1.textContent = text;
-        messageE1.className = `correction-message ${type}`;
-        messageE1.classList.remove("hidden")
+        if (!messageEl) return;
+        messageEl.textContent = text;
+        messageEl.className = `correction-message ${type}`;
+        messageEl.classList.remove("hidden");
     };
 
     if (!orderNumber || !partNumber || !quantity || quantity < 1) {
-        showProvisionMessage("Order number, Part number, and a quantity of at least 1 are required", "error");
+        showProvisionMessage("Order number, part number, and a quantity of at least 1 are required.", "error");
         return;
     }
 
     if (!isValidOrderNumber(orderNumber)) {
-        showProvisionMessage("Order number must be formateed as 0000.0 or 00000.0", "error");
+        showProvisionMessage("Order number must be formatted as 0000.0 or 00000.0.", "error");
         return;
     }
 
@@ -71,12 +71,11 @@ async function provisionOrder(event) {
             part_number: partNumber,
             quantity,
         });
-        showProvisionMessage(result.message || "success")
+        showProvisionMessage(result.message, "success");
     } catch (error) {
-        showProvisionMessage(error.message || "Unable to provision order.", "error")
+        showProvisionMessage(error.message || "Unable to provision order.", "error");
     }
 }
-
 
 async function runAction(action) {
     try {
@@ -150,7 +149,7 @@ async function saveCorrections(event) {
 
     const reason = getFieldValue("correction-reason");
     if (!reason) {
-        showMessage("A reason is required for manual corrections.", "error")
+        showMessage("A reason is required for manual corrections.", "error");
         return;
     }
 
@@ -173,7 +172,7 @@ async function saveCorrections(event) {
         const result = await api.updateDevice(activeDeviceSerial, updates);
         activeDeviceSerial = result.device.serial_number;
         populateCorrectionForm(result.device);
-        setFieldValue("correction-reason", "")
+        setFieldValue("correction-reason", "");
         showMessage(result.message, "success");
     } catch (error) {
         showMessage(error.message || "Unable to save corrections.", "error");
@@ -197,9 +196,9 @@ async function resetMac() {
     }
 
     try {
-        const result = await api.resetMac(activeDeviceSerial, serial);
+        const result = await api.resetMac(activeDeviceSerial, reason);
         populateCorrectionForm(result.device);
-        setFieldValue("correction-reason, ")
+        setFieldValue("correction-reason", "");
         showMessage(result.message, "success");
     } catch (error) {
         showMessage(error.message || "Unable to reset MAC.", "error");

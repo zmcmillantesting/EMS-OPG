@@ -18,8 +18,8 @@ class OrderService:
             raise ValueError(
                 "Order number must be formatted as 0000.0 or 00000.0 "
                 "(4-5 digits, a decimal point, then exactly one digit)."
-
             )
+
         if quantity < 1:
             raise ValueError("Quantity must be at least 1.")
 

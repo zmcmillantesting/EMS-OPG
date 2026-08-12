@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import select, or_
+from sqlalchemy import or_, select
 
 from ems_opg.database.models import Device, Order
 
@@ -81,14 +81,14 @@ class DeviceRepository:
             .where(Device.order_number == order_number)
         ).all()
 
-    def list_available(self):
-        return self.session.scalars(
-            select(Device).where(Device.used.is_(False))
-        ).all()
-
     def list_by_order(self, order_number):
         return self.session.scalars(
             select(Device).where(Device.order_number == order_number)
+        ).all()
+
+    def list_available(self):
+        return self.session.scalars(
+            select(Device).where(Device.used.is_(False))
         ).all()
 
     def assign_order(self, device, order_number, serial_number, operator):

@@ -101,12 +101,6 @@ function escapeHtml(value) {
     return div.innerHTML;
 }
 
-function escapeHtml(value) {
-    const div = document.createElement("div");
-    div.textContent = value ?? "";
-    return div.innerHTML;
-}
-
 async function loadMacPool() {
     const tbody = document.getElementById("mac-pool-body");
     const emptyMessage = document.getElementById("mac-pool-empty");
@@ -151,4 +145,3 @@ function renderMacPoolTable(records) {
         )
         .join("");
 }
-

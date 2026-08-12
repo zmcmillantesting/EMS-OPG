@@ -226,6 +226,7 @@ const mockApi = {
         return Promise.resolve({
             session: { ...mockSession },
             message: "Device saved to trace log",
+            serial_number: serialNumber,
         });
     },
 
@@ -362,7 +363,7 @@ const mockApi = {
             return Promise.reject(new Error("Device not found"));
         }
         if (!reason) {
-            return Promise.reject(new Error("A reason is required to reset a MAC Address."))
+            return Promise.reject(new Error("A reason is required to reset a MAC address."));
         }
 
         device.used = false;
@@ -376,21 +377,21 @@ const mockApi = {
             order_number: record.used ? record.order_number : null,
             serial_number: record.used ? record.serial_number : null,
         }));
-        return Promise.resolve({ records })
+        return Promise.resolve({ records });
     },
 
     getResetDeviceSteps() {
         return Promise.resolve({
             instructions:
-            "RESET INSTRUCTIONS\n\n" +
-            "1. Press and hold the erase button\n\n" +
-            "2. With button pressed, apply power\n\n" +
-            "3. Once text is seen press any arrow key to cancel the boot " +
-            "(only a few seconds to do so)\n\n" +
-            "4. scan the following barcodes",
+                "RESET INSTRUCTIONS\n\n" +
+                "1. Press and hold the erase button\n\n" +
+                "2. With button pressed, apply power\n\n" +
+                "3. Once text is seen press any arrow key to cancel the boot " +
+                "(only a few seconds to do so)\n\n" +
+                "4. scan the following barcodes",
             steps: [
-                { command: "set do_factory_setup 1", qr_url: buildQrUrl("set do factory_setup 1") },
-                { command: "savenv", qr_url: buildQrUrl("saveenv") },
+                { command: "set do_factory_setup 1", qr_url: buildQrUrl("set do_factory_setup 1") },
+                { command: "saveenv", qr_url: buildQrUrl("saveenv") },
                 { command: "reset", qr_url: buildQrUrl("reset") },
             ],
         });
@@ -421,11 +422,10 @@ const mockApi = {
     },
 
     provisionOrder(payload) {
-        return Promise.resolve({ message: `Provisioned ${payload.quantity} device(s) for order
-            ${payload.order_number}.`,
-    });
+        return Promise.resolve({
+            message: `Provisioned ${payload.quantity} device(s) for order ${payload.order_number}.`,
+        });
     },
-
 };
 
 async function withFallback(liveCall, mockCall) {
@@ -487,11 +487,9 @@ const api = {
         );
     },
 
-    finishSession() {
+    finishSession(serialNumber) {
         return withFallback(
-            () => request("/session/finish", { method: "POST", body: JSON.stringify({
-                serial_number : serialNumber
-            }) }),
+            () => request("/session/finish", { method: "POST", body: JSON.stringify({ serial_number: serialNumber }) }),
             () => mockApi.finishSession(serialNumber)
         );
     },
@@ -536,23 +534,9 @@ const api = {
             () =>
                 request(`/devices/${encodeURIComponent(serial)}`, {
                     method: "PUT",
-                    body: JSON.stringify({ reason }),
+                    body: JSON.stringify(updates),
                 }),
             () => mockApi.updateDevice(serial, updates)
-        );
-    },
-
-    getMacPool() {
-        return withFallback(
-            () => request("/mac-pool"),
-            () => mockApi.getMacPool
-        );
-    },
-
-    getResetSteps() {
-        return withFallback(
-            () => request("/reset-device"),
-            () => mockApi.getResetDeviceSteps()
         );
     },
 
@@ -561,8 +545,23 @@ const api = {
             () =>
                 request(`/devices/${encodeURIComponent(serial)}/reset-mac`, {
                     method: "POST",
+                    body: JSON.stringify({ reason }),
                 }),
-            () => mockApi.resetMac(serial)
+            () => mockApi.resetMac(serial, reason)
+        );
+    },
+
+    getMacPool() {
+        return withFallback(
+            () => request("/mac-pool"),
+            () => mockApi.getMacPool()
+        );
+    },
+
+    getResetDeviceSteps() {
+        return withFallback(
+            () => request("/reset-device"),
+            () => mockApi.getResetDeviceSteps()
         );
     },
 
@@ -614,10 +613,7 @@ const api = {
 
     provisionOrder(payload) {
         return withFallback(
-            () => request("/orders/provision", {
-                method: "POST",
-                body: JSON.stringify(payload)
-            }),
+            () => request("/orders/provision", { method: "POST", body: JSON.stringify(payload) }),
             () => mockApi.provisionOrder(payload)
         );
     },
