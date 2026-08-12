@@ -3,7 +3,7 @@
  * verification, and serial number capture.
  */
 
-const PHASES = ["order", "qr", "mac", "verification", "serial"];
+const PHASES = ["qr", "mac", "verification", "serial"];
 
 const STAGE_META = {
     qr: { title: "Test QR Codes", sub: "Steps 1–4" },
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
         console.error("Unable to load workflow:", error);
         clearSession();
-        navigateTo("index.html")
+        navigateTo("index.html");
     }
 });
 
@@ -397,6 +397,6 @@ async function startNextUnit() {
     } catch (error) {
         console.error("Unable to start the next unit:", error);
         currentSession = null;
-        navigateTo("index.html")
+        navigateTo("index.html");
     }
 }

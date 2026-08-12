@@ -45,7 +45,7 @@
     min-height: 70px;
     font-size: 22px;
     align-self: center;
-    margin-top: var(--space-md);
+    margin-top: var(--space-sm);
 }
 
 .home-status {

@@ -152,7 +152,7 @@ def register_routes(app, application):
             return jsonify({"error": str(error)}), 409
 
         return jsonify({"message": result["message"]}), 201
-    
+
     @api_bp.route("/orders/open", methods=["GET"])
     def get_open_orders():
         db = DatabaseManager()
@@ -175,7 +175,6 @@ def register_routes(app, application):
                     })
 
             return jsonify({"orders": open_orders})
-
 
     @api_bp.route("/session/start", methods=["POST"])
     def session_start():

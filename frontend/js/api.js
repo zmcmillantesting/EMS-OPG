@@ -430,14 +430,12 @@ const mockApi = {
     getOpenOrders() {
         return Promise.resolve({
             orders: [
-                { order_number: "12345.6", part_number: "Demo Part A", quantity: 10, completed: 3},
-                { order_number: "54321.1", part_number: "Demo Part B", quantity: 5, completed: 1},
+                { order_number: "12345.6", part_number: "Demo Part A", quantity: 10, completed: 3 },
+                { order_number: "54321.1", part_number: "Demo Part B", quantity: 5, completed: 1 },
             ],
         });
     },
 };
-
-
 
 async function withFallback(liveCall, mockCall) {
     if (useMock) {
