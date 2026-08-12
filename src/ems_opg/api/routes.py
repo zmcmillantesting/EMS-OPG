@@ -296,4 +296,28 @@ def register_routes(app, application):
             "Restart the server to ensure the change takes effect."
         })
 
+    @api_bp.route("/api/devices", methods=["GET"])
+    def api_devices_get():
+        pass
+
+    @api_bp.route("/api/devices/:serial", methods=["PUT"])
+    def set_api_device_serial():
+        pass
+
+    @api_bp.route("/api/devices/:serial/reset-mac", methods=["POST"])
+    def api_reset_macs():
+        pass
+
+    @api_bp.route("/api/mac/:mac", methods=["GET"])
+    def get_api_mac():
+        pass
+
+    @api_bp.route("/api/history?q=", methods=["GET"])
+    def get_api_history():
+        pass
+
+    @api_bp.route("/api/history/export", methods=["GET"])
+    def get_api_history():
+        pass
+
     app.register_blueprint(api_bp)
