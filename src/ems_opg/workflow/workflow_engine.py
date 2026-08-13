@@ -59,7 +59,7 @@ class WorkflowEngine:
 
     # --------------------------------------------------
 
-   def set_test_result(self, result, notes=""):
+    def set_test_result(self, result, notes=""):
         if self.state != WorkflowState.COMPLETE:
             return
 
