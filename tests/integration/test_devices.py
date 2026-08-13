@@ -79,7 +79,6 @@ def test_assign_order_to_device(session):
         ethaddr_id="00:11:22:33:44:57",
         eth1addr_id="00:11:22:33:44:58",
         used=False,
-        test_result="Pending",
         operator="Importer",
         test_result="PASS"
     )
@@ -94,6 +93,7 @@ def test_assign_order_to_device(session):
         order_number=order.order_number,
         serial_number="SN003-ASSIGNED",
         operator="Technician",
+        test_result=device.test_result
     )
 
     assert reserved.used is True
