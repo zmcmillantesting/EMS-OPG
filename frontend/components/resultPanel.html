@@ -1,0 +1,19 @@
+<section class="phase-panel">
+    <div class="panel-header">
+        <h1 class="panel-title">Test Result</h1>
+        <p class="panel-sub">Record the outcome of this device's functional test</p>
+    </div>
+
+    <div class="card">
+        <div class="nav-row">
+            <button id="result-pass" class="button button-primary" type="button">Pass</button>
+            <button id="result-fail" class="button button-danger" type="button">Fail</button>
+        </div>
+
+        <div id="result-notes-row" class="form-row hidden">
+            <label class="field-label" for="result-notes">Failure Notes</label>
+            <input class="input" id="result-notes" type="text" placeholder="Required — briefly describe the failure">
+            <button id="result-fail-submit" class="button button-danger" type="button">Record Failure</button>
+        </div>
+    </div>
+</section>

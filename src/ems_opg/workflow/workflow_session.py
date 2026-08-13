@@ -14,6 +14,10 @@ class WorkflowSession:
     mac1: str = ""
 
     mac2: str = ""
+    
+    test_result: str = ""
+    
+    test_notes: str = ""
 
     current_step: int = 0
 

@@ -216,6 +216,28 @@ const mockApi = {
          });
     },
 
+    setTestResult(result, notes) {
+        if (!mockSession) {
+            return Promise.reject(new Error("No active session"));
+        }
+        if (!mockSession.completed) {
+            return Promise.reject(new Error("Complete all test steps before recording a result"));
+        }
+        if (result === "FAIL" && !notes) {
+            return Promise.reject(new Error("Notes are required when recording a failed test"));
+        }
+
+        mockSession.test_result = result;
+        mockSession.test_notes = notes || "";
+
+        return Promise.resolve({
+            session: { ...mockSession },
+            step: buildStepPayload(mockSession),
+        });
+    },
+
+
+
     finishSession(serialNumber) {
         if (!mockSession) {
             return Promise.reject(new Error("No active session"));
@@ -495,6 +517,13 @@ const api = {
             () => mockApi.setMacAddresses(mac1, mac2)
         );
     },
+
+    setTestResult(result, notes) {
+        return withFallback(
+            () => request("/workflow/result", { method: "PUT", body: JSON.stringify({ result, notes }) }),
+            () => mockApi.setTestResult(result, notes)
+        );
+    },    
 
     finishSession(serialNumber) {
         return withFallback(

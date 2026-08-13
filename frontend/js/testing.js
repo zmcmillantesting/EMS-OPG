@@ -62,6 +62,10 @@ function bindActions() {
     bindClick("verification-prev", handlePrevious);
     bindClick("verification-next", handleNext);
 
+    bindClick("result-pass", handleResultPass),
+    bindClick("result-fail", handleResultFail),
+    bindClick("result-fail-submit", handleResultFailSubmit),
+
     bindClick("serial-prev", handlePrevious);
     bindClick("serial-finish", handleFinish);
 
@@ -123,7 +127,9 @@ function renderResetDevicePanel(result) {
 /* ---------- Phase derivation & shared rendering ---------- */
 
 function derivePhase(session) {
-    if (session.completed) return "serial";
+    if (session.completed) {
+        return session.test_result ? "serial" : "result";
+    }
     if (session.current_step <= 3) return "qr";
     if (session.current_step === 4) return "mac";
     return "verification";
@@ -187,6 +193,8 @@ function render(step) {
         renderMacPhase(step);
     } else if (phase === "verification" && step) {
         renderVerificationPhase(step);
+    } else if (phase == "result") {
+        renderResultPhase();
     } else if (phase === "serial") {
         renderSerialPhase();
     }
@@ -340,6 +348,50 @@ function handleVerifyChange(event) {
     document.getElementById("chip-mac1").classList.toggle("is-verified", confirmed);
     document.getElementById("chip-mac2").classList.toggle("is-verified", confirmed);
     document.getElementById("verification-next").disabled = !confirmed;
+}
+
+/* ---------- Phase 3.5: Test Result ---------- */
+
+function renderResultPhase() {
+    document.getElementById("result-notes").value = "";
+    setVisible("result-notes-row", false);
+}
+
+async function handleResultPass() {
+    try {
+        const result = await api.setTestResult("PASS", "");
+        currentSession = result.session;
+        saveSession(currentSession);
+        render(result.step);
+    } catch (error) {
+        console.error("Unable to record test result:", error);
+        alert(error.message || "Unable to record test result.");
+    }
+}
+
+function handleResultFailShowNotes() {
+    setVisible("result-notes-row", true);
+    document.getElementById("result-notes").focus();
+}
+
+async function handleResultFailSubmit() {
+    const notesInput = document.getElementById("result-notes");
+    const notes = notesInput.value.trim();
+
+    if (!notes) {
+        notesInput.focus();
+        return;
+    }
+
+    try {
+        const result = await api.setTestResult("FAIL", notes);
+        currentSession = result.session;
+        saveSession(currentSession);
+        render(result.step);
+    } catch (error) {
+        console.error("Unable to record test result:", error);
+        alert(error.message || "Unable to record test result.");
+    }
 }
 
 /* ---------- Phase 4: Serial Number ---------- */

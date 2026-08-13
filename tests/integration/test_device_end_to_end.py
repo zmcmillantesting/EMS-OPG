@@ -55,6 +55,7 @@ def test_reserve_device_end_to_end():
         order_number="100001",
         serial_number="SER123456",
         operator="Zach",
+        test_result="PASS",
     )
 
     assert reserved.used is True

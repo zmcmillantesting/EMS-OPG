@@ -83,6 +83,7 @@ def test_full_database_flow_with_audit_log(session):
         order_number=order.order_number,
         serial_number="SN-9001",
         operator="Technician A",
+        test_result="PASS",
     )
     write_log(f"Reserved device {reserved_device.serial_number}")
 
@@ -113,6 +114,7 @@ def test_full_database_flow_with_audit_log(session):
             order_number=order.order_number,
             serial_number="SN-9002",
             operator="Technician B",
+            test_result="PASS",
         )
     except ValueError as exc:
         failure_message = str(exc)

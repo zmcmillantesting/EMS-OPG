@@ -14,6 +14,7 @@ class DeviceService:
         order_number,
         serial_number,
         operator,
+        test_result,
     ):
 
         device = self.repository.get_by_mac(ethaddr_id, eth1addr_id)
@@ -36,6 +37,7 @@ class DeviceService:
             order_number,
             serial_number,
             operator,
+            test_result,
         )
 
         return device

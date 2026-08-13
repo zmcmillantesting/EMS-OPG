@@ -10,6 +10,7 @@ const PAGE_COMPONENTS = {
     commandPanel: "components/command_panel.html",
     macPanel: "components/macPanel.html",
     verificationPanel: "components/verificationPanel.html",
+    resultPanel: "components/resultPanel.html",
     serialPanel: "components/serialPanel.html",
 };
 
@@ -64,6 +65,7 @@ async function loadTestingComponents() {
         loadComponent("navigation-placeholder", PAGE_COMPONENTS.navigation),
         loadComponent("mac-placeholder", PAGE_COMPONENTS.macPanel),
         loadComponent("verification-placeholder", PAGE_COMPONENTS.verificationPanel),
+        loadComponent("result-placeholder", PAGE_COMPONENTS.resultPanel),
         loadComponent("serial-placeholder", PAGE_COMPONENTS.serialPanel),
     ]);
 }

@@ -91,7 +91,7 @@ class DeviceRepository:
             select(Device).where(Device.used.is_(False))
         ).all()
 
-    def assign_order(self, device, order_number, serial_number, operator):
+    def assign_order(self, device, order_number, serial_number, operator, test_result):
         if device.used:
             raise ValueError("MAC address has already been used.")
 
@@ -108,6 +108,7 @@ class DeviceRepository:
         device.order_number = order_number
         device.serial_number = serial_number
         device.operator = operator
+        device.test_result = test_result
         device.used = True
         device.timestamp = datetime.now(UTC)
 

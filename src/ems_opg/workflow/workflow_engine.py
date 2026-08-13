@@ -59,6 +59,14 @@ class WorkflowEngine:
 
     # --------------------------------------------------
 
+   def set_test_result(self, result, notes=""):
+        if self.state != WorkflowState.COMPLETE:
+            return
+
+        self.session.test_result = result
+        self.session.test_notes = notes
+
+    # --------------------------------------------------
 
     def finish(self, serial_number):
         self.session.serial_number = serial_number

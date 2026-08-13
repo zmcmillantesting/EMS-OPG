@@ -28,6 +28,8 @@ def session_dict(session):
         "serial_number": session.serial_number,
         "mac1": session.mac1,
         "mac2": session.mac2,
+        "test_result": session.test_result,
+        "test_notes": session.test_notes,
         "current_step": session.current_step,
         "total_steps": session.total_steps,
         "completed": session.completed,
@@ -229,11 +231,36 @@ def register_routes(app, application):
         engine.set_mac_addresses(mac1, mac2)
 
         return workflow_response()
+    
+    @api_bp.route("/workflow/result", methods=["PUT"])
+    def workflow_result():
+        if not session_active():
+            return jsonify({"error": "No active session"}), 400
+        
+        if engine.state != WorkflowState.COMPLETE:
+            return jsonify({"error": "Complete all test steps before recording a result"}), 409
+        
+        payload = request.get_json(silent=True) or {}
+        result = (payload.get("result") or"").strip().upper()
+        notes = (payload.get("notes") or "").strip()
+        
+        if result not in ("PASS", "FAIL"):
+            return jsonify({"error": "result must be PASS or FAIL"}), 400
+        
+        if result == "FAIL" and not notes:
+            return jsonify({"error": "Notes are required when recording a failed test."}), 400
+        
+        engine.set_test_result(result, notes)
+        
+        return workflow_response()
 
     @api_bp.route("/session/finish", methods=["POST"])
     def session_finish():
         if not session_active():
             return jsonify({"error": "No active session"}), 404
+        
+        if engine.session.test_result not in ("PASS", "FAIL"):
+            return jsonify({"error": "Record a test result before saving this device"}), 409
 
         payload = request.get_json(silent=True) or {}
         serial_number = (payload.get("serial_number") or "").strip()
@@ -255,7 +282,19 @@ def register_routes(app, application):
                     order_number=engine.session.order_number,
                     serial_number=serial_number,
                     operator=engine.session.operator,
+                    test_result=engine.session.test_result,
                 )
+                
+                if engine.session.test_result == "FAIL":
+                    audit_repo = AuditRepository(db_session)
+                    audit_repo.create(AuditLog(
+                        operator=engine.session.operator or "unknown",
+                        action="Test Failed",
+                        details=(
+                            f"Device {serial_number} (order {engine.session.order_number}) "
+                            f"failed testings. Notes: {engine.session.test_notes}"
+                        ),
+                    ))
         except ValueError as error:
             return jsonify({"error": str(error)}), 409
 

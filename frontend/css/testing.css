@@ -368,6 +368,13 @@
     max-width: 240px;
 }
 
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-top: var(--space-md);
+}
+
 .workflow-header {
     text-align: center;
     padding-bottom: var(--space-sm);

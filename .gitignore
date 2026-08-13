@@ -218,3 +218,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Runtime-generated, regenerable on next run
+cache/qr/*.png
+logs/*.log
+backup/*.db
+
+# Virtual environments
+venv/
+.venv/
