@@ -20,13 +20,12 @@ APP_VERSION = "0.1.0"
 # ==========================================================
 
 SRC_DIR = Path(__file__).resolve().parent.parent
-PROJECT_ROOT = SRC_DIR.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 DB_DIR = PROJECT_ROOT / "database"
 LOG_DIR = PROJECT_ROOT / "logs"
-BACKUP_DIR = PROJECT_ROOT / "backups"
+BACKUP_DIR = PROJECT_ROOT / "backup"
 RESOURCE_DIR = PROJECT_ROOT / "resources"
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_FILE = PROJECT_ROOT / "config" / "config.json"
 
 # ==========================================================

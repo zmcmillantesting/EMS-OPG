@@ -447,7 +447,12 @@ def register_routes(app, application):
 
             if old_mac1 != mac1 or old_mac2 != new_mac2:
                 mac_repo = MacAddressRepository(db_session)
-                new_macs = {mac1, new_mac2}
+                for canidate in (mac1, new_mac2):
+                    if not canidate:
+                        continue
+                    conflict = repo.get_by_single_mac(candidate)
+                    if conflict is not None and conflict.id != device.id:
+                        return jsonify({"error": f"MAC address {canidate} is already assigned to another device."}), 409
 
                 for old_mac in (old_mac1, old_mac2):
                     if old_mac and old_mac not in new_macs:

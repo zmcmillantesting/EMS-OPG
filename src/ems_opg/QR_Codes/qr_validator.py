@@ -156,7 +156,7 @@ class QRValidator:
 
         # Check for ethaddr= and ethaddr1=
 
-        if "ethaddr=" not in command or "ethaddr1=" not in command:
+        if "ethaddr=" not in command or "eth1addr=" not in command:
 
             errors.append(
                 "Missing MAC address assignment: eth0 and/or eth1"

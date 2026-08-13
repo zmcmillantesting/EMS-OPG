@@ -158,8 +158,8 @@ class Device(Base):
         return (
             f"<Device("
             f"serial={self.serial_number}, "
-            f"first_mac={self.ethaddr_id})>"
-            f"second_mac={self.eth1addr_id}>"
+            f"first_mac={self.ethaddr_id}),"
+            f"second_mac={self.eth1addr_id})>"
         )
 
 #---------------------------------------------------------
