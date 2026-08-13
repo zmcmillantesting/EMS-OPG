@@ -81,7 +81,7 @@ def test_assign_order_to_device(session):
         used=False,
         test_result="Pending",
         operator="Importer",
-        test_result="PASS",
+        test_result="PASS"
     )
 
     session.add(device)
