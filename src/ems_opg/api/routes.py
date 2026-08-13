@@ -497,11 +497,12 @@ def register_routes(app, application):
 
             repo.mark_unused(device)
             
-            mac_repo = MacAddressRepository(db_session)
-            for mac_address in (device.ethaddr_id, device.eth1addr_id):
-                pool_entry = mac_repo.get_by_mac(mac_address)
-                if pool_entry is not None:
-                    mac_repo.mark_unused(pool_entry)
+            # Only clears the device's "used" flag so the same MAC pair can
+            # be re-finished (corrected serial/order). The MAC pool entries
+            # stay marked used — a MAC is permanently tied to one physical
+            # device's unique columns, so freeing the pool here would let
+            # provisioning try to hand these same MACs to a *different*
+            # device and crash on the devices table's UNIQUE constraint.        
 
             audit_repo = AuditRepository(db_session)
             audit_repo.create(AuditLog(

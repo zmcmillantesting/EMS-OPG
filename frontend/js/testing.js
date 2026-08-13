@@ -3,7 +3,7 @@
  * verification, and serial number capture.
  */
 
-const PHASES = ["qr", "mac", "verification", "serial"];
+const PHASES = ["qr", "mac", "verification", "result", "serial"];
 
 const STAGE_META = {
     qr: { title: "Test QR Codes", sub: "Steps 1–4" },
