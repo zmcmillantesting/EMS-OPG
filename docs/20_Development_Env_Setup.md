@@ -167,6 +167,8 @@ This installs:
 * pytest-cov
 * black
 * ruff
+* sqlalchemy
+* flask
 
 The `-e` flag installs the project in editable mode.
 
