@@ -1,5 +1,5 @@
 {
-    "_comment_data_root": "Absolute path (e.g. a network drive like P:\\EMS_TR_PATH\EMS_OPG) where
+    "_comment_data_root": "Absolute path (e.g. a network drive like P:\\EMS_TR_PATH\\EMS_OPG) where
     database/logs/cache/backup/reports should live, separate from the application install. Leave
     blank to keep everything next to the app.",
     

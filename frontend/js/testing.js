@@ -62,9 +62,9 @@ function bindActions() {
     bindClick("verification-prev", handlePrevious);
     bindClick("verification-next", handleNext);
 
-    bindClick("result-pass", handleResultPass),
-    bindClick("result-fail", handleResultFail),
-    bindClick("result-fail-submit", handleResultFailSubmit),
+    bindClick("result-pass", handleResultPass);
+    bindClick("result-fail", handleResultFailShowNotes);
+    bindClick("result-fail-submit", handleResultFailSubmit);
 
     bindClick("serial-prev", handlePrevious);
     bindClick("serial-finish", handleFinish);
