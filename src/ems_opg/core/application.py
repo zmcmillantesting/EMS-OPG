@@ -42,7 +42,7 @@ class Application:
                 )
                 raise SystemExit(1) from error
             raise
-        except KeyboardInterupt:
+        except KeyboardInterrupt:
             self.logger.info("Shutdown requested by operator")
         finally:
             self.logger.info("Server stopped")

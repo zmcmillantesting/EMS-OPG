@@ -16,10 +16,11 @@
         "max_log_size_mb": 8,
         "backup_count": 10
     },
-    // wiring backup for shutdown but will not be implementing. Only backup creation on startup
+
     "backup": {
         "enabled": true,
         "directory": "database/backups",
+        "max_backups": 5,
         "backup_on_startup": false,
         "backup_on_shutdown": true, 
     },

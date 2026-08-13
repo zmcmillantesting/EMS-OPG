@@ -70,7 +70,7 @@ def device_dict(device):
         "timestamp": device.timestamp.isoformat() if device.timestamp else None,
     }
     
-    def maybe_export_completed_order(db_session, application, order_number):
+def maybe_export_completed_order(db_session, application, order_number):
     """
     If every device tied to order_number has been finalized with a PASS
     result, write the order's traceability records to exports/ as a CSV.
@@ -617,6 +617,7 @@ def register_routes(app, application):
 
             buffer = io.StringIO()
             writer = csv.writer(buffer)
+            write_devices_csv(writer, devices)
            
             return jsonify({"csv": buffer.getvalue(), "filename": "ems-opg-history.csv"})
 
