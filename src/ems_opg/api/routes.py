@@ -441,13 +441,31 @@ def register_routes(app, application):
                 return jsonify({"error": "Serial number already exists."}), 409
 
             before = device_dict(device)
+            
+            old_mac1, old_mac2 = device.ethaddr_id, device.eth1addr_id
+            new_mac2 = mac2 or None
+
+            if old_mac1 != mac1 or old_mac2 != new_mac2:
+                mac_repo = MacAddressRepository(db_session)
+                new_macs = {mac1, new_mac2}
+
+                for old_mac in (old_mac1, old_mac2):
+                    if old_mac and old_mac not in new_macs:
+                        old_entry = mac_repo.get_by_mac(old_mac)
+                        if old_entry is not None:
+                            mac_repo.mark_unused(old_entry)
+
+                for claimed_mac in (mac1, new_mac2):
+                    if claimed_mac:
+                        claimed_entry = mac_repo.get_by_mac(claimed_mac)
+                        if claimed_entry is not None:
+                            mac_repo.mark_used(claimed_entry)
 
             device.order_number = order_number
             device.serial_number = new_serial
             device.operator = operator
             device.ethaddr_id = mac1
-            device.eth1addr_id = mac2 or None
-
+            device.eth1addr_id = new_mac2
             audit_repo = AuditRepository(db_session)
             audit_repo.create(AuditLog(
                 operator=operator or "unknown",
@@ -557,7 +575,7 @@ def register_routes(app, application):
 
             records = []
             for entry in mac_repo.list_all():
-                device = device_repo.get_by_single_mac(entry.mac_address) if entry.used else None
+                device = device_repo.get_by_single_mac(entry.mac_address)
                 records.append({
                     "mac_address": entry.mac_address,
                     "used": entry.used,

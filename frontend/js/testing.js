@@ -9,6 +9,7 @@ const STAGE_META = {
     qr: { title: "Test QR Codes", sub: "Steps 1–4" },
     mac: { title: "MAC Addresses", sub: "Step 5" },
     verification: { title: "Verification", sub: "Step 6" },
+    result: { title: "Test Result", sub: "Pass/Fail" },
     serial: { title: "Serial Number", sub: "Finish" },
 };
 
@@ -16,6 +17,7 @@ const PHASE_PLACEHOLDER_IDS = {
     qr: "qr-steps-placeholder",
     mac: "mac-placeholder",
     verification: "verification-placeholder",
+    result: "result-placeholder",
     serial: "serial-placeholder",
 };
 
