@@ -12,7 +12,7 @@ def test_config_manager_load():
     assert config.application["version"] == "1.0.0"
     assert config.database["filename"] == "ems_opg.db"
     assert config.logging["level"] == "INFO"
-    assert config.backup["directory"] == "backup"
+    assert config.backup["directory"] == "database/backup"
 
 def test_config_manager_save():
     # Modify a configuration value

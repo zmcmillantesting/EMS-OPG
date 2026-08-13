@@ -21,6 +21,26 @@ from ems_opg.workflow.workflow_state import WorkflowState
 
 LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR"}
 
+CSV_HEADER = ["Date", "Order", "Serial", "MAC1", "MAC2", "Operator", "Result", "Status"]
+
+
+def device_csv_row(d):
+    return [
+        d.timestamp.isoformat() if d.timestamp else "",
+        d.order_number,
+        d.serial_number,
+        d.ethaddr_id,
+        d.eth1addr_id or "",
+        d.operator,
+        d.test_result,
+        "Used" if d.used else "Available",
+    ]
+
+def write_devices_csv(writer, devices):
+    writer.writerow(CSV_HEADER)
+    for d in devices:
+        writer.writerow(device_csv_row(d))
+
 def session_dict(session):
     return {
         "operator": session.operator,
@@ -49,6 +69,43 @@ def device_dict(device):
         "operator": device.operator,
         "timestamp": device.timestamp.isoformat() if device.timestamp else None,
     }
+    
+    def maybe_export_completed_order(db_session, application, order_number):
+    """
+    If every device tied to order_number has been finalized with a PASS
+    result, write the order's traceability records to exports/ as a CSV.
+    No-ops (silently) if the order isn't fully passed yet.
+    """
+
+    order_repo = OrderRepository(db_session)
+    device_repo = DeviceRepository(db_session)
+
+    order = order_repo.get_by_order_number(order_number)
+    if order is None:
+        return
+
+    devices = device_repo.list_by_order(order_number)
+
+    if len(devices) != order.quantity:
+        return
+
+    if not all(d.test_result == "PASS" for d in devices):
+        return
+
+    try:
+        application.paths.exports_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+        destination = application.paths.exports_dir / f"{order_number}_{timestamp}.csv"
+
+        with destination.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            write_devices_csv(writer, devices)
+
+    except OSError:
+        application.logger.exception(
+            "Failed to export completed order %s to CSV.", order_number
+        )
 
 
 def build_step_payload(engine, qr_service):
@@ -295,6 +352,8 @@ def register_routes(app, application):
                             f"failed testings. Notes: {engine.session.test_notes}"
                         ),
                     ))
+                    
+                maybe_export_completed_order(db_session, application, engine.session.order_number)
         except ValueError as error:
             return jsonify({"error": str(error)}), 409
 
@@ -367,12 +426,13 @@ def register_routes(app, application):
     def backup_database():
         source = DATABASE_FILE
 
-        if not source.exists():
+        if not DATABASE_FILE.exists():
             return jsonify({"error": "No database file found to back up"}), 404
 
-        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-        destination = application.paths.backup_dir / f"ems_opg_{timestamp}.db"
-
+        db = DatabaseManager()
+        max_backups = application.config.backup.get("max_backups", 5)
+        destination = db.backup(DATABASE_FILE, application.paths.backup_dir, keep=max_backups)
+       
         shutil.copy2(source, destination)
 
         return jsonify({"message": f"Database backed up to {destination.name}."})
@@ -557,20 +617,7 @@ def register_routes(app, application):
 
             buffer = io.StringIO()
             writer = csv.writer(buffer)
-            writer.writerow(["Date", "Order", "Serial", "MAC1", "MAC2", "Operator", "Result", "Status"])
-
-            for d in devices:
-                writer.writerow([
-                    d.timestamp.isoformat() if d.timestamp else "",
-                    d.order_number,
-                    d.serial_number,
-                    d.ethaddr_id,
-                    d.eth1addr_id or "",
-                    d.operator,
-                    d.test_result,
-                    "Used" if d.used else "Available",
-                ])
-
+           
             return jsonify({"csv": buffer.getvalue(), "filename": "ems-opg-history.csv"})
 
     @api_bp.route("/mac-pool", methods=["GET"])

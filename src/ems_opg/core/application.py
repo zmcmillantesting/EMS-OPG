@@ -20,13 +20,16 @@ class Application:
 
     def run(self):
         from ems_opg.api.server import create_app
+        from ems_opg.core.shutdown import Shutdown
 
         app = create_app(self)
         port = int(os.environ.get("EMS_OPG_PORT", 5000))
+        started = True
 
         try:
             app.run(host="127.0.0.1", port=port)
         except OSError as error:
+            started = False
             if error.errno == errno.EADDRINUSE:
                 self.logger.error(
                     "Port %s is already in use - a previous server is "
@@ -39,5 +42,9 @@ class Application:
                 )
                 raise SystemExit(1) from error
             raise
+        except KeyboardInterupt:
+            self.logger.info("Shutdown requested by operator")
         finally:
             self.logger.info("Server stopped")
+            if started:
+                Shutdown(self).shutdown()

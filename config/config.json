@@ -13,14 +13,15 @@
     "logging": {
         "level": "INFO",
         "directory": "logs",
-        "max_log_size_mb": 10,
-        "backup_count": 5
+        "max_log_size_mb": 8,
+        "backup_count": 10
     },
+    // wiring backup for shutdown but will not be implementing. Only backup creation on startup
     "backup": {
         "enabled": true,
-        "directory": "backup",
-        "backup_on_startup": true,
-        "backup_on_shutdown": false
+        "directory": "database/backups",
+        "backup_on_startup": false,
+        "backup_on_shutdown": true, 
     },
     "paths": {
         "assets": "assets",

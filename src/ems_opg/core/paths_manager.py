@@ -32,10 +32,10 @@ class PathManager:
         #
         self.database_dir = self.data_root / "database"
         self.logs_dir = self.data_root / "logs"
-        self.backup_dir = self.data_root / "backup"
+        self.backup_dir = self.data_root / "backups"
         self.cache_dir = self.data_root / "cache"
         self.qr_cache = self.cache_dir / "qr"
-        self.reports_dir = self.data_root / "reports"   
+        self.exports_dir = self.data_root / "exports"   
         
         self.database_file = self.database_dir / "ems_opg.db"
         
@@ -70,7 +70,7 @@ class PathManager:
 
             self.qr_cache,
             
-            self.reports_dir,
+            self.exports_dir,
 
         ):
 
