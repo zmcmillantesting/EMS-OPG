@@ -15,7 +15,7 @@ class Shutdown:
         self.app.logger.info("=" * 60)
 
         self.app.logger.info("Closing database...")
-        self.backup_database()
+        run_backup_if_enabled(self.app, "backup_on_shutdown")
         self.app.logger.info("Saving configuration...")
         self.app.logger.info("Application shutdown complete.")
         self.app.logger.info("=" * 60)

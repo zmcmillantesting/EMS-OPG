@@ -16,7 +16,7 @@ dependencies = [
     "SQLAlchemy>=2.0",
     "Flask>=3.0",
     "waitress",
-    "webview",
+    "pywebview",
 ]
 
 

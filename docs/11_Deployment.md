@@ -5,12 +5,12 @@
 ```bash
 uv sync --extra dev        # or: pip install -e ".[dev]"
 python -m ems_opg.database.init_db   # first-time schema creation
-python app.py                        # starts the Flask dev server on window
+python app.py                        # opens the app in a native window
 ```
 
-`python app.py` no longer opens a browser tab - it starts a waitress WSGI
+`python app.py` no longer opens a browser tab -- it starts a waitress WSGI
 server on a background thread and opens a native window (PyWebView)
-pointing at it, sized/maximized per `config.json`'s `"window"` section
+pointing at it, sized/maximized per `config.json`'s `"window"` section.
 Closing the window is the shutdown trigger (see Production, below).
 
 `config.json`'s `data_root` is left blank in the repo, so in development
@@ -31,8 +31,8 @@ real `database/ems_opg.db`.
 
 Production runs the same `python app.py` entry point. `core/application.py`
 starts a **waitress** WSGI server (not Flask's dev server 00 waitress is a 
-production-graed server) on a background thread, then opens a **PyWebView** 
-native window pointing at it. The app is a desktop application, not somthing
+production-grade server) on a background thread, then opens a **PyWebView** 
+native window pointing at it. The app is a desktop application, not something
 operators reach through a browser. Before pointing it at read data:
 1. Set `config.json`'s `data_root` to the shared network path (see
    `docs/33_Pathing_updates_pre_prod_push.md`).
@@ -44,15 +44,15 @@ operators reach through a browser. Before pointing it at read data:
 5. Start the app. Confirm `GET /api/status` reports `databaseConnected: true`.
 
 The app still binds to `127.0.0.1` only (`core/application.py`) -- it is not
-exposed to the network. The PyWebView window is the only way it's ment to be 
+exposed to the network. The PyWebView window is the only way it's meant to be 
 reached.
 
 **Not yet verified on an actual machine with a display** -- the server and 
 window-close/shutdown wiring were tested headlessly (server binding, serving
 real requests, event subscription), but the native window itself requires a 
-real GUI environment (WINForms/EdgeChromium on Windows, GTK/Qt on linux, Cocoa
+real GUI environment (WinForms/EdgeChromium on Windows, GTK/Qt on linux, Cocoa
 on macOS) that isn't available in the sandbox this was built in. Confirm the window
-actually opens and renders the fronend correctly, and closing it triggers the shutdown
+actually opens and renders the frontend correctly, and that the shutdown closing it triggers the shutdown
 backup, before relying on this in production.
 
 ## Configuration
@@ -68,9 +68,9 @@ There's no automated update mechanism. Updating means:
 
 1. `git pull` (or deploy a new build — see Installer, below) on the machine
    running the app.
-2. Close the app window (This triggers the shutdown backup automatically if
-`backup_on_shutdown` is enabled --startup backup, the defualt, also files the
-next time it's launched regardlessf)
+2. Close the app window (this triggers the shutdown backup automatically if
+`backup_on_shutdown` is enabled -- startup backup, the default, also fires the
+next time it's launched regardless)
 3. Re-run `python -m ems_opg.database.init_db` only if the schema changed —
    it detects an outdated schema and recreates it automatically otherwise.
 4. Restart.

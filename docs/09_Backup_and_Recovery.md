@@ -77,30 +77,6 @@ This is controlled entirely by `config.json`'s `"backup"` section:
   `PathManager.backup_dir` (`database/backups` under `data_root`), not read
   from this key.
 
-
-This is controlled entirely by `config.json`'s `"backup"` section:
-
-```json
-"backup": {
-    "enabled": true,
-    "directory": "database/backups",
-    "max_backups": 5,
-    "backup_on_startup": false,
-    "backup_on_shutdown": true
-}
-```
-
-- `enabled` — master switch. If `false`, no automatic backup happens
-  regardless of the other flags.
-- `backup_on_shutdown` — if `true`, a backup is created every time the
-  application shuts down.
-- `backup_on_startup` — present in config for a future startup-backup
-  feature. **Not implemented yet** — see `docs/29_Known_Issues.md`.
-- `max_backups` — how many timestamped backups to retain (see Cleanup below).
-- `directory` — informational only right now; the actual location is always
-  `PathManager.backup_dir` (`database/backups` under `data_root`), not read
-  from this key.
-
 A failed backup (e.g. the network drive is briefly unreachable) is caught and
 logged — it does not crash the shutdown sequence.
 
