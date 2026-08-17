@@ -39,7 +39,7 @@ Stores traceability information for every tested device.
 | order_number | Foreign Key to Orders |
 | serial_number | Device Serial Number |
 | ethaddr_id | First MAC Address |
-| ethaddr1_id | Second MAC Address |
+| eth1addr_id | Second MAC Address |
 | used | Boolean indicating MAC allocation |
 | test_result | Pass / Fail |
 | operator | Test Operator |

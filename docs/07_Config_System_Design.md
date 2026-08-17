@@ -1,400 +1,124 @@
 # Configuration System Design Guide
 
-**Document Version:** 1.0
+**Document Version:** 2.0 — rewritten to describe the system as it actually
+exists, not as originally planned. The previous version of this document
+described a schema/validation/defaults layer that was never built; if you're
+looking for that design, it doesn't exist in the current codebase.
 
 ---
 
 # Purpose
 
-This document explains how the application's configuration system is designed, how configuration data flows through the application, and the correct procedure for adding or modifying configuration values.
-
-The goal of this design is to provide a **single source of truth** for application settings while keeping configuration data separate from application code.
-
----
-
-# Design Philosophy
-
-The configuration system is divided into two parts:
-
-1. **Configuration Data**
-2. **Configuration Manager**
-
-These two components have different responsibilities.
-
-| Component                      | Responsibility                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------------- |
-| `config/config.json`           | Stores configuration values                                                     |
-| `src/config/config_manager.py` | Reads, validates, manages, and provides configuration values to the application |
-
-The configuration file contains **only data**.
-
-The Configuration Manager contains **all configuration logic**.
+This document explains how the application's configuration system actually
+works today: where settings live, how they're loaded, and how to add a new
+setting.
 
 ---
 
-# Directory Structure
+# What actually exists
 
-```
-Project/
+Configuration is two pieces:
 
-├── config/
-│   ├── config.default.json
-│   ├── config.json
-│   └── README.md
-│
-├── src/
-│   └── config/
-│       ├── __init__.py
-│       ├── config_manager.py
-│       ├── defaults.py
-│       └── schema.py
-```
+| Component | Responsibility |
+|---|---|
+| `config/config.json` | The single JSON file holding every runtime setting |
+| `src/ems_opg/config/config_manager.py` (`ConfigurationManager`) | Loads, saves, and exposes that file's contents |
 
----
-
-# Responsibilities
-
-## config/config.json
-
-This file stores runtime settings.
-
-Examples include:
-
-* Database filename
-* Logging level
-* Backup settings
-* Window size
-* Workflow options
-
-This file should never contain Python code.
-
----
-
-## src/config/config_manager.py
-
-The Configuration Manager is responsible for:
-
-* Loading the configuration file
-* Validating configuration values
-* Providing default values
-* Saving configuration changes
-* Exposing configuration to the rest of the application
-
-No other module should read the JSON file directly.
-
----
-
-# Configuration Workflow
-
-```
-Application Starts
-        │
-        ▼
-ConfigurationManager Created
-        │
-        ▼
-Locate config/config.json
-        │
-        ▼
-Does file exist?
-        │
-   ┌────┴────┐
-   │         │
-  Yes        No
-   │         │
-   ▼         ▼
-Load JSON   Copy config.default.json
-   │         │
-   └────┬────┘
-        ▼
-Validate Configuration
-        │
-        ▼
-Load Into Memory
-        │
-        ▼
-Provide Configuration To
-Logger
-Database
-Workflow Engine
-UI
-Services
-```
-
-The configuration file is read once during application startup.
-
-After that, every component accesses configuration through the Configuration Manager.
-
----
-
-# Correct Usage
-
-## Correct
-
-```
-Logger
-
-↓
-
-ConfigurationManager
-
-↓
-
-config.logging.level
-```
-
-```
-Database
-
-↓
-
-ConfigurationManager
-
-↓
-
-config.database.filename
-```
-
-Every subsystem requests configuration through the manager.
-
----
-
-## Incorrect
-
-```
-Logger
-
-↓
-
-Open config.json
-```
-
-```
-Database
-
-↓
-
-Open config.json
-```
-
-```
-Workflow
-
-↓
-
-Open config.json
-```
-
-No module other than the Configuration Manager should read the configuration file.
-
----
-
-# Why This Architecture?
-
-Using a Configuration Manager provides several advantages.
-
-## Single Source of Truth
-
-Every component receives configuration from one location.
-
-This prevents duplicate configuration logic throughout the application.
-
----
-
-## Easier Maintenance
-
-Changing the configuration file format only requires changes inside the Configuration Manager.
-
-The remainder of the application remains unchanged.
-
----
-
-## Validation
-
-The Configuration Manager validates settings before the application begins running.
-
-Invalid values can be corrected or replaced with defaults before they cause runtime failures.
-
----
-
-## Testing
-
-Tests can provide custom configurations without modifying production settings.
-
-This allows unit and integration tests to run in isolated environments.
-
----
-
-## Future Expansion
-
-The application may eventually support:
-
-* YAML
-* TOML
-* Environment Variables
-* Encrypted Configuration
-* Remote Configuration
-
-Because the rest of the application communicates only with the Configuration Manager, these changes can be implemented without modifying business logic.
-
----
-
-# How To Add A New Configuration Setting
-
-Whenever a new configuration option is introduced, follow this process.
-
-## Step 1
-
-Add the new value to:
-
-```
-config.default.json
-```
-
-Example:
-
-```json
-"reports":
-{
-    "auto_export": true
-}
-```
-
----
-
-## Step 2
-
-Update the Configuration Manager.
-
-Create or update the appropriate configuration model.
-
-Example:
-
-```
-ReportsConfig
-```
-
----
-
-## Step 3
-
-Expose the new configuration through the Configuration Manager.
-
-Example:
-
-```
-config.reports.auto_export
-```
-
----
-
-## Step 4
-
-Use the Configuration Manager inside the application.
-
-Correct:
+There is **no schema, no validation, no default-value fallback file, and no
+per-section config model classes**. `ConfigurationManager` is a thin wrapper:
 
 ```python
-report_service.initialize(config.reports)
+class ConfigurationManager:
+    def __init__(self, config_path: Path):
+        self.config_path = config_path
+        self._config = {}
+        self.load()
+
+    def load(self):
+        with open(self.config_path, "r") as file:
+            self._config = json.load(file)
+
+    def save(self):
+        with open(self.config_path, "w") as file:
+            json.dump(self._config, file, indent=4)
 ```
 
-Incorrect:
+Everything else on it is a `@property` returning a raw dict straight out of
+`self._config` — `.application`, `.database`, `.logging`, `.backup`,
+`.paths`, `.workflow`, `.window`, plus a couple of QR-command helper methods
+(`get_qr_command`, `get_workflow`, `format_qr_command`) used by `QRService`.
 
-```python
-with open("config/config.json") as file:
-    ...
-```
+**Consequences of this being unvalidated:**
 
----
-
-## Step 5
-
-Update documentation.
-
-If the configuration affects application behavior, update:
-
-* Requirements Specification
-* Configuration Guide
-* User Documentation (if applicable)
+- A missing key raises a plain `KeyError` wherever it's accessed, not a
+  friendly config error.
+- `config.json` must be syntactically valid JSON — no comments, no trailing
+  commas. Standard `json.load()` is strict about this, and a broken file
+  crashes `Application.__init__` immediately (this has happened in practice
+  — see `docs/29_Known_Issues.md`).
+- Code that reads a key with `.get("key", default)` (e.g. `Shutdown`,
+  `backup_database()`) tolerates that key being absent; code that does
+  `config.logging["level"]` does not.
 
 ---
 
-# Rules For Developers
+# Where config is read
 
-The following rules should always be followed.
+`Application.__init__` creates one `ConfigurationManager` for the process
+and passes it (and `PathManager`) into `Logger`. Beyond that, individual
+routes and `Shutdown` reach `application.config.<section>` directly — there
+is no dependency-injection layer routing config to just the modules that
+need it. In practice:
 
-### Rule 1
-
-Never read `config.json` outside of the Configuration Manager.
-
----
-
-### Rule 2
-
-Never hardcode configurable values inside application code.
-
-Incorrect:
-
-```python
-LOG_LEVEL = "INFO"
-```
-
-Correct:
-
-```python
-config.logging.level
-```
+- `Logger`/`LoggerManager` reads `config.logging`.
+- `Shutdown.backup_database()` reads `config.backup`.
+- `api/routes.py`'s `/api/database/backup` route reads
+  `application.config.backup.get("max_backups", 5)`.
+- `QRService` reads `config.get_qr_command(...)` / `config.get_workflow(...)`.
 
 ---
 
-### Rule 3
+# `data_root` — the one setting with real behavioral weight
 
-Every new configuration option must have a default value.
-
----
-
-### Rule 4
-
-Configuration validation belongs inside the Configuration Manager.
-
-Validation should not be duplicated throughout the application.
+`config.json`'s top-level `"data_root"` key is read once by
+`PathManager._resolve_data_root()`. If set to an absolute path, every data
+directory (`database/`, `logs/`, `database/backups/`, `exports/`, `cache/`)
+is created under it instead of next to the app install — this is how the
+app supports "app on C:, data on a shared P: drive" without any code
+changes. See `docs/33_Pathing_updates_pre_prod_push.md`.
 
 ---
 
-### Rule 5
+# How to add a new configuration setting
 
-Application modules should only know about the settings they require.
-
-For example:
-
-* Logger receives logging configuration.
-* Database receives database configuration.
-* Workflow Engine receives workflow configuration.
-
-This reduces coupling between modules.
+1. Add the key (with a sensible value) to `config/config.json`.
+2. If it needs a fallback when absent, read it with
+   `application.config.<section>.get("key", default)` rather than `[...]`.
+3. If it belongs to a section that doesn't have a `ConfigurationManager`
+   property yet, add one — a one-line `@property` returning
+   `self._config["section"]`.
+4. Use it via `application.config`, not by opening `config.json` directly
+   from a new module.
+5. Update this document and, if it changes visible behavior, whichever
+   feature doc it affects (e.g. `09_Backup_and_Recovery.md`).
 
 ---
 
-# Summary
+# Rules that still hold
 
-The Configuration Manager acts as the application's single interface to configuration.
+- Don't read `config.json` outside `ConfigurationManager` — everything
+  should go through `application.config`.
+- Don't hardcode a value in source that's meant to vary by deployment
+  (`data_root` is the existing example of getting this right).
+- `config.json` must stay strictly valid JSON. If your editor's linter
+  doesn't flag trailing commas or comments in `.json` files, double-check
+  by hand before committing — `json.load()` will not forgive either.
 
-```
-config.json
-      │
-      ▼
-ConfigurationManager
-      │
-      ├── Logger
-      ├── Database
-      ├── Backup Manager
-      ├── Workflow Engine
-      ├── UI
-      └── Services
-```
+# Future possibilities, not current behavior
 
-The configuration file stores data.
-
-The Configuration Manager provides behavior.
-
-Keeping these responsibilities separate results in a system that is easier to maintain, easier to test, and easier to extend as the application grows.
+The original version of this document described schema validation, a
+`config.default.json` fallback, and typed config objects
+(`ReportsConfig`-style). None of that exists today. It's a reasonable
+direction if `config.json` grows enough sections that silent `KeyError`s
+become a real problem — but until it's actually built, don't treat it as
+documentation of current behavior.

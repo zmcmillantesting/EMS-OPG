@@ -9,7 +9,8 @@ Company Network
         │
         │
         ▼
-PyQt Workflow Application
+Flask Workflow Application
+(HTML/CSS/JS frontend, served locally)
         │
         │
  (Human Operator)
@@ -17,6 +18,13 @@ PyQt Workflow Application
         ▼
 Isolated Test Bench
 ```
+
+The application is a flask server (`src/ems_opg/api/`) serving a
+static
+HTML/CSS/vanilla-JS frontend (`frontend/`) over a local
+connection -- not a 
+PyQt desktop application, despite earlier drafts of this documents. See
+`docs/04_Project_Structure.md`
 
 No direct communication exists between the application and the test bench.
 

@@ -8,20 +8,50 @@ Welcome to the developer documentation.
 |----------|-------------|
 | 01 | Project Overview |
 | 02 | System Architecture |
-| 03 | Development Standards |
+| 03 | User Interace Specs |
 | 04 | Project Structure |
 | 05 | Database Design |
 | 06 | UI/UX Guidelines |
-| 07 | Security |
+| 07 | Configuration System Design |
 | 08 | Logging |
 | 09 | Backup & Recovery |
 | 10 | Testing Strategy |
 | 11 | Deployment |
 | 12 | Git Workflow |
 | 13 | Coding Standards |
-| 14 | API & Interfaces |
+| 14 | Frontend Development Guide |
 | 15 | Release Process |
-| 16 | Roadmap |
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| 01 | Project Overview |
+| 02 | System Architecture |
+| 03 | User Interface Specs |
+| 04 | Project Structure |
+| 05 | Database Design |
+| 06 | UI/UX Guidelines |
+| 07 | Configuration System Design |
+| 08 | Logging |
+| 09 | Backup & Recovery |
+| 10 | Testing Strategy |
+| 11 | Deployment |
+| 12 | Git Workflow |
+| 13 | Coding Standards |
+| 14 | Frontend Development Guide |
+| 15 | Release Process |
+| 19 | Disaster Recovery |
+| 20 | Development Environment Setup |
+| 21 | Test Instructions |
+| 22 | User Manual |
+| 29 | Known Issues |
+| 30 | Database Initialization |
+| 31 | Test Workflow |
+| 32 | Action Plan |
+| 33 | Pre-Deployment Data Path Checklist |
+
+Also in `docs/`: `flask_guide.md`, `todos.md`, `test_instructions.pdf`
+(not numbered).
 
 ---
 
@@ -51,7 +81,18 @@ Welcome to the developer documentation.
     - All test personell 
 
 - Major Modules:
-    - 
+- Major Modules:
+    - `core/` — application bootstrap, path resolution, config wiring
+    - `api/` — Flask app and all `/api/*` routes
+    - `database/` — SQLAlchemy models, engine, session, backup/restore
+    - `repositories/` — per-model DB access (orders, devices, MAC pool, audit log)
+    - `services/` — business logic (order provisioning, device reservation, QR command building)
+    - `workflow/` — in-memory operator workflow/step state
+    - `QR_Codes/` — QR command generation and per-step validation
+    - `app_logging/` — logging setup (rotating file handler)
+    - `frontend/` — static HTML/CSS/JS UI served by Flask
+    - `scripts/` — standalone admin scripts (MAC pool import, weekly health report)
+
 
 - Data Stored:
     - Order number
