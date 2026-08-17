@@ -2,7 +2,7 @@ import errno
 import os
 import threading
 
-import webview
+import pywebview
 from waitress import create_server
 
 from ems_opg.app_logging.logger import Logger
@@ -52,7 +52,7 @@ class Application:
         server_thread.start()
 
         window_config = self.config.window
-        window = webview.create_window(
+        window = pywebview.create_window(
             title=self.config.application.get("name", "EMS-OPG"),
             url=f"http://127.0.0.1:{port}",
             width=window_config.get("width", 1400),
@@ -74,7 +74,7 @@ class Application:
         window.events.closing += on_window_closing
 
         try:
-            webview.start()
+            pywebview.start()
         except KeyboardInterrupt:
             self.logger.info("Shutdown requested by operator (Ctrl+C).")
         finally:
