@@ -143,12 +143,6 @@ function setVisible(elementId, visible) {
         element.classList.toggle("hidden", !visible);
     }
 }
-function setVisible(elementId, visible) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.classList.toggle("hidden", !visible);
-    }
-}
 
 /**
  * Save text content to a file, choosing the right mechanism for where

@@ -59,26 +59,6 @@ resolved or new ones are found.
 
 ## Not yet verified
 
-- **Frontend hasn't been re-exercised against this cycle's backend
-  changes.** The API surface for existing endpoints didn't change shape,
-  but the automation additions (backup/export/health-report) haven't been
-  confirmed against the actual running UI, only via `pytest` and direct
-  script/function calls.
-- **Production `data_root` is unset.**~~ Resolved — `config.json`'s
-  `data_root` now points at the real shared-drive path.
-- **The PyWebView desktop window has not been visually verified.** Windowing
-  (PyWebView) and the server behind it (waitress) are now implemented
-  (`core/application.py`), and the server-binding/event-wiring logic was
-  tested headlessly, but no sandbox here has a display server — the window
-  actually opening, rendering the frontend, and closing cleanly needs to be
-  confirmed on a real machine before relying on it.
-- **Freezing into a standalone executable is still undecided.** PyWebView
-  gives the native window; something like PyInstaller/Nuitka is still
-  needed to bundle Python itself for shop-floor machines without a Python
-  install. See `docs/11_Deployment.md`'s Installer section.
-
-## Minor## Not yet verified
-
 - ~~**Production `data_root` is unset.**~~ Resolved — `config.json`'s
   `data_root` points at the real UNC path (`\\emsfs01\production\...`) and
   has been confirmed working from a real launch.
@@ -87,6 +67,15 @@ resolved or new ones are found.
   provision → test → history workflow completed, and the shutdown-backup
   toggle behaved correctly (fired on startup, correctly skipped on
   shutdown since `backup_on_shutdown` is off by default).
+  - ~~**History page's "Export" button likely didn't work inside the
+  PyWebView window.**~~ Fixed — it used a Blob-URL + `<a download>` trick
+  that only reliably works in a real browser tab. `core/webview_api.py`
+  now exposes a `save_file` method (native "Save As" dialog) as
+  `window.pywebview.api.save_file`; `frontend/js/common.js`'s `saveFile()`
+  helper uses it when running inside PyWebView and falls back to the old
+  Blob approach otherwise. Note this button exports **all** device
+  history, not one order — it's unrelated to the automatic per-order
+  export on completion.
 - **Freezing into a standalone executable is still undecided.** PyWebView
   gives the native window; something like PyInstaller/Nuitka is still
   needed to bundle Python itself for shop-floor machines without a Python
@@ -101,12 +90,48 @@ resolved or new ones are found.
   backups/exports on the share) or moving to a network-safe database.
   Revisit if "database is locked" errors actually show up, or once
   multiple simultaneous test stations are running.
+  - **CSV auto-export on order completion still hasn't been confirmed
+  against real output files.** The first two attempts to test it hit the
+  provisioning bug below instead. Retry once the production database has
+  been reset (see the data integrity item below) — that's the real test
+  of this feature.
 - **Frontend hasn't been re-exercised against this cycle's backend
   changes beyond a single manual pass.** One full operator workflow
-  (provision → board test → history) has now been confirmed working on
-  real hardware, but the newer automation specifically (CSV
-  auto-export on order completion, the health-report script) hasn't been
-  independently checked against real output files yet.
+  (provision → board test → history) has been confirmed working on real
+  hardware; the delete-order button and the fixed export button still
+  need a real click-through.  
+
+## Data integrity incident (found and fixed)
+
+- ~~**`OrderRepository.create()` and `AuditRepository.create()` committed
+  immediately inside a multi-step service call.**~~ Fixed — both now
+  `flush()` instead of `commit()`, so the containing request commits or
+  rolls back as one atomic unit. Previously, if `provision_order()` failed
+  partway through (e.g. a MAC-pool/device inconsistency), the just-created
+  `Order` row had already been permanently committed on its own, leaving
+  an orphaned order with zero devices that still showed up as "open."
+  `provision_order()` also now returns a clean `409` instead of crashing
+  with a raw 500 when it hits this class of inconsistency
+  (`sqlalchemy.exc.IntegrityError`).
+- ~~**`database/ems_opg.db` was tracked in git.**~~ Fixed going forward —
+  added to `.gitignore` (along with `database/backups/*.db`,
+  `exports/*.csv`, `exports/*.txt`). The file already tracked still needs
+  `git rm --cached database/ems_opg.db` run manually. **The production
+  database at `\\emsfs01\production\...` still contains the leftover
+  dev/test data this caused** (including the specific MAC-pool
+  inconsistency that caused the provisioning crash above) — still needs a
+  clean re-init (`python -m ems_opg.database.init_db` +
+  `scripts/load_database.py`) against that path before this is genuinely
+  production data.
+- **`DELETE /api/orders/<order_number>`**, exposed as a "Delete Empty
+  Order" button on the home page next to the open-orders dropdown (only
+  shown when the selected order has zero devices). Built specifically to
+  clean up orphaned orders like the two the bug above produced. Refuses
+  to delete any order that has even one device attached — this is not a
+  general order-deletion feature.
+
+## Minor
+
 
 
 - **`config/config.json` must stay strictly valid JSON** (no comments, no
