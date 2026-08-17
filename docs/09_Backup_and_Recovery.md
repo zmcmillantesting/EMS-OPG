@@ -37,11 +37,46 @@ deploying to a shared drive.
 
 ## Automatic backups
 
-The application backs up the database **on shutdown**. This is wired into
-`Application.run()`'s `finally` block via `core/shutdown.py`, so it fires both
-on a clean exit and on the realistic shutdown path — an operator hitting
-Ctrl+C. It does **not** fire if the server never actually started (e.g. the
-port was already in use).
+The application can back up the database **on startup, on shutdown, or
+both** — independently toggleable, both driven by the same logic
+(`core/backup.py`'s `run_backup_if_enabled()`):
+
+- **Startup**: `Application.run()` calls it right before the Flask server
+  starts serving. This is the default (see below) — it means every time
+  the application is launched, the database state at that moment is
+  captured before anything can change it that session.
+- **Shutdown**: wired into `Application.run()`'s `finally` block via
+  `core/shutdown.py`, so it fires both on a clean exit and on the
+  realistic shutdown path — an operator hitting Ctrl+C. It does **not**
+  fire if the server never actually started (e.g. the port was already in
+  use).
+
+This is controlled entirely by `config.json`'s `"backup"` section:
+
+```json
+"backup": {
+    "enabled": true,
+    "directory": "database/backups",
+    "max_backups": 5,
+    "backup_on_startup": true,
+    "backup_on_shutdown": false
+}
+```
+
+- `enabled` — master switch. If `false`, no automatic backup happens
+  regardless of the other flags.
+- `backup_on_startup` — if `true`, a backup is created every time the
+  application starts. **Default: on.**
+- `backup_on_shutdown` — if `true`, a backup is created every time the
+  application shuts down. **Default: off** — both can be enabled
+  simultaneously if you want a backup at both ends of a session.
+- `max_backups` — how many timestamped backups to retain (see Cleanup
+  below), shared across both triggers — they prune the same directory
+  down to one combined pool of the newest N, not N-per-trigger.
+- `directory` — informational only right now; the actual location is always
+  `PathManager.backup_dir` (`database/backups` under `data_root`), not read
+  from this key.
+
 
 This is controlled entirely by `config.json`'s `"backup"` section:
 

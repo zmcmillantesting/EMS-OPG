@@ -1,5 +1,5 @@
 {
-    "data_root": "P:\\EMS_TR_PATH\\OpenGear\\database\\",
+    "data_root": "P:\\EMS_TR_PATH\\OpenGear\\",
     "application": {
         "name": "EMS-OPG",
         "version": "1.0.0",
@@ -20,8 +20,8 @@
         "enabled": true,
         "directory": "database/backups",
         "max_backups": 5,
-        "backup_on_startup": false,
-        "backup_on_shutdown": true
+        "backup_on_startup": true,
+        "backup_on_shutdown": false
     },
     "paths": {
         "assets": "assets",

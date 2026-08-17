@@ -9,8 +9,8 @@ Company Network
         │
         │
         ▼
-Flask Workflow Application
-(HTML/CSS/JS frontend, served locally)
+EMS-OPG Desktop Window (PyWebView)
+(HTML/CSS/JS frontend, served locally by waitress)
         │
         │
  (Human Operator)
@@ -19,12 +19,11 @@ Flask Workflow Application
 Isolated Test Bench
 ```
 
-The application is a flask server (`src/ems_opg/api/`) serving a
-static
-HTML/CSS/vanilla-JS frontend (`frontend/`) over a local
-connection -- not a 
-PyQt desktop application, despite earlier drafts of this documents. See
-`docs/04_Project_Structure.md`
+The application is a Flask app (`src/ems_opg/api/`) serving a static
+HTML/CSS/vanilla-JS frontend (`frontend/`), run behind a waitress WSGI
+server and opened in a native PyWebView window rather than a browser tab —
+operators never see a URL bar. See `docs/04_Project_Structure.md` and
+`docs/11_Deployment.md`.
 
 No direct communication exists between the application and the test bench.
 

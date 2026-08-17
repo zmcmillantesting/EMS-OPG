@@ -6,16 +6,16 @@ resolved or new ones are found.
 
 ## Configuration / versioning
 
-- **Version number is inconsistent across the codebase.** `pyproject.toml`
-  and `core/constants.py` both say `0.1.0`; `core/version.py`'s (unused)
-  `Version` dataclass and `config.json`'s `application.version` both say
-  `1.0.0`. Needs consolidating onto one source of truth before
-  `docs/15_Release_Process.md`'s versioning section means anything.
-- **`backup_on_startup` config flag exists but isn't implemented.**
-  `config.json`'s `backup.backup_on_startup` is read nowhere in code —
-  only `backup_on_shutdown` is wired up (`core/shutdown.py`). Either build
-  a startup-backup feature to match it, or remove the flag so it doesn't
-  imply behavior that doesn't exist.
+- ~~**Version number is inconsistent across the codebase.**~~ Resolved —
+  `pyproject.toml`, `core/constants.py`, and `config.json` all say `1.0.0`
+  now. `core/version.py`'s separate `Version` dataclass is still unused
+  dead code (harmless, but worth deleting rather than leaving as a second
+  version source someone could edit by mistake).
+- ~~**`backup_on_startup` config flag exists but isn't implemented.**~~
+  Resolved — startup and shutdown backups are both implemented via
+  `core/backup.py`'s shared `run_backup_if_enabled()`, independently
+  toggled by `config.json`. Startup is now the default; shutdown is
+  available but off by default. See `docs/09_Backup_and_Recovery.md`.
 - **`config.json`'s `"paths"` section is unused.** `PathManager` derives
   every directory from `data_root` directly; the `assets`/`exports`/
   `database`/`qr_cache` keys under `"paths"` in `config.json` are dead
@@ -63,12 +63,18 @@ resolved or new ones are found.
   but the automation additions (backup/export/health-report) haven't been
   confirmed against the actual running UI, only via `pytest` and direct
   script/function calls.
-- **Production `data_root` is unset.** The app currently defaults to
-  storing everything next to the local install; nothing has been run
-  end-to-end against the real shared-drive path yet. See
-  `docs/33_Pathing_updates_pre_prod_push.md`.
-- **Packaging/installer process is undecided** — see
-  `docs/11_Deployment.md`.
+- **Production `data_root` is unset.**~~ Resolved — `config.json`'s
+  `data_root` now points at the real shared-drive path.
+- **The PyWebView desktop window has not been visually verified.** Windowing
+  (PyWebView) and the server behind it (waitress) are now implemented
+  (`core/application.py`), and the server-binding/event-wiring logic was
+  tested headlessly, but no sandbox here has a display server — the window
+  actually opening, rendering the frontend, and closing cleanly needs to be
+  confirmed on a real machine before relying on it.
+- **Freezing into a standalone executable is still undecided.** PyWebView
+  gives the native window; something like PyInstaller/Nuitka is still
+  needed to bundle Python itself for shop-floor machines without a Python
+  install. See `docs/11_Deployment.md`'s Installer section.
 
 ## Minor
 

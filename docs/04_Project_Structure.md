@@ -14,8 +14,11 @@ EMS-OPG/
 ├── src/ems_opg/
 │   ├── core/                   App bootstrap, paths, constants, exceptions
 │   │   ├── application.py      Application class — wires config/paths/logger, runs the Flask server
+│   │   ├── application.py      Application class — starts waitress + the PyWebView window, owns shutdown flow
 │   │   ├── paths_manager.py    Resolves every data directory from config.json's data_root
 │   │   ├── shutdown.py         Runs on app exit — triggers the shutdown DB backup
+│   │   ├── backup.py           Shared trigger for startup/shutdown DB backups (config-gated)
+│   │   ├── shutdown.py         Runs when the app window closes — triggers the shutdown DB backup
 │   │   ├── startup.py          Dead code (imports PyQt5, which isn't a dependency; unused)
 │   │   ├── constants.py        App-wide constants (version string, status labels, etc.)
 │   │   ├── validators.py       Order/serial number format validation
