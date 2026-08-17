@@ -1,0 +1,57 @@
+2026-08-17 10:22:52,214 | INFO     | ======================================================================
+2026-08-17 10:22:52,214 | INFO     | TEST: Login and Password Generation
+2026-08-17 10:22:52,214 | INFO     | ======================================================================
+2026-08-17 10:22:52,219 | INFO     | ======================================================================
+2026-08-17 10:22:52,219 | INFO     | TEST: Functional Workflow
+2026-08-17 10:22:52,219 | INFO     | ======================================================================
+2026-08-17 10:22:52,237 | INFO     | Output File : /home/zmcmillan/projects/emsSolutions/EMS-OPG/cache/qr/step3.png
+2026-08-17 10:22:52,237 | INFO     | Command:
+2026-08-17 10:22:52,237 | INFO     | ls /dev/sd[a-e]; timeout 2s loopback /dev/port0[2-4] -q; timeout 2s loopback /dev/port0[5-8] -q; echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness; emd -i sysfs -c 4; ifconfig eth1 up && sleep 5 && ethtool eth1
+2026-08-17 10:22:52,238 | INFO     | PASS
+
+2026-08-17 10:22:52,239 | INFO     | ======================================================================
+2026-08-17 10:22:52,239 | INFO     | TEST: MAC Programming
+2026-08-17 10:22:52,240 | INFO     | ======================================================================
+2026-08-17 10:22:52,247 | INFO     | Output File : /home/zmcmillan/projects/emsSolutions/EMS-OPG/cache/qr/step5.png
+2026-08-17 10:22:52,247 | INFO     | MAC1        : 00:11:22:33:44:55
+2026-08-17 10:22:52,247 | INFO     | MAC2        : 00:11:22:33:44:56
+2026-08-17 10:22:52,248 | INFO     | Command:
+2026-08-17 10:22:52,248 | INFO     | setfset -u ethaddr=00:11:22:33:44:55 && setfset -u eth1addr=00:11:22:33:44:56
+2026-08-17 10:22:52,248 | INFO     | PASS
+
+2026-08-17 10:22:52,249 | INFO     | ======================================================================
+2026-08-17 10:22:52,249 | INFO     | TEST: Step 4 workflow
+2026-08-17 10:22:52,249 | INFO     | ======================================================================
+2026-08-17 10:22:52,252 | INFO     | Output File : /home/zmcmillan/projects/emsSolutions/EMS-OPG/cache/qr/step4.png
+2026-08-17 10:22:52,252 | INFO     | Command:
+2026-08-17 10:22:52,252 | INFO     | emd -i sysfs -c 4
+2026-08-17 10:22:52,252 | INFO     | PASS
+
+2026-08-17 10:22:52,254 | INFO     | ======================================================================
+2026-08-17 10:22:52,254 | INFO     | TEST: Step 10 Workflow
+2026-08-17 10:22:52,254 | INFO     | ======================================================================
+2026-08-17 10:22:52,259 | INFO     | Output File : /home/zmcmillan/projects/emsSolutions/EMS-OPG/cache/qr/step6.png
+2026-08-17 10:22:52,259 | INFO     | Command:
+2026-08-17 10:22:52,260 | INFO     | setfset | grep eth0 && setfset | grep eth1
+2026-08-17 10:22:52,260 | INFO     | PASS
+
+2026-08-17 10:22:52,262 | INFO     | ======================================================================
+2026-08-17 10:22:52,262 | INFO     | TEST: Complete Workflow
+2026-08-17 10:22:52,262 | INFO     | ======================================================================
+2026-08-17 10:22:52,284 | INFO     | Output File : /home/zmcmillan/projects/emsSolutions/EMS-OPG/cache/qr/complete_test.png
+2026-08-17 10:22:52,284 | INFO     | Command:
+2026-08-17 10:22:52,284 | INFO     | ls /dev/sd[a-e]; timeout 2s loopback /dev/port0[2-4] -q; timeout 2s loopback /dev/port0[5-8] -q; echo 1 | tee /sys/class/leds/acm7000:green:sig_*/brightness; emd -i sysfs -c 4; ifconfig eth1 up && sleep 5 && ethtool eth1 && sleep 2 && setfset -u ethaddr=00:11:22:33:44:55 && setfset -u eth1addr=00:11:22:33:44:56
+2026-08-17 10:22:52,284 | INFO     | PASS
+
+2026-08-17 10:22:52,286 | INFO     | ======================================================================
+2026-08-17 10:22:52,286 | INFO     | QR GENERATION TESTS COMPLETED SUCCESSFULLY
+2026-08-17 10:22:52,286 | INFO     | ======================================================================
+2026-08-17 10:22:52,286 | INFO     | Generated Images:
+2026-08-17 10:22:52,286 | INFO     |  - complete_test.png
+2026-08-17 10:22:52,286 | INFO     |  - step1.png
+2026-08-17 10:22:52,286 | INFO     |  - step2.png
+2026-08-17 10:22:52,286 | INFO     |  - step3.png
+2026-08-17 10:22:52,287 | INFO     |  - step4.png
+2026-08-17 10:22:52,287 | INFO     |  - step5.png
+2026-08-17 10:22:52,287 | INFO     |  - step6.png
+2026-08-17 10:22:52,287 | INFO     | 

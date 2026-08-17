@@ -16,7 +16,6 @@
         "max_log_size_mb": 8,
         "backup_count": 10
     },
-
     "backup": {
         "enabled": true,
         "directory": "database/backups",
