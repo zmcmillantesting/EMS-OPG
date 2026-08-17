@@ -432,8 +432,6 @@ def register_routes(app, application):
         db = DatabaseManager()
         max_backups = application.config.backup.get("max_backups", 5)
         destination = db.backup(DATABASE_FILE, application.paths.backup_dir, keep=max_backups)
-       
-        shutil.copy2(source, destination)
 
         return jsonify({"message": f"Database backed up to {destination.name}."})
 

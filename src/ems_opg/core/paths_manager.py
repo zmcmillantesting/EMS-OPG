@@ -32,7 +32,7 @@ class PathManager:
         #
         self.database_dir = self.data_root / "database"
         self.logs_dir = self.data_root / "logs"
-        self.backup_dir = self.data_root / "backups"
+        self.backup_dir = self.data_root / "database/backups"
         self.cache_dir = self.data_root / "cache"
         self.qr_cache = self.cache_dir / "qr"
         self.exports_dir = self.data_root / "exports"   

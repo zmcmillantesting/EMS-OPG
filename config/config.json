@@ -22,7 +22,7 @@
         "directory": "database/backups",
         "max_backups": 5,
         "backup_on_startup": false,
-        "backup_on_shutdown": true, 
+        "backup_on_shutdown": true
     },
     "paths": {
         "assets": "assets",
