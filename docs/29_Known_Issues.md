@@ -8,9 +8,8 @@ resolved or new ones are found.
 
 - ~~**Version number is inconsistent across the codebase.**~~ Resolved —
   `pyproject.toml`, `core/constants.py`, and `config.json` all say `1.0.0`
-  now. `core/version.py`'s separate `Version` dataclass is still unused
-  dead code (harmless, but worth deleting rather than leaving as a second
-  version source someone could edit by mistake).
+  now. The unused `core/version.py` dataclass that duplicated it has been
+  deleted.
 - ~~**`backup_on_startup` config flag exists but isn't implemented.**~~
   Resolved — startup and shutdown backups are both implemented via
   `core/backup.py`'s shared `run_backup_if_enabled()`, independently
@@ -23,21 +22,18 @@ resolved or new ones are found.
 
 ## Dead / unused code
 
-- **`core/startup.py` and `core/shutdown.py`'s original design both import
-  `PyQt5`**, which isn't a project dependency (not in `pyproject.toml`).
-  `startup.py` is fully dead — nothing imports it, and it would
-  `ModuleNotFoundError` if it were. `shutdown.py` is now live (wired into
-  `Application.run()`) but its `PyQt5`-flavored origins are gone; worth a
-  pass to confirm nothing else in `core/` still assumes a desktop UI.
-- **`core/version.py`'s `Version` dataclass is unused.** `constants.py`'s
-  plain `APP_VERSION` string is what's actually imported (by
-  `api/routes.py`'s `/api/status`). See versioning note above.
-- **`services/audit_service.py` is an empty file.** Audit logging happens
-  ad hoc via `AuditRepository` calls directly inside `api/routes.py`
-  instead of going through a service layer, unlike `OrderService` and
-  `DeviceService`.
-- **`MacAddressRepository.get_first_available()` and
-  `get_next_available()` are identical** — one is redundant.
+- ~~**`core/startup.py`**~~ Deleted — it was fully dead (imported `PyQt5`,
+  not a dependency, never referenced anywhere).
+- ~~**`core/version.py`'s `Version` dataclass**~~ Deleted — see versioning
+  note above.
+- ~~**`services/audit_service.py` was an empty file.**~~ Deleted — audit
+  logging stays as direct `AuditRepository` calls from `api/routes.py`,
+  which is where every current audit-log write happens; there wasn't
+  enough shared logic across those call sites to justify a service layer
+  wrapper. Revisit if that changes.
+- ~~**`MacAddressRepository.get_first_available()` and
+  `get_next_available()` were identical**~~ — deduped, kept
+  `get_next_available()` (the one an existing test depends on).
 - **`QR_Codes/qr_templates.py`** is imported nowhere live (`qr_service.py`
   has it commented out).
 
@@ -51,9 +47,14 @@ resolved or new ones are found.
   `exports/health_report_<timestamp>.txt` only, by design for now (see
   `docs/09_Backup_and_Recovery.md`). Revisit once SMTP details are
   available.
-- **Order/device cleanup was explicitly descoped.** Deleting old closed
-  orders (with operator approval) was part of the original automation
-  request and deliberately deferred — no age threshold or approval
+- **Order/device cleanup for orders with real device history was
+  explicitly descoped.** `DELETE /api/orders/<order_number>` now exists,
+  but only ever deletes an order with **zero** devices attached (it
+  rejects with 409 otherwise) — this is narrowly for cleaning up
+  orphaned/empty orders (see the atomicity fix below), not the broader
+  "delete old closed orders with real traceability data, gated by
+  operator approval" feature from the original automation request. That
+  broader feature is still deferred — no age threshold or approval
   mechanism has been designed.
 
 ## Not yet verified

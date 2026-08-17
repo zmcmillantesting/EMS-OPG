@@ -37,14 +37,6 @@ class MacAddressRepository:
             )
             .all()
         )
-
-    def get_first_available(self):
-
-        return self.session.scalar(
-                select(MACAddressPool)
-                .where(MACAddressPool.used.is_(False))
-                .order_by(MACAddressPool.mac_address)
-            )
     
     def get_next_available(self):
         return self.session.scalar(

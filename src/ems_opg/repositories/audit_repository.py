@@ -10,7 +10,7 @@ class AuditRepository:
 
     def create(self, audit_log):
         self.session.add(audit_log)
-        self.session.commit()
+        self.session.flush()
         return audit_log
 
     def get_by_id(self, audit_id):

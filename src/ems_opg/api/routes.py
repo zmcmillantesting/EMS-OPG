@@ -245,6 +245,65 @@ def register_routes(app, application):
                     })
 
             return jsonify({"orders": open_orders})
+        
+    @api_bp.route("/orders/open", methods=["GET"])
+    def get_open_orders():
+        db = DatabaseManager()
+
+        with db.session() as db_session:
+            order_repo = OrderRepository(db_session)
+            device_repo = DeviceRepository(db_session)
+
+            open_orders = []
+            for order in order_repo.list_all_orders():
+                devices = device_repo.list_by_order(order.order_number)
+                completed = sum(1 for device in devices if device.used)
+
+                if completed < order.quantity:
+                    open_orders.append({
+                        "order_number": order.order_number,
+                        "part_number": order.part_number,
+                        "quantity": order.quantity,
+                        "completed": completed,
+                        "device_count": len(devices),
+                    })
+
+            return jsonify({"orders": open_orders})
+
+    @api_bp.route("/orders/<order_number>", methods=["DELETE"])
+    def delete_order(order_number):
+        db = DatabaseManager()
+
+        with db.session() as db_session:
+            order_repo = OrderRepository(db_session)
+            device_repo = DeviceRepository(db_session)
+
+            order = order_repo.get_by_order_number(order_number)
+            if order is None:
+                return jsonify({"error": "Order not found"}), 404
+
+            devices = device_repo.list_by_order(order_number)
+            if devices:
+                return jsonify({
+                    "error": (
+                        f"Cannot delete order {order_number} - it has "
+                        f"{len(devices)} device(s) attached. Only empty "
+                        f"orders (nothing provisioned yet, or left behind by "
+                        f"a failed provisioning attempt) can be deleted."
+                    ),
+                }), 409
+
+            order_repo.delete(order)
+
+            audit_repo = AuditRepository(db_session)
+            audit_repo.create(AuditLog(
+                operator="system",
+                action="Order Deleted",
+                details=f"Empty order {order_number} deleted (no devices attached).",
+            ))
+
+            return jsonify({"message": f"Order {order_number} deleted."})
+
 
     @api_bp.route("/session/start", methods=["POST"])
     def session_start():

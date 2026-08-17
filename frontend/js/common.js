@@ -143,6 +143,39 @@ function setVisible(elementId, visible) {
         element.classList.toggle("hidden", !visible);
     }
 }
+function setVisible(elementId, visible) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.classList.toggle("hidden", !visible);
+    }
+}
+
+/**
+ * Save text content to a file, choosing the right mechanism for where
+ * the app is actually running:
+ *  - Inside the PyWebView desktop window, browser download tricks
+ *    (Blob URL + <a download>) aren't reliably supported, so this calls
+ *    the native save-file dialog exposed by core/webview_api.py instead.
+ *  - In a plain browser tab (e.g. local development without the
+ *    PyWebView window), falls back to the standard download approach.
+ * Returns true if the file was actually written, false if the operator
+ * cancelled the save dialog (not an error - callers shouldn't alert on it).
+ */
+async function saveFile(content, filename, mimeType = "text/plain;charset=utf-8;") {
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.save_file) {
+        const result = await window.pywebview.api.save_file(filename, content);
+        return Boolean(result && result.saved);
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    return true;
+}
+
 
 /**
  * Store the active workflow session in sessionStorage.

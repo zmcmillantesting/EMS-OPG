@@ -452,10 +452,14 @@ const mockApi = {
     getOpenOrders() {
         return Promise.resolve({
             orders: [
-                { order_number: "12345.6", part_number: "Demo Part A", quantity: 10, completed: 3 },
-                { order_number: "54321.1", part_number: "Demo Part B", quantity: 5, completed: 1 },
+                { order_number: "12345.6", part_number: "Demo Part A", quantity: 10, completed: 3, device_count:3 },
+                { order_number: "54321.1", part_number: "Demo Part B", quantity: 5, completed: 1, device_count: 1 },
             ],
         });
+    },
+
+    deleteOrder(orderNumber) {
+        return Promise.resolve({ message: `Order ${orderNumber} deleted.` });
     },
 };
 
@@ -660,6 +664,14 @@ const api = {
         return withFallback(
             () => request("/orders/open"),
             () => mockApi.getOpenOrders()
+        );
+    },
+
+    deleteOrder(orderNumber) {
+        return withFallback(
+            () =>
+                request(`/orders/${encodeURIComponent(orderNumber)}`, {method: "DELETE" }),
+            () => mockApi.deleteOrder(orderNumber)
         );
     },
 };

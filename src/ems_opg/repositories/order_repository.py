@@ -31,7 +31,7 @@ class OrderRepository:
 
     def delete(self, order):
         self.session.delete(order)
-        self.session.commit()
+        self.session.flush()
 
 
     

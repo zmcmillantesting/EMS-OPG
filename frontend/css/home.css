@@ -39,6 +39,23 @@
     gap: var(--space-xs);
 }
 
+.start-test-form .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.input-with-action {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+.input-with-action .select-input {
+    flex: 1;
+}
+
+
 .start-button {
     width: 100%;
     max-width: 340px;

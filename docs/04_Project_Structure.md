@@ -17,12 +17,11 @@ EMS-OPG/
 │   │   ├── paths_manager.py    Resolves every data directory from config.json's data_root
 │   │   ├── shutdown.py         Runs on app exit — triggers the shutdown DB backup
 │   │   ├── backup.py           Shared trigger for startup/shutdown DB backups (config-gated)
-│   │   ├── startup.py          Dead code (imports PyQt5, which isn't a dependency; unused)
+│   │   ├── webview_api.py      Methods exposed to the frontend as window.pywebview.api.* (native save dialog)
 │   │   ├── constants.py        App-wide constants (version string, status labels, etc.)
 │   │   ├── validators.py       Order/serial number format validation
 │   │   ├── environment.py      APP_ENV → Environment enum
-│   │   ├── exceptions.py       Custom exception hierarchy
-│   │   └── version.py          A separate, currently-unused Version dataclass (see 29_Known_Issues.md)
+│   │   └── exceptions.py       Custom exception hierarchy
 │   │
 │   ├── api/                    Flask app and HTTP layer
 │   │   ├── server.py           create_app() — Flask app, static frontend serving, log-file endpoint
@@ -45,9 +44,9 @@ EMS-OPG/
 │   ├── services/                Business logic, built on repositories
 │   │   ├── order_service.py     Order provisioning (creates placeholder devices, allocates MACs)
 │   │   ├── device_service.py    Device reservation (finalizing a tested device)
-│   │   ├── qr_service.py        Builds/validates the QR command for each workflow step
-│   │   └── audit_service.py     Empty — audit logging is currently done ad hoc via AuditRepository
-│   │                            directly from routes.py, not through a service (see 29_Known_Issues.md)
+│   │   └── qr_service.py        Builds/validates the QR command for each workflow step
+│   │                            (no audit_service.py — audit logging is direct AuditRepository
+│   │                            calls from routes.py; see 29_Known_Issues.md)
 │   │
 │   ├── workflow/                In-memory operator workflow state (not persisted)
 │   │   ├── workflow_engine.py   Step sequencing, PASS/FAIL result capture

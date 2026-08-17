@@ -8,6 +8,7 @@ from waitress import create_server
 from ems_opg.app_logging.logger import Logger
 from ems_opg.config.config_manager import ConfigurationManager
 from ems_opg.core.paths_manager import PathManager
+from ems_opg.core.webview_api import WebviewApi
 
 class Application:
 
@@ -58,6 +59,7 @@ class Application:
             width=window_config.get("width", 1400),
             height=window_config.get("height", 900),
             maximized=window_config.get("maximize", False),
+            js_api=WebviewApi()
         )
 
         shutdown_ran = False
