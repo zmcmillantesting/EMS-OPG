@@ -76,7 +76,37 @@ resolved or new ones are found.
   needed to bundle Python itself for shop-floor machines without a Python
   install. See `docs/11_Deployment.md`'s Installer section.
 
-## Minor
+## Minor## Not yet verified
+
+- ~~**Production `data_root` is unset.**~~ Resolved — `config.json`'s
+  `data_root` points at the real UNC path (`\\emsfs01\production\...`) and
+  has been confirmed working from a real launch.
+- ~~**The PyWebView desktop window has not been visually verified.**~~
+  Resolved — confirmed on real hardware: the window opens, a full
+  provision → test → history workflow completed, and the shutdown-backup
+  toggle behaved correctly (fired on startup, correctly skipped on
+  shutdown since `backup_on_shutdown` is off by default).
+- **Freezing into a standalone executable is still undecided.** PyWebView
+  gives the native window; something like PyInstaller/Nuitka is still
+  needed to bundle Python itself for shop-floor machines without a Python
+  install. See `docs/11_Deployment.md`'s Installer section.
+- **SQLite database lives directly on a network share
+  (`\\emsfs01\production\...`).** SQLite's locking, which coordinates
+  concurrent access, is well known to be unreliable over SMB/CIFS network
+  filesystems — under concurrent writes from multiple operators this can
+  cause spurious "database is locked" errors or, in the worst case,
+  corruption. A single-operator smoke test won't surface this. **Decision:
+  accept this risk for now** rather than splitting `data_root` (DB local,
+  backups/exports on the share) or moving to a network-safe database.
+  Revisit if "database is locked" errors actually show up, or once
+  multiple simultaneous test stations are running.
+- **Frontend hasn't been re-exercised against this cycle's backend
+  changes beyond a single manual pass.** One full operator workflow
+  (provision → board test → history) has now been confirmed working on
+  real hardware, but the newer automation specifically (CSV
+  auto-export on order completion, the health-report script) hasn't been
+  independently checked against real output files yet.
+
 
 - **`config/config.json` must stay strictly valid JSON** (no comments, no
   trailing commas) — this has broken the app on startup at least once in

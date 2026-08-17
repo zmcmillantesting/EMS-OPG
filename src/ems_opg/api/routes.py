@@ -3,6 +3,7 @@ import io
 from datetime import UTC, datetime
 import logging, shutil
 from flask import Blueprint, jsonify, request
+from sqlalchemy.exc import IntegrityError
 
 from ems_opg.core.constants import APP_VERSION
 from ems_opg.core.validators import is_valid_serial_number
@@ -209,6 +210,16 @@ def register_routes(app, application):
                 result = order_service.provision_order(order_number, part_number, quantity)
         except ValueError as error:
             return jsonify({"error": str(error)}), 409
+        except IntegrityError:
+            return jsonify({
+                "error": (
+                    "Could not provision this order because the MAC address pool "
+                    "and device records are out of sync (a MAC marked available "
+                    "is already assigned to an existing device). This needs an "
+                    "administrator to reconcile the database before provisioning can continue"
+                ),
+            }), 409
+            
 
         return jsonify({"message": result["message"]}), 201
 

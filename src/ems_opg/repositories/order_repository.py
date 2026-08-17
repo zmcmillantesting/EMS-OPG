@@ -25,7 +25,6 @@ class OrderRepository:
                 f"Order with order_number {order.order_number} already exists."
             )
         self.session.add(order)
-        self.session.commit()
 
     def update(self):
         self.session.commit()

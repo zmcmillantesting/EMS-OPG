@@ -230,6 +230,10 @@ __pycache__/
 cache/qr/*.png
 logs/*.log
 backup/*.db
+database/*.db
+database/backups/*.db
+exports/*.csv
+exports/*.txt
 
 # Virtual environments
 venv/
