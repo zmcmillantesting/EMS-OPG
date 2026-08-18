@@ -90,7 +90,15 @@ class DeviceRepository:
         return self.session.scalars(
             select(Device).where(Device.used.is_(False))
         ).all()
-
+        
+    def get_next_unused_by_order(self, order_number):
+        return self.session.scalar(
+            select(Device)
+            .where(Device.order_number == order_number)
+            .where(Device.used.is_(False))
+            .order_by(Device.id)
+        )
+        
     def assign_order(self, device, order_number, serial_number, operator, test_result):
         if device.used:
             raise ValueError("MAC address has already been used.")

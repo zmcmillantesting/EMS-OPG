@@ -54,7 +54,7 @@ class Application:
         if no_window:
             self.logger.info(
                 "EMS_OPG_NO_WINDOW set - skipping the PyWebView window."
-                "Open http://127.0.0.1%s in a browser.", port
+                "Open http://127.0.0.1:%s in a browser.", port
             )
             
             try:

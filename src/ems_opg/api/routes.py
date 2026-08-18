@@ -87,7 +87,7 @@ def maybe_export_completed_order(db_session, application, order_number):
 
     devices = device_repo.list_by_order(order_number)
 
-    if len(devices) != order.quantity:
+    if not devices or not all(d.used for d in devices):
         return
 
     if not all(d.test_result == "PASS" for d in devices):
@@ -249,37 +249,56 @@ def register_routes(app, application):
 
     @api_bp.route("/orders/<order_number>", methods=["DELETE"])
     def delete_order(order_number):
+        payload = request.get_json(silent=True) or {}
+        operator = (payload.get("operator") or "").strip() or "system"
+
         db = DatabaseManager()
 
         with db.session() as db_session:
             order_repo = OrderRepository(db_session)
             device_repo = DeviceRepository(db_session)
+            audit_repo = AuditRepository(db_session)
 
             order = order_repo.get_by_order_number(order_number)
             if order is None:
                 return jsonify({"error": "Order not found"}), 404
 
             devices = device_repo.list_by_order(order_number)
-            if devices:
-                return jsonify({
-                    "error": (
-                        f"Cannot delete order {order_number} - it has "
-                        f"{len(devices)} device(s) attached. Only empty "
-                        f"orders (nothing provisioned yet, or left behind by "
-                        f"a failed provisioning attempt) can be deleted."
-                    ),
-                }), 409
 
-            order_repo.delete(order)
+            if not devices:
+                order_repo.delete(order)
+                audit_repo.create(AuditLog(
+                    operator=operator,
+                    action="Order Deleted",
+                    details=f"Empty order {order_number} deleted (no devices attached).",
+                ))
+                return jsonify({"message": f"Order {order_number} deleted."})
 
-            audit_repo = AuditRepository(db_session)
+            # Orders with devices attached can't have their row removed
+            # (devices.order_number is a required foreign key), and their
+            # MAC addresses stay claimed either way. Instead, reset every
+            # device back to available so a mis-provisioned order (too many
+            # or too few devices assigned) can be corrected and re-tested -
+            # serial numbers, operators, and MAC assignments are untouched.
+            for device in devices:
+                device.used = False
+
             audit_repo.create(AuditLog(
-                operator="system",
-                action="Order Deleted",
-                details=f"Empty order {order_number} deleted (no devices attached).",
+                operator=operator,
+                action="Order Reset",
+                details=(
+                    f"Order {order_number} reset: {len(devices)} device(s) "
+                    "marked available again (MAC addresses, serial numbers, "
+                    "and operators left unchanged)."
+                ),
             ))
 
-            return jsonify({"message": f"Order {order_number} deleted."})
+            return jsonify({
+                "message": (
+                    f"Order {order_number} reset: {len(devices)} device(s) "
+                    "marked available."
+                ),
+            })
 
 
     @api_bp.route("/session/start", methods=["POST"])
@@ -291,7 +310,18 @@ def register_routes(app, application):
         if not operator or not order_number:
             return jsonify({"error": "operator and order_number are required"}), 400
 
+        db = DatabaseManager()
+        with db.session() as db_session:
+            device_repo = DeviceRepository(db_session)
+            next_device = device_repo.get_next_unused_by_order(order_number)
+
+        if next_device is None:
+            return jsonify({
+                "error": f"No unprovisioned devices remain for order {order_number}.",
+            }), 409
+
         engine.start(operator, order_number)
+        engine.set_mac_addresses(next_device.ethaddr_id, next_device.eth1addr_id)
 
         return workflow_response()
 

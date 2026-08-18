@@ -74,31 +74,49 @@ async function loadOpenOrders() {
 }
 
 function updateDeleteOrderButton(orderNumber) {
-    const isEmpty = Boolean(orderNumber) && orderDeviceCounts[orderNumber] === 0;
-    setVisible("delete-order-button", isEmpty);
+    setVisible("delete-order-button", Boolean(orderNumber));
 }
 
 async function handleDeleteOrder() {
     const select = document.getElementById("open-orders-select");
     const orderInput = document.getElementById("order-input");
+    const operatorInput = document.getElementById("operator-input");
     const orderNumber = select?.value;
 
     if (!orderNumber) {
         return;
     }
 
-    if (!confirm(`Delete empty order ${orderNumber}? This cannot be undone.`)) {
+    const deviceCount = orderDeviceCounts[orderNumber];
+    const confirmMessage = deviceCount
+        ? `Reset order ${orderNumber}? Its ${deviceCount} device(s) will be marked ` +
+          `available again for re-testing. Serial numbers, operators, and MAC ` +
+          `assignments are kept - this does not release any MAC addresses.`
+        : `Delete empty order ${orderNumber}? This cannot be undone.`;
+
+    if (!confirm(confirmMessage)) {
         return;
     }
 
     try {
-        await api.deleteOrder(orderNumber);
+        await api.deleteOrder(orderNumber, operatorInput?.value.trim());
 
-        const option = select.querySelector(`option[value="${CSS.escape(orderNumber)}"]`);
-        if (option) {
-            option.remove();
+        if (deviceCount) {
+            // Reset, not removed - the order stays open at 0% complete.
+            orderDeviceCounts[orderNumber] = 0;
+            const option = select.querySelector(`option[value="${CSS.escape(orderNumber)}"]`);
+            if (option) {
+                const parts = option.textContent.split(" — ");
+                const partNumber = parts[1]?.split(" (")[0] ?? "";
+                option.textContent = `${orderNumber} — ${partNumber} (empty — nothing provisioned)`;
+            }
+        } else {
+            const option = select.querySelector(`option[value="${CSS.escape(orderNumber)}"]`);
+            if (option) {
+                option.remove();
+            }
+            delete orderDeviceCounts[orderNumber];
         }
-        delete orderDeviceCounts[orderNumber];
 
         select.value = "";
         if (orderInput && orderInput.value === orderNumber) {
