@@ -355,7 +355,7 @@ def register_routes(app, application):
         try:
             with db.session() as db_session:
                 order_service = OrderService(db_session)
-                order = order_service.correct_order(
+                order, removed_count = order_service.correct_order(
                     order_number,
                     new_order_number=new_order_number,
                     quantity=quantity,
@@ -366,6 +366,11 @@ def register_routes(app, application):
                     changes.append(f"renamed to {new_order_number}")
                 if quantity is not None:
                     changes.append(f"quantity set to {quantity}")
+                if removed_count:
+                    changes.append(
+                        f"{removed_count} unassigned device(s) removed and "
+                        "their MAC pair(s) released back to the pool"
+                    )
 
                 audit_repo = AuditRepository(db_session)
                 audit_repo.create(AuditLog(
@@ -376,6 +381,7 @@ def register_routes(app, application):
 
                 result_order_number = order.order_number
                 result_quantity = order.quantity
+                result_removed_count = removed_count
         except ValueError as error:
             return jsonify({"error": str(error)}), 409
         except IntegrityError:
@@ -386,12 +392,19 @@ def register_routes(app, application):
                 ),
             }), 409
 
+        message = f"Order {order_number} updated."
+        if result_removed_count:
+            message += (
+                f" {result_removed_count} unassigned device(s) removed, "
+                "their MAC pair(s) released back to the pool."
+            )
+
         return jsonify({
-            "message": f"Order {order_number} updated.",
+            "message": message,
             "order_number": result_order_number,
             "quantity": result_quantity,
+            "removed_count": result_removed_count,
         })
-
 
     @api_bp.route("/session/start", methods=["POST"])
     def session_start():
