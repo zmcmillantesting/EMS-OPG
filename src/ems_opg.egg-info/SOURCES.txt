@@ -24,9 +24,7 @@ src/ems_opg/core/environment.py
 src/ems_opg/core/exceptions.py
 src/ems_opg/core/paths_manager.py
 src/ems_opg/core/shutdown.py
-src/ems_opg/core/startup.py
 src/ems_opg/core/validators.py
-src/ems_opg/core/version.py
 src/ems_opg/core/webview_api.py
 src/ems_opg/database/base.py
 src/ems_opg/database/database.py
@@ -40,7 +38,6 @@ src/ems_opg/repositories/device_repository.py
 src/ems_opg/repositories/mac_address_repository.py
 src/ems_opg/repositories/order_repository.py
 src/ems_opg/services/__init__.py
-src/ems_opg/services/audit_service.py
 src/ems_opg/services/device_service.py
 src/ems_opg/services/order_service.py
 src/ems_opg/services/qr_service.py
