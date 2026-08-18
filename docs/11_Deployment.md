@@ -77,22 +77,85 @@ next time it's launched regardless)
 
 ## Installer / Portable Version
 
-**Windowing decided: PyWebView** (`webview.create_window()` +
-`webview.start()`, wrapping a waitress-served Flask backend — see
-`core/application.py`). **Freezing into a standalone executable is still
-not decided.** PyWebView gives the native window; it doesn't bundle Python
-itself into an executable. There is still no PyInstaller spec, no build
-script, and no packaging config anywhere in `pyproject.toml`. Options to
-evaluate for that remaining piece:
+**Windowing: PyWebView** (`webview.create_window()` + `webview.start()`,
+wrapping a waitress-served Flask backend — see `core/application.py`).
+**Freezing: PyInstaller, `--onedir` (not `--onefile`)** — `EMS-OPG.spec` at
+the project root, with `pyinstaller` in the `dev` extras of `pyproject.toml`.
 
-- Bundle with PyInstaller/Nuitka into a single executable so operators
- don't need a Python install on shop-floor machines. (PyWebView is
-  commonly packaged this way — its own docs have guidance on bundling
-  with PyInstaller specifically.)
-- Ship as a portable Python environment + the source tree.
-- Require Python 3.12+ to already be present and distribute source only.
+Build on Windows (PyInstaller cannot cross-compile) with the venv active,
+from the project root:
 
-Whichever direction is chosen, this section needs to be filled in with the
-actual build command and any environment-specific gotchas (e.g. the
-`data_root` P: drive dependency) before it's usable as a real deployment
-guide.
+```powershell
+uv sync --extra dev
+uv run pyinstaller EMS-OPG.spec
+```
+
+This produces `dist\EMS-OPG\` — the whole folder is the app (the exe plus
+the Python runtime, `frontend/`, `config/`, `assets/`, and PyWebView's
+Windows backend DLLs, all bundled flat next to the exe via
+`contents_directory="."` on `EXE()` in the spec — PyInstaller 6+ otherwise
+nests all of this under an `_internal\` subfolder, which
+`PathManager.root`'s `sys.frozen` resolution doesn't look inside).
+`database/`, `logs/`, `cache/`, `exports/`, and `backup/` are deliberately
+*not* bundled — those get created fresh on first run, wherever `data_root`
+in the bundled `config.json` points.
+
+`dist\EMS-OPG\` itself isn't meant to be handed to an operator directly.
+Run the installer script afterward to move it to a clean per-user location
+and drop a single shortcut on the Desktop, rather than leaving the whole
+runtime folder there:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install_windows.ps1
+```
+
+This moves the build to `%LOCALAPPDATA%\Programs\EMS-OPG\` and creates
+`EMS-OPG.lnk` on the Desktop pointing at the exe inside it. Re-running the
+script replaces a previous install cleanly.
+
+**Before compiling**, double-check `config/config.json`'s `data_root`
+points at the real production UNC path (e.g.
+`\\emsfs01\production\EMS_TR_PATH\OpenGear\`) — it gets baked into the
+build as-is, and a UNC path is required specifically because mapped drive
+letters (`P:\`) are per-user-session and may not be visible to a process
+launched under a different context.
+
+**Before compiling**, double-check `config/config.json`'s `data_root`
+points at the real production UNC path (e.g.
+`\\emsfs01\production\EMS_TR_PATH\OpenGear\`) — it gets baked into the
+build as-is, and a UNC path is required specifically because mapped drive
+letters (`P:\`) are per-user-session and may not be visible to a process
+launched under a different context.
+
+## USB Deployment to Shop-Floor Machines
+
+Windows disabled AutoRun for USB/removable drives back in Windows 7 (it
+was one of the most common malware infection vectors), so a drive that
+installs itself the instant it's plugged in isn't something to build or
+re-enable. `install.bat` at the project root is the practical equivalent:
+double-click it and it runs the installer for you, no typed commands.
+
+To build a USB drive that installs with one double-click:
+
+1. Build once: `uv run pyinstaller EMS-OPG.spec` (produces `dist\EMS-OPG\`).
+2. Copy these three things onto the USB drive, keeping them in the same
+   relative layout as the project root:
+   ```
+   USB:\
+     install.bat
+     scripts\
+       install_windows.ps1
+     dist\
+       EMS-OPG\        (the full build output)
+   ```
+3. On the target machine: plug in the drive, open it, double-click
+   `install.bat`. It installs to `%LOCALAPPDATA%\Programs\EMS-OPG\` and
+   creates the Desktop shortcut, same as running the PowerShell script
+   directly — `install.bat` just wraps that same script (with
+   `-ExecutionPolicy Bypass` baked in) so nobody has to type PowerShell
+   commands or fight execution-policy prompts on each machine.
+
+Re-running `install.bat` on a machine that already has EMS-OPG installed
+cleanly replaces the previous install (same behavior as the underlying
+script). Nothing about this requires internet access or admin rights on
+the target machine — it's a plain per-user file copy plus a shortcut.
