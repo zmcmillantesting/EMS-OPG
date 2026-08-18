@@ -24,7 +24,7 @@ function bindHomeActions(status) {
             if (orderInputE1 && openOrdersSelect.value) {
                 orderInputE1.value = openOrdersSelect.value;
             }
-            updateOrderActionButtons(openOrdersSelect.value);
+            updateOrderActionButton(openOrdersSelect.value);
         });
     }
 
@@ -179,7 +179,7 @@ async function handleEditOrder() {
 
         if (select) select.value = "";
         if (orderInput) orderInput.value = "";
-        updateOrderActionButtons("");
+        updateOrderActionButton("");
 
         await loadOpenOrders();
 
