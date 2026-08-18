@@ -604,6 +604,24 @@ def register_routes(app, application):
 
         return jsonify({"message": f"Database backed up to {destination.name}."})
 
+    @api_bp.route("/database/restore", methods=["POST"])
+    def restore_database():
+        backups = sorted(
+            application.paths.backup_dir.glob("ems_opg_*.db"),
+            key=lambda path: path.stat().st_mtime,
+        )
+
+        if not backups:
+            return jsonify({"error": "No backups found to restore."}), 404
+
+        latest = backups[-1]
+        shutil.copy2(latest, DATABASE_FILE)
+
+        return jsonify({
+            "message": f"Database restored from {latest.name}. "
+            "Restart the server to ensure the change takes effect."
+        })
+
     @api_bp.route("/devices/<serial>", methods=["GET"])
     def get_device(serial):
         order_number = (request.args.get("order_number") or "").strip() or None
