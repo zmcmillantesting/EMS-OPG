@@ -1,5 +1,5 @@
-from src.ems_opg.app_logging.logger import Logger
-from src.ems_opg.core.backup import run_backup_if_enabled
+from ems_opg.app_logging.logger import Logger
+from ems_opg.core.backup import run_backup_if_enabled
 
 class Shutdown:
 
