@@ -5,11 +5,11 @@ usage:
 from pathlib import Path
 
 from config.config_manager import ConfigurationManager
-from src.ems_opg.config.path_manager import PathManager
+from ems_opg.config.path_manager import PathManager
 
 
 config = ConfigurationManager(
-    Path("PathManager.config")
+    Path("config/config.json")
 )
 ...
 """

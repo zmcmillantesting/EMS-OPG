@@ -1,6 +1,6 @@
 import sys
 
-from src.ems_opg.core.application  import Application
+from ems_opg.core.application  import Application
 
 
 def main():

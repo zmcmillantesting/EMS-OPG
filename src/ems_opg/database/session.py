@@ -1,5 +1,5 @@
 from sqlalchemy.orm import sessionmaker
-from src.ems_opg.database.engine import engine
+from ems_opg.database.engine import engine
 
 SessionLocal = sessionmaker(
     bind=engine,
