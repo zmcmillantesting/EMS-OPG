@@ -300,6 +300,67 @@ def register_routes(app, application):
                 ),
             })
 
+    @api_bp.route("/orders/<order_number>", methods=["PATCH"])
+    def correct_order(order_number):
+        payload = request.get_json(silent=True) or {}
+        operator = (payload.get("operator") or "").strip() or "system"
+
+        new_order_number = (payload.get("new_order_number") or "").strip() or None
+
+        quantity = payload.get("quantity")
+        if quantity is not None:
+            try:
+                quantity = int(quantity)
+            except (TypeError, ValueError):
+                return jsonify({"error": "quantity must be a whole number."}), 400
+
+        if new_order_number is None and quantity is None:
+            return jsonify({
+                "error": "Provide new_order_number and/or quantity to update.",
+            }), 400
+
+        db = DatabaseManager()
+
+        try:
+            with db.session() as db_session:
+                order_service = OrderService(db_session)
+                order = order_service.correct_order(
+                    order_number,
+                    new_order_number=new_order_number,
+                    quantity=quantity,
+                )
+
+                changes = []
+                if new_order_number:
+                    changes.append(f"renamed to {new_order_number}")
+                if quantity is not None:
+                    changes.append(f"quantity set to {quantity}")
+
+                audit_repo = AuditRepository(db_session)
+                audit_repo.create(AuditLog(
+                    operator=operator,
+                    action="Order Corrected",
+                    details=f"Order {order_number}: {', '.join(changes)}.",
+                ))
+
+                result_order_number = order.order_number
+                result_quantity = order.quantity
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 409
+        except IntegrityError:
+            return jsonify({
+                "error": (
+                    f"Could not update order {order_number} - the requested "
+                    "order number is already in use."
+                ),
+            }), 409
+
+        return jsonify({
+            "message": f"Order {order_number} updated.",
+            "order_number": result_order_number,
+            "quantity": result_quantity,
+        })
+
 
     @api_bp.route("/session/start", methods=["POST"])
     def session_start():

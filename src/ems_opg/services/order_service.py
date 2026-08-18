@@ -31,6 +31,8 @@ class OrderService:
                 quantity=quantity,
             )
             self.orders.create(order)
+        elif quantity > order.quantity:
+            order.quantity = quantity
 
         existing = self.devices.list_by_order(order_number)
         already_provisioned = len(existing)
@@ -87,3 +89,48 @@ class OrderService:
             "already_provisioned": already_provisioned,
             "message": f"Provisioned {len(created)} device(s) for order {order_number}.",
         }
+
+    def correct_order(self, order_number, new_order_number=None, quantity=None):
+        """
+        Rename an order's number and/or adjust its planned quantity without
+        touching any device rows individually - for orders large enough
+        that per-device correction isn't practical (a mistyped order
+        number, or a quantity that needs adjusting after the fact).
+        """
+
+        order = self.orders.get_by_order_number(order_number)
+        if order is None:
+            raise ValueError(f"Order {order_number} not found.")
+
+        devices = self.devices.list_by_order(order_number)
+
+        if quantity is not None:
+            if quantity < 1:
+                raise ValueError("Quantity must be at least 1.")
+
+            finalized = sum(1 for device in devices if device.used)
+            if quantity < finalized:
+                raise ValueError(
+                    f"Cannot set quantity below {finalized} - that many "
+                    f"device(s) on this order are already finalized."
+                )
+
+            order.quantity = quantity
+
+        if new_order_number and new_order_number != order_number:
+            if not is_valid_order_number(new_order_number):
+                raise ValueError(
+                    "Order number must be formatted as 0000.0 or 00000.0 "
+                    "(4-5 digits, a decimal point, then exactly one digit)."
+                )
+
+            if self.orders.get_by_order_number(new_order_number) is not None:
+                raise ValueError(f"Order {new_order_number} already exists.")
+
+            order.order_number = new_order_number
+            for device in devices:
+                device.order_number = new_order_number
+
+        self.session.flush()
+        return order
+

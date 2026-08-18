@@ -3,6 +3,7 @@
  */
 
 let orderDeviceCounts = {};
+let orderQuantities = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
     const status = await initPage();
@@ -23,17 +24,17 @@ function bindHomeActions(status) {
             if (orderInputE1 && openOrdersSelect.value) {
                 orderInputE1.value = openOrdersSelect.value;
             }
-            updateDeleteOrderButton(openOrdersSelect.value);
+            updateOrderActionButtons(openOrdersSelect.value);
         });
     }
 
     if (orderInputE1) {
         orderInputE1.addEventListener("input", ()=> {
-            updateDeleteOrderButton(orderInputE1.value.trim());
+            updateOrderActionButton(orderInputE1.value.trim());
         });
     }
 
-    bindClick("delete-order-button", handleDeleteOrder);
+    bindClick("edit-order-button", handleDeleteOrder);
 
     if (status) {
         const devicesCount = document.getElementById("home-devices-count");
@@ -62,11 +63,13 @@ async function loadOpenOrders() {
     try {
         const result = await api.getOpenOrders();
         orderDeviceCounts = {};
+        orderQuantities = {};
 
         select.querySelectorAll('option:not([value=""])').forEach((option) => option.remove());
 
         result.orders.forEach((order) => {
             orderDeviceCounts[order.order_number] = order.device_count ?? order.completed;
+            orderQuantities[order.order_number] = order.quantity;
 
             const option = document.createElement("option");
             option.value = order.order_number;
@@ -81,8 +84,8 @@ async function loadOpenOrders() {
     }
 }
 
-function updateDeleteOrderButton(orderNumber) {
-    setVisible("delete-order-button", Boolean(orderNumber));
+function updateOrderActionButton(orderNumber) {
+    setVisible("edit-order-button", Boolean(orderNumber));
 }
 
 async function handleDeleteOrder() {
@@ -112,12 +115,76 @@ async function handleDeleteOrder() {
         await api.deleteOrder(orderNumber, operatorInput?.value.trim());
         if (select) select.value = ""
         if (orderInput) orderInput.value = "";
-        setVisible("delete-order-button", false);
+        updateOrderActionButton("")
 
         await loadOpenOrders()
     } catch (error) {
         console.error("Unable to delete order:", error);
         alert(error.message || "Unable to delete this order.");
+    }
+}
+
+async function handleEditOrder() {
+    const select = document.getElementById("open-orders-select");
+    const orderInput = document.getElementById("order-input");
+    const operatorInput = document.getElementById("operator-input");
+    const orderNumber = (orderInput?.value || select?.value || "").trim();
+
+    if (!orderNumber) {
+        return;
+    }
+
+    // Correcting a mistake on a large order (hundreds of devices) shouldn't
+    // require touching devices one at a time - this only renames the order
+    // number and/or adjusts the planned quantity; devices are untouched.
+    const newOrderNumberRaw = prompt(
+        `New order number for ${orderNumber} (leave unchanged to keep it):`,
+        orderNumber
+    );
+    if (newOrderNumberRaw === null) {
+        return;
+    }
+    const newOrderNumber = newOrderNumberRaw.trim();
+
+    const currentQuantity = orderQuantities[orderNumber];
+    const newQuantityRaw = prompt(
+        `New quantity for ${orderNumber} (leave blank to keep it unchanged):`,
+        currentQuantity ?? ""
+    );
+    if (newQuantityRaw === null) {
+        return;
+    }
+    const trimmedQuantity = newQuantityRaw.trim();
+
+    const updates = {};
+    if (newOrderNumber && newOrderNumber !== orderNumber) {
+        updates.new_order_number = newOrderNumber;
+    }
+    if (trimmedQuantity !== "" && Number(trimmedQuantity) !== currentQuantity) {
+        if (!Number.isInteger(Number(trimmedQuantity)) || Number(trimmedQuantity) < 1) {
+            alert("Quantity must be a whole number of at least 1.");
+            return;
+        }
+        updates.quantity = Number(trimmedQuantity);
+    }
+
+    if (Object.keys(updates).length === 0) {
+        return;
+    }
+
+    try {
+        const result = await api.correctOrder(orderNumber, updates, operatorInput?.value.trim());
+
+        if (select) select.value = "";
+        if (orderInput) orderInput.value = "";
+        updateOrderActionButtons("");
+
+        await loadOpenOrders();
+
+        alert(result.message || "Order updated.");
+    } catch (error) {
+        console.error("Unable to update order:", error);
+        alert(error.message || "Unable to update this order.");
     }
 }
 

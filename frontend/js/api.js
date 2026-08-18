@@ -461,6 +461,15 @@ const mockApi = {
     deleteOrder(orderNumber) {
         return Promise.resolve({ message: `Order ${orderNumber} deleted.` });
     },
+
+    correctOrder(orderNumber, updates) {
+        return Promise.resolve({
+            message: `Order ${orderNumber} updated.`,
+            order_number: updates.new_order_number ||
+            orderNumber, 
+            quantity: updates.quantity
+        });
+    },
 };
 
 async function withFallback(liveCall, mockCall) {
@@ -674,4 +683,26 @@ const api = {
             () => mockApi.deleteOrder(orderNumber)
         );
     },
+    deleteOrder(orderNumber, operator) {
+        return withFallback(
+            () =>
+                request(`/orders/${encodeURIComponent(orderNumber)}`, {
+                    method: "DELETE",
+                    body: JSON.stringify({ operator }),
+                }),
+            () => mockApi.deleteOrder(orderNumber)
+        );
+    },
+
+    correctOrder(orderNumber, updates, operator) {
+        return withFallback(
+            () =>
+                request(`/orders/${encodeURIComponent(orderNumber)}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({ ...updates, operator }),
+                }),
+            () => mockApi.correctOrder(orderNumber, updates)
+        );
+    },
+
 };
