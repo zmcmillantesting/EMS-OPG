@@ -604,36 +604,32 @@ def register_routes(app, application):
 
         return jsonify({"message": f"Database backed up to {destination.name}."})
 
-    @api_bp.route("/database/restore", methods=["POST"])
-    def restore_database():
-        backups = sorted(
-            application.paths.backup_dir.glob("ems_opg_*.db"),
-            key=lambda path: path.stat().st_mtime,
-        )
-
-        if not backups:
-            return jsonify({"error": "No backups found to restore."}), 404
-
-        latest = backups[-1]
-        shutil.copy2(latest, DATABASE_FILE)
-
-        return jsonify({
-            "message": f"Database restored from {latest.name}. "
-            "Restart the server to ensure the change takes effect."
-        })
-
     @api_bp.route("/devices/<serial>", methods=["GET"])
     def get_device(serial):
+        order_number = (request.args.get("order_number") or "").strip() or None
+
         db = DatabaseManager()
 
         with db.session() as db_session:
             repo = DeviceRepository(db_session)
-            device = repo.get_by_serial(serial)
 
-            if device is None:
+            if order_number:
+                device = repo.get_by_order_and_serial(order_number, serial)
+                if device is None:
+                    return jsonify({"error": "Device not found"}), 404
+                return jsonify({"device": device_dict(device)})
+
+            matches = repo.list_by_serial(serial)
+
+            if not matches:
                 return jsonify({"error": "Device not found"}), 404
 
-            return jsonify({"device": device_dict(device)})
+            if len(matches) > 1:
+                return jsonify({
+                    "candidates": [device_dict(d) for d in matches],
+                })
+
+            return jsonify({"device": device_dict(matches[0])})
 
     @api_bp.route("/devices/<serial>", methods=["PUT"])
     def update_device(serial):
@@ -662,7 +658,7 @@ def register_routes(app, application):
             repo = DeviceRepository(db_session)
             device, error = resolve_device_by_serial(repo, serial, current_order_number)
             if error is not None:
-                body, status = KeyError
+                body, status = error
                 return jsonify(body), status
 
             conflict = repo.get_by_order_and_serial(order_number, new_serial)

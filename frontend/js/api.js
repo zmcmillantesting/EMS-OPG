@@ -567,11 +567,9 @@ const api = {
     },
 
     lookupDevice(serial, orderNumber) {
-        const query = orderNumber ? `?
-        order_number=${encodeURIComponent(orderNumber)}
-        ` : "";
+        const query = orderNumber ? `?order_number=${encodeURIComponent(orderNumber)}` : "";
         return withFallback(
-            () => request(`/devices/${encodeURIComponent(serial)} ${query}`),
+            () => request(`/devices/${encodeURIComponent(serial)}${query}`),
             () => mockApi.lookupDevice(serial)
         );
     },
@@ -681,13 +679,6 @@ const api = {
         );
     },
 
-    deleteOrder(orderNumber) {
-        return withFallback(
-            () =>
-                request(`/orders/${encodeURIComponent(orderNumber)}`, {method: "DELETE" }),
-            () => mockApi.deleteOrder(orderNumber)
-        );
-    },
     deleteOrder(orderNumber, operator) {
         return withFallback(
             () =>
