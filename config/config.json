@@ -1,5 +1,5 @@
 {
-    "data_root": "\\\\emsfs01\\production\\EMS_TR_PATH\\OpenGear\\",
+    "data_root": "",
     "application": {
         "name": "EMS-OPG",
         "version": "1.0.0",

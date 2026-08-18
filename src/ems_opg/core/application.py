@@ -48,6 +48,24 @@ class Application:
                 )
                 raise SystemExit(1) from error
             raise
+        
+        no_window = os.environ.get("EMS_OPG_NO_WINDOW", "").strip().lower() in ("1", "true", "yes")
+        
+        if no_window:
+            self.logger.info(
+                "EMS_OPG_NO_WINDOW set - skipping the PyWebView window."
+                "Open http://127.0.0.1%s in a browser.", port
+            )
+            
+            try:
+                server.run()
+            except KeyboardInterrupt:
+                self.logger.info("Shutdown requested by operator (Ctrl+C)")
+            finally:
+                self.logger.info("Server Stopped")
+                server.close()
+                Shutdown(self).shutdown()
+            return
 
         server_thread = threading.Thread(target=server.run, daemon=True)
         server_thread.start()
