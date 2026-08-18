@@ -63,7 +63,7 @@ async function loadOpenOrders() {
         const result = await api.getOpenOrders();
         orderDeviceCounts = {};
 
-        select.querySelectorAll('option:not([value="])').forEach((option) => option.remove());
+        select.querySelectorAll('option:not([value=""])').forEach((option) => option.remove());
 
         result.orders.forEach((order) => {
             orderDeviceCounts[order.order_number] = order.device_count ?? order.completed;
