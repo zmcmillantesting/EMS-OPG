@@ -566,9 +566,12 @@ const api = {
         );
     },
 
-    lookupDevice(serial) {
+    lookupDevice(serial, orderNumber) {
+        const query = orderNumber ? `?
+        order_number=${encodeURIComponent(orderNumber)}
+        ` : "";
         return withFallback(
-            () => request(`/devices/${encodeURIComponent(serial)}`),
+            () => request(`/devices/${encodeURIComponent(serial)} ${query}`),
             () => mockApi.lookupDevice(serial)
         );
     },
@@ -580,23 +583,25 @@ const api = {
         );
     },
 
-    updateDevice(serial, updates) {
+    updateDevice(serial, updates, currentOrderNumber) {
         return withFallback(
             () =>
                 request(`/devices/${encodeURIComponent(serial)}`, {
                     method: "PUT",
-                    body: JSON.stringify(updates),
+                    body: JSON.stringify({
+                        ...updates, current_order_number: currentOrderNumber
+                    }),
                 }),
             () => mockApi.updateDevice(serial, updates)
         );
     },
 
-    resetMac(serial, reason) {
+    resetMac(serial, reason, currentOrderNumber) {
         return withFallback(
             () =>
                 request(`/devices/${encodeURIComponent(serial)}/reset-mac`, {
                     method: "POST",
-                    body: JSON.stringify({ reason }),
+                    body: JSON.stringify({ reason, current_order_number: currentOrderNumber  }),
                 }),
             () => mockApi.resetMac(serial, reason)
         );

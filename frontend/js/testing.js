@@ -418,7 +418,7 @@ async function handleFinish() {
     }
 
     if (!isValidSerialNumber(serial)) {
-        alert("Serial number must be formatted as EMyyyyww0000.");
+        alert("Serial number must be formatted as EMyyww0000.");
         serialInput.focus();
         return;
     }
