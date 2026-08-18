@@ -17,13 +17,19 @@ function bindHomeActions(status) {
     }
 
     const openOrdersSelect = document.getElementById("open-orders-select");
+    const orderInputE1 = document.getElementById("order-input");
     if (openOrdersSelect) {
         openOrdersSelect.addEventListener("change", () => {
-            const orderInput = document.getElementById("order-input");
-            if (orderInput && openOrdersSelect.value) {
-                orderInput.value = openOrdersSelect.value;
+            if (orderInputE1 && openOrdersSelect.value) {
+                orderInputE1.value = openOrdersSelect.value;
             }
             updateDeleteOrderButton(openOrdersSelect.value);
+        });
+    }
+
+    if (orderInputE1) {
+        orderInputE1.addEventListener("input", ()=> {
+            updateDeleteOrderButton(orderInputE1.value.trim());
         });
     }
 
@@ -57,6 +63,8 @@ async function loadOpenOrders() {
         const result = await api.getOpenOrders();
         orderDeviceCounts = {};
 
+        select.querySelectorAll('option:not([value="])').forEach((option) => option.remove());
+
         result.orders.forEach((order) => {
             orderDeviceCounts[order.order_number] = order.device_count ?? order.completed;
 
@@ -81,18 +89,20 @@ async function handleDeleteOrder() {
     const select = document.getElementById("open-orders-select");
     const orderInput = document.getElementById("order-input");
     const operatorInput = document.getElementById("operator-input");
-    const orderNumber = select?.value;
+    const orderNumber = (orderInput?.value || select?.value || "").trim();
 
     if (!orderNumber) {
         return;
     }
 
-    const deviceCount = orderDeviceCounts[orderNumber];
-    const confirmMessage = deviceCount
-        ? `Reset order ${orderNumber}? Its ${deviceCount} device(s) will be marked ` +
+    const knownCount = orderDeviceCounts[orderNumber];
+    const confirmMessage = knownCount
+        ? `Reset order ${orderNumber}? Its ${knownCount} device(s) will be marked ` +
           `available again for re-testing. Serial numbers, operators, and MAC ` +
           `assignments are kept - this does not release any MAC addresses.`
-        : `Delete empty order ${orderNumber}? This cannot be undone.`;
+        : `Delete or reset order ${orderNumber}? If it has devices assigned, ` + 
+        `they will be marked available again for retesting (serial numbers, operators, ` +
+        `and MAC assignments are kept). If it's empty the order itself will be deleted. This cannot be undone`;
 
     if (!confirm(confirmMessage)) {
         return;
@@ -100,29 +110,11 @@ async function handleDeleteOrder() {
 
     try {
         await api.deleteOrder(orderNumber, operatorInput?.value.trim());
-
-        if (deviceCount) {
-            // Reset, not removed - the order stays open at 0% complete.
-            orderDeviceCounts[orderNumber] = 0;
-            const option = select.querySelector(`option[value="${CSS.escape(orderNumber)}"]`);
-            if (option) {
-                const parts = option.textContent.split(" — ");
-                const partNumber = parts[1]?.split(" (")[0] ?? "";
-                option.textContent = `${orderNumber} — ${partNumber} (empty — nothing provisioned)`;
-            }
-        } else {
-            const option = select.querySelector(`option[value="${CSS.escape(orderNumber)}"]`);
-            if (option) {
-                option.remove();
-            }
-            delete orderDeviceCounts[orderNumber];
-        }
-
-        select.value = "";
-        if (orderInput && orderInput.value === orderNumber) {
-            orderInput.value = "";
-        }
+        if (select) select.value = ""
+        if (orderInput) orderInput.value = "";
         setVisible("delete-order-button", false);
+
+        await loadOpenOrders()
     } catch (error) {
         console.error("Unable to delete order:", error);
         alert(error.message || "Unable to delete this order.");
