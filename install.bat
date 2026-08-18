@@ -12,6 +12,17 @@ pause
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\install_windows.ps1"
 
+if errorlevel 1 (
+    echo.
+    echo
+============================================
+    echo Install Failed - see the error above.
+    echo
+============================================
+    pause >nul
+    exit /b 1
+)
+
 echo.
 echo ============================================
 echo  Done. Press any key to close this window.
