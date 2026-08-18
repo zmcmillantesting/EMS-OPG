@@ -15,7 +15,7 @@ const PAGE_COMPONENTS = {
 };
 
 const ORDER_NUMBER_PATTERN = /^\d{4,5}\.\d$/;
-const SERIAL_NUMBER_PATTERN = /^EM\d{10}$/;
+const SERIAL_NUMBER_PATTERN = /^EM\d{8}$/;
 
 function isValidOrderNumber(value) {
     return ORDER_NUMBER_PATTERN.test(value || "");

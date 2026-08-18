@@ -3,6 +3,7 @@
  */
 
 let activeDeviceSerial = null;
+let activeDeviceOrderNumber = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
     await initPage();
@@ -30,6 +31,7 @@ function bindSettingsActions() {
 
     bindClick("lookup-device-button", lookupDevice);
     bindClick("lookup-mac-button", lookupDeviceByMac);
+    bindClick("serial-picker-select-button", pickSerialCandidate);
 
     const correctionForm = document.getElementById("correction-form");
     if (correctionForm) {
@@ -100,15 +102,31 @@ async function lookupDevice() {
         return;
     }
 
+    setVisible("serial-picker", false);
+
     try {
         const result = await api.lookupDevice(serial);
-        populateCorrectionForm(result.device);
-        activeDeviceSerial = result.device.serial_number;
-        setVisible("correction-fields", true);
-        showMessage(`Loaded device ${result.device.serial_number}.`, "success");
+
+        if (result.candidates) {
+            // Same serial exists in more than one order - let the
+            // operator pick which one they actually meant instead of
+            // guessing for them.
+            setVisible("correction-fields", false);
+            activeDeviceSerial = null;
+            activeDeviceOrderNumber = null;
+            renderSerialPicker(result.candidates);
+            showMessage(
+                `Serial ${serial} is used in ${result.candidates.length} different orders - pick one below.`,
+                "error"
+            );
+            return;
+        }
+
+        applyDeviceResult(result.device);
     } catch (error) {
         setVisible("correction-fields", false);
         activeDeviceSerial = null;
+        activeDeviceOrderNumber = null;
         showMessage("Device not found.", "error");
     }
 }
@@ -122,17 +140,54 @@ async function lookupDeviceByMac() {
         return;
     }
 
+    setVisible("serial-picker", false);
+
     try {
         const result = await api.lookupMac(mac);
-        populateCorrectionForm(result.device);
-        activeDeviceSerial = result.device.serial_number;
-        setVisible("correction-fields", true);
-        showMessage(`Loaded device ${result.device.serial_number}.`, "success");
+        applyDeviceResult(result.device);
     } catch (error) {
         setVisible("correction-fields", false);
         activeDeviceSerial = null;
+        activeDeviceOrderNumber = null;
         showMessage("Device not found.", "error");
     }
+}
+
+function renderSerialPicker(candidates) {
+    const select = document.getElementById("serial-picker-select");
+    if (!select) return;
+
+    select.innerHTML = "";
+    candidates.forEach((device, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        const when = device.timestamp ? new Date(device.timestamp).toLocaleString() : "no timestamp";
+        option.textContent = `Order ${device.order_number} - ${device.test_result} - ${when}`;
+        select.appendChild(option);
+    });
+    select.dataset.candidates = JSON.stringify(candidates);
+
+    setVisible("serial-picker", true);
+}
+
+function pickSerialCandidate() {
+    const select = document.getElementById("serial-picker-select");
+    if (!select) return;
+
+    const candidates = JSON.parse(select.dataset.candidates || "[]");
+    const device = candidates[Number(select.value)];
+    if (!device) return;
+
+    setVisible("serial-picker", false);
+    applyDeviceResult(device);
+}
+
+function applyDeviceResult(device) {
+    populateCorrectionForm(device);
+    activeDeviceSerial = device.serial_number;
+    activeDeviceOrderNumber = device.order_number;
+    setVisible("correction-fields", true);
+    showMessage(`Loaded device ${device.serial_number} (order ${device.order_number}).`, "success");
 }
 
 function populateCorrectionForm(device) {
@@ -159,7 +214,7 @@ async function saveCorrections(event) {
 
     const newSerial = getFieldValue("correction-new-serial");
     if (!isValidSerialNumber(newSerial)) {
-        showMessage("Serial number must be formatted as EMyyyyww0000.", "error");
+        showMessage("Serial number must be formatted as EMyyww0000.", "error");
         return;
     }
 
@@ -173,8 +228,9 @@ async function saveCorrections(event) {
     };
 
     try {
-        const result = await api.updateDevice(activeDeviceSerial, updates);
+        const result = await api.updateDevice(activeDeviceSerial, updates, activeDeviceOrderNumber);
         activeDeviceSerial = result.device.serial_number;
+        activeDeviceOrderNumber = result.device.order_number 
         populateCorrectionForm(result.device);
         setFieldValue("correction-reason", "");
         showMessage(result.message, "success");
@@ -200,7 +256,8 @@ async function resetMac() {
     }
 
     try {
-        const result = await api.resetMac(activeDeviceSerial, reason);
+        const result = await api.resetMac(activeDeviceSerial, reason, activeDeviceOrderNumber);
+        activeDeviceOrderNumber = result.device.order_number;
         populateCorrectionForm(result.device);
         setFieldValue("correction-reason", "");
         showMessage(result.message, "success");

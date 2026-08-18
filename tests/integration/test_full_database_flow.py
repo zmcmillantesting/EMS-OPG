@@ -124,8 +124,8 @@ def test_full_database_flow_with_audit_log(session):
         write_log(f"Secondary reservation failed unexpectedly: {failure_message}")
 
     stored_order = order_repository.get_by_order_number(order.order_number)
-    stored_device = device_repository.get_by_serial("SN-9001")
-    stored_second_device = device_repository.get_by_serial("SN-9002")
+    stored_device = device_repository.get_by_order_and_serial(order.order_number, "SN-9001")
+    stored_second_device = device_repository.get_by_order_and_serial(order.order_number, "SN-9002")
     stored_mac = mac_repository.get_by_mac("00:11:22:33:44:55")
     stored_audit = audit_repository.get_by_action("Device Reserved")
 

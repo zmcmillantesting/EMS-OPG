@@ -7,6 +7,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -78,6 +79,13 @@ class Order(Base):
 
 class Device(Base):
     __tablename__ = "devices"
+    __table_args__ = (
+        UniqueConstraint(
+            "order_number",
+            "serial_number",
+            name="uq_device_order_serial"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -92,7 +100,6 @@ class Device(Base):
 
     serial_number: Mapped[str] = mapped_column(
         String(100),
-        unique=True,
         nullable=False,
         index=True,
     )

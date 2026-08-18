@@ -16,11 +16,22 @@ class DeviceRepository:
             .where(Device.eth1addr_id == eth1addr)
         )
 
-    def get_by_serial(self, serial):
+    def list_by_serial(self, serial):
+        """
+        Serial numbers are only unique within an order, so a bare serial
+        can match devices across multiple orders - callers that need a
+        single device must disambiguate by order (see
+        get_by_order_and_serial) or handle multiple results themselves.
+        """
+        return self.session.scalars(
+            select(Device).where(Device.serial_number == serial)
+        ).all()
+
+    def get_by_order_and_serial(self, order_number, serial):
         return self.session.scalar(
-            select(Device).where(
-                Device.serial_number == serial
-            )
+            select(Device)
+            .where(Device.order_number == order_number)
+            .where(Device.serial_number == serial)
         )
 
     def get_by_single_mac(self, mac):
@@ -103,9 +114,9 @@ class DeviceRepository:
         if device.used:
             raise ValueError("MAC address has already been used.")
 
-        existing = self.get_by_serial(serial_number)
+        existing = self.get_by_order_and_serial(order_number, serial_number)
         if existing and existing.id != device.id:
-            raise ValueError("Serial number already exists.")
+            raise ValueError("Serial number already exists for this order.")
 
         order_obj = self.session.scalars(
             select(Order).where(Order.order_number == order_number)

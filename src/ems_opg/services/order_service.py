@@ -103,17 +103,45 @@ class OrderService:
             raise ValueError(f"Order {order_number} not found.")
 
         devices = self.devices.list_by_order(order_number)
+        removed_count = 0
 
         if quantity is not None:
             if quantity < 1:
                 raise ValueError("Quantity must be at least 1.")
 
-            finalized = sum(1 for device in devices if device.used)
-            if quantity < finalized:
+            finalized = [device for device in devices if device.used]
+            if quantity < len(finalized):
                 raise ValueError(
-                    f"Cannot set quantity below {finalized} - that many "
+                    f"Cannot set quantity below {len(finalized)} - that many "
                     f"device(s) on this order are already finalized."
                 )
+            excess = len(devices) - quantity
+            if excess > 0:
+                # Shrinking below the current device count - trim the
+                # most-recently-provisioned devices that were never
+                # assigned to a physical unit, and release the MAC pair
+                # each one was holding back to the pool. The finalized
+                # check above guarantees there are at least `excess`
+                # untested devices to remove.
+                untested = sorted(
+                    (device for device in devices if not device.used),
+                    key=lambda device: device.id,
+                    reverse=True,
+                )
+                to_remove = untested[:excess]
+
+                for device in to_remove:
+                    for mac_value in (device.ethaddr_id, device.eth1addr_id):
+                        if not mac_value:
+                            continue
+                        mac_entry = self.macs.get_by_mac(mac_value)
+                        if mac_entry is not None:
+                            self.macs.mark_unused(mac_entry)
+                    self.devices.delete(device)
+
+                removed_count = len(to_remove)
+                removed_ids = {device.id for device in to_remove}
+                devices = [device for device in devices if device.id not in removed_ids]
 
             order.quantity = quantity
 
@@ -132,5 +160,5 @@ class OrderService:
                 device.order_number = new_order_number
 
         self.session.flush()
-        return order
+        return order, removed_count
 

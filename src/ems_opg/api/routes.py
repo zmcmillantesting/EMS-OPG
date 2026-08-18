@@ -70,6 +70,37 @@ def device_dict(device):
         "operator": device.operator,
         "timestamp": device.timestamp.isoformat() if device.timestamp else None,
     }
+
+def resolve_device_by_serial(repo, serial, current_order_number):
+    """
+    Serial numbers are only unique within an order, so a bare serial can
+    match devices in more than one order. If current_order_number is
+    given, look up that exact (order, serial) pair. Otherwise, require
+    the serial to be unambiguous on its own - returns (device, error)
+    where error is an (error_response, status) tuple to return as-is,
+    or None if a single device was resolved successfully.
+    """
+    if current_order_number:
+        device = repo.get_by_order_and_serial(current_order_number, serial)
+        if device is None:
+            return None, ({"error": "Device not found"}, 404)
+        return device, None
+
+    matches = repo.list_by_serial(serial)
+
+    if not matches:
+        return None, ({"error": "Device not found"}, 404)
+
+    if len(matches) > 1:
+        return None, ({
+            "error": (
+                f"Serial {serial} matches devices in more than one order - "
+                "include current_order_number to specify which one."
+            ),
+            "candidates": [device_dict(d) for d in matches],
+        }, 409)
+
+    return matches[0], None
     
 def maybe_export_completed_order(db_session, application, order_number):
     """
@@ -324,7 +355,7 @@ def register_routes(app, application):
         try:
             with db.session() as db_session:
                 order_service = OrderService(db_session)
-                order = order_service.correct_order(
+                order, removed_count = order_service.correct_order(
                     order_number,
                     new_order_number=new_order_number,
                     quantity=quantity,
@@ -335,6 +366,11 @@ def register_routes(app, application):
                     changes.append(f"renamed to {new_order_number}")
                 if quantity is not None:
                     changes.append(f"quantity set to {quantity}")
+                if removed_count:
+                    changes.append(
+                        f"{removed_count} unassigned device(s) removed and "
+                        "their MAC pair(s) released back to the pool"
+                    )
 
                 audit_repo = AuditRepository(db_session)
                 audit_repo.create(AuditLog(
@@ -345,6 +381,7 @@ def register_routes(app, application):
 
                 result_order_number = order.order_number
                 result_quantity = order.quantity
+                result_removed_count = removed_count
         except ValueError as error:
             return jsonify({"error": str(error)}), 409
         except IntegrityError:
@@ -355,12 +392,19 @@ def register_routes(app, application):
                 ),
             }), 409
 
+        message = f"Order {order_number} updated."
+        if result_removed_count:
+            message += (
+                f" {result_removed_count} unassigned device(s) removed, "
+                "their MAC pair(s) released back to the pool."
+            )
+
         return jsonify({
-            "message": f"Order {order_number} updated.",
+            "message": message,
             "order_number": result_order_number,
             "quantity": result_quantity,
+            "removed_count": result_removed_count,
         })
-
 
     @api_bp.route("/session/start", methods=["POST"])
     def session_start():
@@ -464,7 +508,7 @@ def register_routes(app, application):
             return jsonify({"error": "serial_number is required"}), 400
 
         if not is_valid_serial_number(serial_number):
-            return jsonify({"error": "Serial number must be formatted as EMyyyyww0000."}), 400
+            return jsonify({"error": "Serial number must be formatted as EMyyww0000."}), 400
 
         db = DatabaseManager()
 
@@ -593,21 +637,36 @@ def register_routes(app, application):
 
     @api_bp.route("/devices/<serial>", methods=["GET"])
     def get_device(serial):
+        order_number = (request.args.get("order_number") or "").strip() or None
+
         db = DatabaseManager()
 
         with db.session() as db_session:
             repo = DeviceRepository(db_session)
-            device = repo.get_by_serial(serial)
 
-            if device is None:
+            if order_number:
+                device = repo.get_by_order_and_serial(order_number, serial)
+                if device is None:
+                    return jsonify({"error": "Device not found"}), 404
+                return jsonify({"device": device_dict(device)})
+
+            matches = repo.list_by_serial(serial)
+
+            if not matches:
                 return jsonify({"error": "Device not found"}), 404
 
-            return jsonify({"device": device_dict(device)})
+            if len(matches) > 1:
+                return jsonify({
+                    "candidates": [device_dict(d) for d in matches],
+                })
+
+            return jsonify({"device": device_dict(matches[0])})
 
     @api_bp.route("/devices/<serial>", methods=["PUT"])
     def update_device(serial):
         payload = request.get_json(silent=True) or {}
 
+        current_order_number = (payload.get("current_order_number") or "").strip() or None
         order_number = (payload.get("order_number") or "").strip()
         new_serial = (payload.get("serial_number") or "").strip()
         operator = (payload.get("operator") or "").strip()
@@ -622,19 +681,22 @@ def register_routes(app, application):
             return jsonify({"error": "A reason is required for manual corrections."}), 400
 
         if not is_valid_serial_number(new_serial):
-            return jsonify({"error": "Serial number must be formatted as EMyyyyww0000."}), 400
+            return jsonify({"error": "Serial number must be formatted as EMyyww0000."}), 400
 
         db = DatabaseManager()
 
         with db.session() as db_session:
             repo = DeviceRepository(db_session)
-            device = repo.get_by_serial(serial)
+            device, error = resolve_device_by_serial(repo, serial, current_order_number)
+            if error is not None:
+                body, status = error
+                return jsonify(body), status
 
-            if device is None:
-                return jsonify({"error": "Device not found"}), 404
+            conflict = repo.get_by_order_and_serial(order_number, new_serial)
+            if conflict is not None and conflict.id != device.id:
+                return jsonify({"error": "Serial number already exists for that order."}), 409
 
-            if new_serial != device.serial_number and repo.get_by_serial(new_serial) is not None:
-                return jsonify({"error": "Serial number already exists."}), 409
+            
 
             before = device_dict(device)
             
@@ -686,6 +748,8 @@ def register_routes(app, application):
         payload = request.get_json(silent=True) or {}
         reason = (payload.get("reason") or "").strip()
 
+        current_order_number = (payload.get("current_order_number") or "").strip() or None
+
         if not reason:
             return jsonify({"error": "A reason is required to reset a MAC address."}), 400
 
@@ -693,10 +757,10 @@ def register_routes(app, application):
 
         with db.session() as db_session:
             repo = DeviceRepository(db_session)
-            device = repo.get_by_serial(serial)
-
-            if device is None:
-                return jsonify({"error": "Device not found"}), 404
+            device, error = resolve_device_by_serial(repo, serial, current_order_number)
+            if error is not None:
+                body, status = error
+                return jsonify(body), status
 
             repo.mark_unused(device)
             
