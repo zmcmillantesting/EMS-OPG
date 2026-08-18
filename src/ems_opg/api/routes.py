@@ -242,29 +242,6 @@ def register_routes(app, application):
                         "part_number": order.part_number,
                         "quantity": order.quantity,
                         "completed": completed,
-                    })
-
-            return jsonify({"orders": open_orders})
-        
-    @api_bp.route("/orders/open", methods=["GET"])
-    def get_open_orders():
-        db = DatabaseManager()
-
-        with db.session() as db_session:
-            order_repo = OrderRepository(db_session)
-            device_repo = DeviceRepository(db_session)
-
-            open_orders = []
-            for order in order_repo.list_all_orders():
-                devices = device_repo.list_by_order(order.order_number)
-                completed = sum(1 for device in devices if device.used)
-
-                if completed < order.quantity:
-                    open_orders.append({
-                        "order_number": order.order_number,
-                        "part_number": order.part_number,
-                        "quantity": order.quantity,
-                        "completed": completed,
                         "device_count": len(devices),
                     })
 
