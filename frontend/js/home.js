@@ -34,7 +34,8 @@ function bindHomeActions(status) {
         });
     }
 
-    bindClick("edit-order-button", handleDeleteOrder);
+    bindClick("delete-order-button", handleDeleteOrder);
+    bindClick("edit-order-button", handleEditOrder);
 
     if (status) {
         const devicesCount = document.getElementById("home-devices-count");
@@ -85,6 +86,7 @@ async function loadOpenOrders() {
 }
 
 function updateOrderActionButton(orderNumber) {
+    setVisible("delete-order-button", Boolean(orderNumber));
     setVisible("edit-order-button", Boolean(orderNumber));
 }
 
