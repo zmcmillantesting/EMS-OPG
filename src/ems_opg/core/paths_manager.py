@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import sys
 
 
 class PathManager:
@@ -8,8 +9,10 @@ class PathManager:
         
         # Where the application's own code/frontend/config live. This
         # never moves - it's always wherever the app is installed
-        self.root = Path(__file__).resolve().parents[3]
-
+        if getattr(sys, "frozen", False):
+            Path(sys.executable).resolve().parent
+        else:
+            self.root = Path(__file__).resolve().parents[3]
         #
         # Appliction directories (stay with the app install)
         #
