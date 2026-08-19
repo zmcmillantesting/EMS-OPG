@@ -1,5 +1,6 @@
 import csv
 import io
+import time
 from datetime import UTC, datetime
 import logging, shutil
 from flask import Blueprint, jsonify, request
@@ -163,7 +164,7 @@ def build_step_payload(engine, qr_service):
                 "total_steps": session.total_steps,
                 "step_name": step_name,
                 "command": "",
-                "qr_url": None,
+                "qr_url": f"/qr/{result.filename}?t={time.time_ns()}",
             }
         command = qr_service.create_macs(session.mac1, session.mac2)
         result = qr_service.generator.generate(command, "step5")
