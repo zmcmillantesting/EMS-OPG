@@ -65,3 +65,16 @@ class MacAddressRepository:
 
     def exists(self, mac_address):
         return self.get_by_mac(mac_address) is not None
+
+    def get_next_available_excluding(self, exclude_mac_address):
+        """
+        Picks MAC2 once MAC1 has already been chosen (scanned) by the
+        operator, so the same address is never handed out twice in a
+        single pair.
+        """
+        return self.session.scalar(
+            select(MACAddressPool)
+            .where(MACAddressPool.used.is_(False))
+            .where(MACAddressPool.mac_address != exclude_mac_address)
+            .order_by(MACAddressPool.mac_address)
+        )

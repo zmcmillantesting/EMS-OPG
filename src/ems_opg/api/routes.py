@@ -10,7 +10,7 @@ from ems_opg.core.constants import APP_VERSION
 from ems_opg.core.validators import is_valid_serial_number
 from ems_opg.database.database import DatabaseManager
 from ems_opg.database.engine import DATABASE_FILE
-from ems_opg.database.models import AuditLog, Device
+from ems_opg.database.models import AuditLog, Device, DeviceFailureNote
 from ems_opg.repositories.audit_repository import AuditRepository
 from ems_opg.repositories.device_repository import DeviceRepository
 from ems_opg.repositories.mac_address_repository import MacAddressRepository
@@ -58,6 +58,13 @@ def session_dict(session):
         "cancelled": session.cancelled,
     }
 
+def failure_note_dict(note):
+    return {
+        "timestamp": note.timestamp.isoformat() if
+        note.timestamp else None,
+        "operator": note.operator,
+        "reason": note.reason
+    }
 
 def device_dict(device):
     return {
@@ -70,6 +77,7 @@ def device_dict(device):
         "test_result": device.test_result,
         "operator": device.operator,
         "timestamp": device.timestamp.isoformat() if device.timestamp else None,
+        "failure_notes": [DeviceFailureNote(note) for note in device.failure_notes]
     }
 
 def resolve_device_by_serial(repo, serial, current_order_number):
@@ -105,9 +113,8 @@ def resolve_device_by_serial(repo, serial, current_order_number):
     
 def maybe_export_completed_order(db_session, application, order_number):
     """
-    If every device tied to order_number has been finalized with a PASS
-    result, write the order's traceability records to exports/ as a CSV.
-    No-ops (silently) if the order isn't fully passed yet.
+    If an order's PASS count has reached its target quantity, write its
+    traceability records to exports/ as a CSV. No-op if it hasn't.
     """
 
     order_repo = OrderRepository(db_session)
@@ -117,13 +124,11 @@ def maybe_export_completed_order(db_session, application, order_number):
     if order is None:
         return
 
+    passed = device_repo.count_passed_by_order(order_number)
+    if passed < order.quantity:
+        return
+
     devices = device_repo.list_by_order(order_number)
-
-    if not devices or not all(d.used for d in devices):
-        return
-
-    if not all(d.test_result == "PASS" for d in devices):
-        return
 
     try:
         application.paths.exports_dir.mkdir(parents=True, exist_ok=True)
@@ -153,24 +158,8 @@ def build_step_payload(engine, qr_service):
     elif index == 2:
         command = qr_service.multi_step()
         result = qr_service.generator.generate(command, "step3")
-    elif index == 3:
-        result = qr_service.create_step8()
-    elif index == 4:
-        if not (session.mac1 and session.mac2):
-            return {
-                "workflow_name": "Functional Test",
-                "step_index": index,
-                "step_number": index + 1,
-                "total_steps": session.total_steps,
-                "step_name": step_name,
-                "command": "",
-                "qr_url": None,
-            }
-        command = qr_service.create_macs(session.mac1, session.mac2)
-        result = qr_service.generator.generate(command, "step5")
     else:
-        command = qr_service.create_step11()
-        result = qr_service.generator.generate(command, "step6")
+        result = qr_service.create_step8()
 
     return {
         "workflow_name": "Functional Test",
@@ -179,15 +168,40 @@ def build_step_payload(engine, qr_service):
         "total_steps": session.total_steps,
         "step_name": step_name,
         "command": result.command,
-        # Each step reuses a fixed filename (step5.png, etc.), so the URL
-        # is byte-identical across devices even though the file's content
-        # changes (a new MAC pair each device). Setting an <img>'s src to
-        # a URL it already has doesn't trigger a new fetch in any
-        # browser, so without a cache-buster the very first device's QR
-        # code just stays on screen forever after - the underlying file
-        # and the rest of the UI update correctly, only the cached image
-        # doesn't. The query param forces every response to be treated
-        # as a genuinely new resource.
+        "qr_url": f"/qr/{result.filename}?t={time.time_ns()}",
+    }
+
+
+def build_mac_payload(session, qr_service):
+    """WorkflowState.ASSIGNING_MAC - no QR until both MACs are known."""
+    if not (session.mac1 and session.mac2):
+        return {
+            "workflow_name": "Functional Test",
+            "step_name": "Mac Addresses",
+            "command": "",
+            "qr_url": None,
+        }
+
+    command = qr_service.create_macs(session.mac1, session.mac2)
+    result = qr_service.generator.generate(command, "step5")
+
+    return {
+        "workflow_name": "Functional Test",
+        "step_name": "Mac Addresses",
+        "command": result.command,
+        "qr_url": f"/qr/{result.filename}?t={time.time_ns()}",
+    }
+
+
+def build_verification_payload(qr_service):
+    """WorkflowState.VERIFYING_MAC"""
+    command = qr_service.create_step11()
+    result = qr_service.generator.generate(command, "step6")
+
+    return {
+        "workflow_name": "Functional Test",
+        "step_name": "Verify MAC Addresses",
+        "command": result.command,
         "qr_url": f"/qr/{result.filename}?t={time.time_ns()}",
     }
 
@@ -199,12 +213,29 @@ def register_routes(app, application):
     qr_service = QRService(output_directory=application.paths.qr_cache)
 
     def session_active():
-        return engine.state in (WorkflowState.TESTING, WorkflowState.COMPLETE)
+        return engine.state in (
+            WorkflowState.TESTING,
+            WorkflowState.AWAITING_RESULT,
+            WorkflowState.ASSIGNING_MAC,
+            WorkflowState.VERIFYING_MAC,
+            WorkflowState.READY_TO_SAVE,
+        )
 
     def workflow_response():
+        session = engine.session
+
+        if engine.state == WorkflowState.TESTING:
+            step = build_step_payload(engine, qr_service)
+        elif engine.state == WorkflowState.ASSIGNING_MAC:
+            step = build_mac_payload(session, qr_service)
+        elif engine.state == WorkflowState.VERIFYING_MAC:
+            step = build_verification_payload(qr_service)
+        else:
+            step = None
+
         return jsonify({
-            "session": session_dict(engine.session),
-            "step": build_step_payload(engine, qr_service),
+            "session": session_dict(session),
+            "step": step,
         })
 
     @api_bp.route("/status", methods=["GET"])
@@ -229,65 +260,54 @@ def register_routes(app, application):
             "devicesToday": devices_today,
         })
 
-    @api_bp.route("/orders/provision", methods=["POST"])
-    def provision_order():
-        payload = request.get_json(silent=True) or {}
-        order_number = (payload.get("order_number") or "").strip()
-        part_number = (payload.get("part_number") or "").strip()
-
-        if not order_number or not part_number:
-            return jsonify({"error": "order_number and part_number are required"}), 400
-
-        try:
-            quantity = int(payload.get("quantity"))
-        except (TypeError, ValueError):
-            return jsonify({"error": "quantity must be a whole number."}), 400
-
+    @api_bp.route("/orders", methods=["GET", "POST"])
+    def orders_collection():
         db = DatabaseManager()
 
-        try:
-            with db.session() as db_session:
-                order_service = OrderService(db_session)
-                result = order_service.provision_order(order_number, part_number, quantity)
-        except ValueError as error:
-            return jsonify({"error": str(error)}), 409
-        except IntegrityError:
+        if request.method == "POST":
+            payload = request.get_json(silent=True) or {}
+            order_number = (payload.get("order_number") or "").strip()
+
+            try:
+                quantity = int(payload.get("quantity"))
+            except (TypeError, ValueError):
+                return jsonify({"error": "quantity must be a whole number."}), 400
+
+            if not order_number:
+                return jsonify({"error": "order_number is required"}), 400
+
+            try:
+                with db.session() as db_session:
+                    order_service = OrderService(db_session)
+                    order = order_service.create_order(order_number, quantity)
+                    order_number, quantity = order.order_number, order.quantity
+            except ValueError as error:
+                return jsonify({"error": str(error)}), 409
+
             return jsonify({
-                "error": (
-                    "Could not provision this order because the MAC address pool "
-                    "and device records are out of sync (a MAC marked available "
-                    "is already assigned to an existing device). This needs an "
-                    "administrator to reconcile the database before provisioning can continue"
-                ),
-            }), 409
-            
+                "message": f"Order {order_number} created.",
+                "order_number": order_number,
+                "quantity": quantity,
+            }), 201
 
-        return jsonify({"message": result["message"]}), 201
-
-    @api_bp.route("/orders/open", methods=["GET"])
-    def get_open_orders():
-        db = DatabaseManager()
-
+        # GET - the operator's order dropdown, with live progress against
+        # each order's target quantity.
         with db.session() as db_session:
             order_repo = OrderRepository(db_session)
             device_repo = DeviceRepository(db_session)
 
-            open_orders = []
+            orders = []
             for order in order_repo.list_all_orders():
-                devices = device_repo.list_by_order(order.order_number)
-                completed = sum(1 for device in devices if device.used)
+                passed = device_repo.count_passed_by_order(order.order_number)
+                orders.append({
+                    "order_number": order.order_number,
+                    "quantity": order.quantity,
+                    "passed": passed,
+                    "remaining": max(order.quantity - passed, 0),
+                })
 
-                if completed < order.quantity:
-                    open_orders.append({
-                        "order_number": order.order_number,
-                        "part_number": order.part_number,
-                        "quantity": order.quantity,
-                        "completed": completed,
-                        "device_count": len(devices),
-                    })
-
-            return jsonify({"orders": open_orders})
-
+            return jsonify({"orders": orders})
+        
     @api_bp.route("/orders/<order_number>", methods=["DELETE"])
     def delete_order(order_number):
         payload = request.get_json(silent=True) or {}
@@ -305,47 +325,27 @@ def register_routes(app, application):
                 return jsonify({"error": "Order not found"}), 404
 
             devices = device_repo.list_by_order(order_number)
+            if devices:
+                return jsonify({
+                    "error": (
+                        f"Order {order_number} has {len(devices)} device(s) "
+                        "recorded against it and can't be deleted. Use the "
+                        "quantity correction instead if it was mis-entered."
+                    ),
+                }), 409
 
-            if not devices:
-                order_repo.delete(order)
-                audit_repo.create(AuditLog(
-                    operator=operator,
-                    action="Order Deleted",
-                    details=f"Empty order {order_number} deleted (no devices attached).",
-                ))
-                return jsonify({"message": f"Order {order_number} deleted."})
-
-            # Orders with devices attached can't have their row removed
-            # (devices.order_number is a required foreign key), and their
-            # MAC addresses stay claimed either way. Instead, reset every
-            # device back to available so a mis-provisioned order (too many
-            # or too few devices assigned) can be corrected and re-tested -
-            # serial numbers, operators, and MAC assignments are untouched.
-            for device in devices:
-                device.used = False
-
+            order_repo.delete(order)
             audit_repo.create(AuditLog(
                 operator=operator,
-                action="Order Reset",
-                details=(
-                    f"Order {order_number} reset: {len(devices)} device(s) "
-                    "marked available again (MAC addresses, serial numbers, "
-                    "and operators left unchanged)."
-                ),
+                action="Order Deleted",
+                details=f"Empty order {order_number} deleted (no devices attached).",
             ))
-
-            return jsonify({
-                "message": (
-                    f"Order {order_number} reset: {len(devices)} device(s) "
-                    "marked available."
-                ),
-            })
+            return jsonify({"message": f"Order {order_number} deleted."})
 
     @api_bp.route("/orders/<order_number>", methods=["PATCH"])
     def correct_order(order_number):
         payload = request.get_json(silent=True) or {}
         operator = (payload.get("operator") or "").strip() or "system"
-
         new_order_number = (payload.get("new_order_number") or "").strip() or None
 
         quantity = payload.get("quantity")
@@ -356,16 +356,14 @@ def register_routes(app, application):
                 return jsonify({"error": "quantity must be a whole number."}), 400
 
         if new_order_number is None and quantity is None:
-            return jsonify({
-                "error": "Provide new_order_number and/or quantity to update.",
-            }), 400
+            return jsonify({"error": "Provide new_order_number and/or quantity to update."}), 400
 
         db = DatabaseManager()
 
         try:
             with db.session() as db_session:
                 order_service = OrderService(db_session)
-                order, removed_count = order_service.correct_order(
+                order = order_service.correct_order(
                     order_number,
                     new_order_number=new_order_number,
                     quantity=quantity,
@@ -376,11 +374,6 @@ def register_routes(app, application):
                     changes.append(f"renamed to {new_order_number}")
                 if quantity is not None:
                     changes.append(f"quantity set to {quantity}")
-                if removed_count:
-                    changes.append(
-                        f"{removed_count} unassigned device(s) removed and "
-                        "their MAC pair(s) released back to the pool"
-                    )
 
                 audit_repo = AuditRepository(db_session)
                 audit_repo.create(AuditLog(
@@ -391,52 +384,47 @@ def register_routes(app, application):
 
                 result_order_number = order.order_number
                 result_quantity = order.quantity
-                result_removed_count = removed_count
         except ValueError as error:
             return jsonify({"error": str(error)}), 409
         except IntegrityError:
             return jsonify({
-                "error": (
-                    f"Could not update order {order_number} - the requested "
-                    "order number is already in use."
-                ),
+                "error": f"Could not update order {order_number} - the requested order number is already in use.",
             }), 409
 
-        message = f"Order {order_number} updated."
-        if result_removed_count:
-            message += (
-                f" {result_removed_count} unassigned device(s) removed, "
-                "their MAC pair(s) released back to the pool."
-            )
-
         return jsonify({
-            "message": message,
+            "message": f"Order {order_number} updated.",
             "order_number": result_order_number,
             "quantity": result_quantity,
-            "removed_count": result_removed_count,
         })
-
+    
     @api_bp.route("/session/start", methods=["POST"])
     def session_start():
         payload = request.get_json(silent=True) or {}
         operator = (payload.get("operator") or "").strip()
         order_number = (payload.get("order_number") or "").strip()
+        serial_number = (payload.get("serial_number") or "").strip()
 
-        if not operator or not order_number:
-            return jsonify({"error": "operator and order_number are required"}), 400
+        if not operator or not order_number or not serial_number:
+            return jsonify({"error": "operator, order_number, and serial_number are required"}), 400
+
+        if not is_valid_serial_number(serial_number):
+            return jsonify({"error": "Serial number must be formatted as EMyyww0000."}), 400
 
         db = DatabaseManager()
         with db.session() as db_session:
+            order_repo = OrderRepository(db_session)
             device_repo = DeviceRepository(db_session)
-            next_device = device_repo.get_next_unused_by_order(order_number)
 
-        if next_device is None:
-            return jsonify({
-                "error": f"No unprovisioned devices remain for order {order_number}.",
-            }), 409
+            if order_repo.get_by_order_number(order_number) is None:
+                return jsonify({"error": f"Order {order_number} does not exist."}), 404
 
-        engine.start(operator, order_number)
-        engine.set_mac_addresses(next_device.ethaddr_id, next_device.eth1addr_id)
+            existing = device_repo.get_by_order_and_serial(order_number, serial_number)
+            if existing is not None and existing.test_result == "PASS":
+                return jsonify({
+                    "error": f"Serial {serial_number} in order {order_number} has already passed testing.",
+                }), 409
+
+        engine.start(operator, order_number, serial_number)
 
         return workflow_response()
 
@@ -465,96 +453,118 @@ def register_routes(app, application):
 
         return workflow_response()
 
-    @api_bp.route("/workflow/mac", methods=["PUT"])
-    def workflow_mac():
-        if not session_active():
-            return jsonify({"error": "No active session"}), 404
+    @api_bp.route("/workflow/mac-assign", methods=["PUT"])
+    def workflow_mac_assign():
+        if engine.state != WorkflowState.ASSIGNING_MAC:
+            return jsonify({"error": "Not currently assigning MAC addresses"}), 409
 
         payload = request.get_json(silent=True) or {}
         mac1 = (payload.get("mac1") or "").strip()
-        mac2 = (payload.get("mac2") or "").strip()
 
-        if not mac1 or not mac2:
-            return jsonify({"error": "mac1 and mac2 are required"}), 400
+        if not mac1:
+            return jsonify({"error": "mac1 is required"}), 400
 
+        db = DatabaseManager()
+        with db.session() as db_session:
+            mac_repo = MacAddressRepository(db_session)
+
+            mac_entry_1 = mac_repo.get_by_mac(mac1)
+            if mac_entry_1 is None or mac_entry_1.used:
+                return jsonify({"error": f"MAC address {mac1} is not available."}), 409
+
+            mac_entry_2 = mac_repo.get_next_available_excluding(mac1)
+            if mac_entry_2 is None:
+                return jsonify({"error": "No second MAC address available in the pool."}), 409
+
+            mac2 = mac_entry_2.mac_address
+
+        # Only validated here, not claimed - the pool entries aren't
+        # marked used until the device is actually saved (see
+        # DeviceService.record_result), so a cancelled session never
+        # leaves MACs stuck in limbo.
         engine.set_mac_addresses(mac1, mac2)
+
+        return workflow_response()
+
+    @api_bp.route("/workflow/mac-confirm", methods=["POST"])
+    def workflow_mac_confirm():
+        if engine.state != WorkflowState.ASSIGNING_MAC:
+            return jsonify({"error": "Not currently assigning MAC addresses"}), 409
+
+        engine.confirm_mac_assignment()
+
+        return workflow_response()
+
+    @api_bp.route("/workflow/verify-confirm", methods=["POST"])
+    def workflow_verify_confirm():
+        if engine.state != WorkflowState.VERIFYING_MAC:
+            return jsonify({"error": "Not currently verifying MAC addresses"}), 409
+
+        engine.confirm_mac_verification()
 
         return workflow_response()
     
     @api_bp.route("/workflow/result", methods=["PUT"])
     def workflow_result():
-        if not session_active():
-            return jsonify({"error": "No active session"}), 400
-        
-        if engine.state != WorkflowState.COMPLETE:
+        if engine.state != WorkflowState.AWAITING_RESULT:
             return jsonify({"error": "Complete all test steps before recording a result"}), 409
-        
+
         payload = request.get_json(silent=True) or {}
-        result = (payload.get("result") or"").strip().upper()
+        result = (payload.get("result") or "").strip().upper()
         notes = (payload.get("notes") or "").strip()
-        
+
         if result not in ("PASS", "FAIL"):
             return jsonify({"error": "result must be PASS or FAIL"}), 400
-        
+
         if result == "FAIL" and not notes:
             return jsonify({"error": "Notes are required when recording a failed test."}), 400
-        
+
         engine.set_test_result(result, notes)
-        
+
         return workflow_response()
 
     @api_bp.route("/session/finish", methods=["POST"])
     def session_finish():
-        if not session_active():
-            return jsonify({"error": "No active session"}), 404
-        
-        if engine.session.test_result not in ("PASS", "FAIL"):
-            return jsonify({"error": "Record a test result before saving this device"}), 409
+        if engine.state != WorkflowState.READY_TO_SAVE:
+            return jsonify({"error": "Session is not ready to be saved"}), 409
 
-        payload = request.get_json(silent=True) or {}
-        serial_number = (payload.get("serial_number") or "").strip()
-
-        if not serial_number:
-            return jsonify({"error": "serial_number is required"}), 400
-
-        if not is_valid_serial_number(serial_number):
-            return jsonify({"error": "Serial number must be formatted as EMyyww0000."}), 400
-
+        session = engine.session
         db = DatabaseManager()
 
         try:
             with db.session() as db_session:
                 device_service = DeviceService(db_session)
-                device_service.reserve_device(
-                    ethaddr_id=engine.session.mac1,
-                    eth1addr_id=engine.session.mac2,
-                    order_number=engine.session.order_number,
-                    serial_number=serial_number,
-                    operator=engine.session.operator,
-                    test_result=engine.session.test_result,
+                device_service.record_result(
+                    order_number=session.order_number,
+                    serial_number=session.serial_number,
+                    operator=session.operator,
+                    test_result=session.test_result,
+                    notes=session.test_notes,
+                    mac1=session.mac1 or None,
                 )
-                
-                if engine.session.test_result == "FAIL":
+
+                if session.test_result == "FAIL":
                     audit_repo = AuditRepository(db_session)
                     audit_repo.create(AuditLog(
-                        operator=engine.session.operator or "unknown",
+                        operator=session.operator or "unknown",
                         action="Test Failed",
                         details=(
-                            f"Device {serial_number} (order {engine.session.order_number}) "
-                            f"failed testings. Notes: {engine.session.test_notes}"
+                            f"Device {session.serial_number} (order {session.order_number}) "
+                            f"failed testing. Notes: {session.test_notes}"
                         ),
                     ))
-                    
-                maybe_export_completed_order(db_session, application, engine.session.order_number)
+
+                maybe_export_completed_order(db_session, application, session.order_number)
         except ValueError as error:
             return jsonify({"error": str(error)}), 409
 
-        engine.finish(serial_number)
+        # Straight back to the serial/order prompt, same operator - no
+        # separate "Save & Repeat" confirmation screen anymore.
+        engine.restart()
 
         return jsonify({
             "session": session_dict(engine.session),
             "message": "Device saved to traceability log.",
-            "serial_number": serial_number,
         })
 
     @api_bp.route("/session/cancel", methods=["POST"])
