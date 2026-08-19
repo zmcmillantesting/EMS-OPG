@@ -143,3 +143,9 @@ resolved or new ones are found.
   `logs/mac_database_initialization.log`, `logs/database_flow_test.log`)
   aren't on a rotating handler and can grow unbounded, though they're
   test/dev artifacts rather than production logs.
+
+
+- **Inconsistant scanning on simple QR codes** barcodes may be too grainy or too large for barcode scanner to work properly. May also be a bad scanner. need to do more testing to determine root cause.
+
+- **MAC Address QR Code wont update with new mac addresses** stays on ...:79:70 and ...:79:71. Having to manually update bash code. All data updates on UI just not the QR code itself.
+
