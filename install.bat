@@ -14,11 +14,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\install_window
 
 if errorlevel 1 (
     echo.
-    echo
-============================================
-    echo Install Failed - see the error above.
-    echo
-============================================
+    echo ============================================
+    echo  Install FAILED - see the error above.
+    echo ============================================
     pause >nul
     exit /b 1
 )

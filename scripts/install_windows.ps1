@@ -47,13 +47,13 @@ New-Item -ItemType Directory -Force -Path $ProgramsDir | Out-Null
 $RobocopyLog = Join-Path $env:TEMP "ems-opg-install-robocopy.log"
 
 Write-Host "Installing to $InstallDir..."
-robocopy $BuildOutput $InstallDir /E /R:3 /W:2 /NFL /NDL /NJH /NP | Out-Null
-
 robocopy $BuildOutput $InstallDir /E /R:5 /W:3 /NJH /NJS /NP /LOG:$RobocopyLog | Out-Null
+
 # robocopy's exit code is a bitmask, not a simple 0/1 - anything under 8
 # means some form of success (0-7 cover "nothing to copy" through "some
 # files copied/mismatched but no real failure"); 8+ is a genuine failure.
 if ($LASTEXITCODE -ge 8) {
+    Write-Error "robocopy failed (exit code $LASTEXITCODE) while copying to $InstallDir"
     Write-Host ""
     Write-Host "Errors from the robocopy log:"
     Select-String -Path $RobocopyLog -Pattern "ERROR" | ForEach-Object {
@@ -61,7 +61,6 @@ if ($LASTEXITCODE -ge 8) {
     }
     Write-Host ""
     Write-Host "Full log: $RobocopyLog"
-
     exit 1
 }
 

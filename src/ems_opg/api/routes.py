@@ -164,7 +164,7 @@ def build_step_payload(engine, qr_service):
                 "total_steps": session.total_steps,
                 "step_name": step_name,
                 "command": "",
-                "qr_url": f"/qr/{result.filename}?t={time.time_ns()}",
+                "qr_url": None,
             }
         command = qr_service.create_macs(session.mac1, session.mac2)
         result = qr_service.generator.generate(command, "step5")
@@ -179,7 +179,16 @@ def build_step_payload(engine, qr_service):
         "total_steps": session.total_steps,
         "step_name": step_name,
         "command": result.command,
-        "qr_url": f"/qr/{result.filename}",
+        # Each step reuses a fixed filename (step5.png, etc.), so the URL
+        # is byte-identical across devices even though the file's content
+        # changes (a new MAC pair each device). Setting an <img>'s src to
+        # a URL it already has doesn't trigger a new fetch in any
+        # browser, so without a cache-buster the very first device's QR
+        # code just stays on screen forever after - the underlying file
+        # and the rest of the UI update correctly, only the cached image
+        # doesn't. The query param forces every response to be treated
+        # as a genuinely new resource.
+        "qr_url": f"/qr/{result.filename}?t={time.time_ns()}",
     }
 
 

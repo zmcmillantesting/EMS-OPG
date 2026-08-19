@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ems-opg"
-version = "1.0.0"
+version = "1.0.1"
 description = "EMS Operations and Production Gateway"
 requires-python = ">=3.12"
 
