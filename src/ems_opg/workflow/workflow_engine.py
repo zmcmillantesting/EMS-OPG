@@ -49,7 +49,7 @@ class WorkflowEngine:
     def previous_step(self):
         if self.state == WorkflowState.AWAITING_RESULT:
             self.state = WorkflowState.TESTING
-        elif self.session.current_step > 0:
+        elif self.state == WorkflowState.TESTING and self.session.current_step > 0:
             self.session.current_step -= 1
 
     # --------------------------------------------------

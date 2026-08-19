@@ -202,18 +202,46 @@ const mockApi = {
         });
     },
 
-    setMacAddresses(mac1, mac2) {
-        if (!mockSession) {
-            return Promise.reject(new Error("No active session"));
-        }
-        
-        mockSession.mac1 = mac1
-        mockSession.mac2 = mac2
+    assignMac1(mac1) {
+        return withFallback(
+            () => request("/workflow/mac-assign", { method: "PUT", body: JSON.stringify({ mac1 }) }),
+            () => mockApi.assignMac1(mac1)
+        );
+    },
 
-        return Promise.resolve({
-            session: { ...mockSession },
-        step: buildStepPayload(mockSession),
-         });
+    confirmMacAssignment() {
+        return withFallback(
+            () => request("/workflow/mac-confirm", { method: "POST" }),
+            () => mockApi.confirmMacAssignment()
+        );
+    },
+
+    confirmVerification() {
+        return withFallback(
+            () => request("/workflow/verify-confirm", { method: "POST" }),
+            () => mockApi.confirmVerification()
+        );
+    },
+
+    finishSession() {
+        return withFallback(
+            () => request("/session/finish", { method: "POST" }),
+            () => mockApi.finishSession()
+        );
+    },
+
+    getOrders() {
+        return withFallback(
+            () => request("/orders"),
+            () => mockApi.getOrders()
+        );
+    },
+
+    createOrder(payload) {
+        return withFallback(
+            () => request("/orders", { method: "POST", body: JSON.stringify(payload) }),
+            () => mockApi.createOrder(payload)
+        );
     },
 
     setTestResult(result, notes) {

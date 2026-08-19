@@ -11,7 +11,6 @@ const PAGE_COMPONENTS = {
     macPanel: "components/macPanel.html",
     verificationPanel: "components/verificationPanel.html",
     resultPanel: "components/resultPanel.html",
-    serialPanel: "components/serialPanel.html",
 };
 
 const ORDER_NUMBER_PATTERN = /^\d{4,5}\.\d$/;
@@ -66,7 +65,6 @@ async function loadTestingComponents() {
         loadComponent("mac-placeholder", PAGE_COMPONENTS.macPanel),
         loadComponent("verification-placeholder", PAGE_COMPONENTS.verificationPanel),
         loadComponent("result-placeholder", PAGE_COMPONENTS.resultPanel),
-        loadComponent("serial-placeholder", PAGE_COMPONENTS.serialPanel),
     ]);
 }
 

@@ -43,7 +43,7 @@ def write_devices_csv(writer, devices):
     for d in devices:
         writer.writerow(device_csv_row(d))
 
-def session_dict(session):
+def session_dict(session, state):
     return {
         "operator": session.operator,
         "order_number": session.order_number,
@@ -56,6 +56,11 @@ def session_dict(session):
         "total_steps": session.total_steps,
         "completed": session.completed,
         "cancelled": session.cancelled,
+        # Explicit state name - current_step/test_result/mac1 can't
+        # disambiguate every phase on their own (ASSIGNING_MAC once both
+        # MACs are set is field-for-field identical to VERIFYING_MAC, and
+        # to a save-ready PASS). The frontend switches on this directly.
+        "state": state.name,
     }
 
 def failure_note_dict(note):
@@ -77,7 +82,7 @@ def device_dict(device):
         "test_result": device.test_result,
         "operator": device.operator,
         "timestamp": device.timestamp.isoformat() if device.timestamp else None,
-        "failure_notes": [DeviceFailureNote(note) for note in device.failure_notes]
+        "failure_notes": [failure_note_dict(note) for note in device.failure_notes]
     }
 
 def resolve_device_by_serial(repo, serial, current_order_number):
@@ -234,7 +239,7 @@ def register_routes(app, application):
             step = None
 
         return jsonify({
-            "session": session_dict(session),
+            "session": session_dict(session, engine.state),
             "step": step,
         })
 
@@ -563,7 +568,7 @@ def register_routes(app, application):
         engine.restart()
 
         return jsonify({
-            "session": session_dict(engine.session),
+            "session": session_dict(session, engine.state),
             "message": "Device saved to traceability log.",
         })
 
@@ -694,8 +699,8 @@ def register_routes(app, application):
         mac2 = (payload.get("mac2") or "").strip()
         reason = (payload.get("reason") or "").strip()
 
-        if not order_number or not new_serial or not mac1:
-            return jsonify({"error": "order_number, serial_number, and mac1 are required"}), 400
+        if not order_number or not new_serial:
+            return jsonify({"error": "order_number and serial_number are required"}), 400
 
         if not reason:
             return jsonify({"error": "A reason is required for manual corrections."}), 400
@@ -712,24 +717,41 @@ def register_routes(app, application):
                 body, status = error
                 return jsonify(body), status
 
+            # MAC fields only make sense on a device that has actually
+            # passed - a FAIL is never supposed to hold MAC addresses.
+            # Assigning MACs for the first time goes through the normal
+            # PASS workflow, not this manual-correction endpoint.
+            if mac1 and device.test_result != "PASS":
+                return jsonify({
+                    "error": "Cannot assign MAC addresses to a device that hasn't passed testing.",
+                }), 400
+
+            if device.test_result == "PASS" and not mac1:
+                return jsonify({"error": "mac1 is required for a device that has passed testing."}), 400
+
             conflict = repo.get_by_order_and_serial(order_number, new_serial)
             if conflict is not None and conflict.id != device.id:
                 return jsonify({"error": "Serial number already exists for that order."}), 409
 
-            
-
             before = device_dict(device)
-            
+
             old_mac1, old_mac2 = device.ethaddr_id, device.eth1addr_id
+            new_mac1 = mac1 or None
             new_mac2 = mac2 or None
 
-            if old_mac1 != mac1 or old_mac2 != new_mac2:
+            if old_mac1 != new_mac1 or old_mac2 != new_mac2:
                 mac_repo = MacAddressRepository(db_session)
-                new_macs = {mac1, new_mac2}
-                
-                for candidate in (mac1, new_mac2):
+                new_macs = {new_mac1, new_mac2}
+
+                for candidate in (new_mac1, new_mac2):
                     if not candidate:
                         continue
+                    # The MAC must actually be a registered pool address -
+                    # previously this wasn't checked, letting the devices
+                    # table and the pool silently drift out of sync.
+                    if mac_repo.get_by_mac(candidate) is None:
+                        return jsonify({"error": f"MAC address {candidate} is not in the MAC pool."}), 400
+
                     conflict = repo.get_by_single_mac(candidate)
                     if conflict is not None and conflict.id != device.id:
                         return jsonify({"error": f"MAC address {candidate} is already assigned to another device."}), 409
@@ -740,7 +762,7 @@ def register_routes(app, application):
                         if old_entry is not None:
                             mac_repo.mark_unused(old_entry)
 
-                for claimed_mac in (mac1, new_mac2):
+                for claimed_mac in (new_mac1, new_mac2):
                     if claimed_mac:
                         claimed_entry = mac_repo.get_by_mac(claimed_mac)
                         if claimed_entry is not None:
@@ -749,8 +771,10 @@ def register_routes(app, application):
             device.order_number = order_number
             device.serial_number = new_serial
             device.operator = operator
-            device.ethaddr_id = mac1
+            device.ethaddr_id = new_mac1
             device.eth1addr_id = new_mac2
+            device.used = device.test_result == "PASS"
+
             audit_repo = AuditRepository(db_session)
             audit_repo.create(AuditLog(
                 operator=operator or "unknown",
@@ -767,7 +791,6 @@ def register_routes(app, application):
     def reset_device_mac(serial):
         payload = request.get_json(silent=True) or {}
         reason = (payload.get("reason") or "").strip()
-
         current_order_number = (payload.get("current_order_number") or "").strip() or None
 
         if not reason:
@@ -782,27 +805,44 @@ def register_routes(app, application):
                 body, status = error
                 return jsonify(body), status
 
-            repo.mark_unused(device)
-            
-            # Only clears the device's "used" flag so the same MAC pair can
-            # be re-finished (corrected serial/order). The MAC pool entries
-            # stay marked used — a MAC is permanently tied to one physical
-            # device's unique columns, so freeing the pool here would let
-            # provisioning try to hand these same MACs to a *different*
-            # device and crash on the devices table's UNIQUE constraint.        
+            if device.test_result != "PASS":
+                return jsonify({"error": "This device has no MAC addresses assigned."}), 409
+
+            # Undoes a PASS: releases both addresses back to the shared
+            # pool (they were mis-scanned or wrongly assigned) and drops
+            # the device to FAIL so it's retestable again - session/start
+            # will accept this serial+order once more since it's no
+            # longer PASS.
+            mac_repo = MacAddressRepository(db_session)
+            for mac_value in (device.ethaddr_id, device.eth1addr_id):
+                if not mac_value:
+                    continue
+                mac_entry = mac_repo.get_by_mac(mac_value)
+                if mac_entry is not None:
+                    mac_repo.mark_unused(mac_entry)
+
+            device.ethaddr_id = None
+            device.eth1addr_id = None
+            device.used = False
+            device.test_result = "FAIL"
+            device.failure_notes.append(DeviceFailureNote(
+                operator=device.operator or "unknown",
+                reason=f"MAC reset: {reason}",
+            ))
 
             audit_repo = AuditRepository(db_session)
             audit_repo.create(AuditLog(
                 operator=device.operator or "unknown",
                 action="MAC Reset",
-                details=f"MAC used-status reset for device {device.serial_number}. Reason: {reason}",
+                details=f"MAC addresses released for device {device.serial_number}. Reason: {reason}",
             ))
 
             return jsonify({
                 "device": device_dict(device),
-                "message": "MAC reset successfully.",
+                "message": "MAC addresses released. Device is retestable again.",
             })
 
+        
     @api_bp.route("/mac/<mac>", methods=["GET"])
     def get_device_by_mac(mac):
         db = DatabaseManager()

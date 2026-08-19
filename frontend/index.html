@@ -17,33 +17,41 @@
         <section class="home-card card">
             <h1 class="page-title">EMS Operations Production Gateway</h1>
             <p class="page-subtitle">Enter your operator ID and select an order to begin device testing</p>
-
             <form id="start-test-form" class="start-test-form">
                 <div class="form-row">
                     <label class="field-label" for="operator-input">Operator ID</label>
                     <input class="input" id="operator-input" type="text" placeholder="4521" autofocus>
                 </div>
-
+            
                 <div class="form-row">
-                    <label class="field-label" for="open-orders-select">Open Orders</label>
+                    <label class="field-label" for="order-select">Order</label>
                     <div class="input-with-action">
-                        <select class="input select-input" id="open-orders-select">
-                            <option value="">— Select an open order —</option>
+                        <select class="input select-input" id="order-select" required>
+                            <option value="">— Select an order —</option>
                         </select>
-                        <button id="edit-order-button" class="button button-secondary hidden" type="button">
-                            Edit Order
-                        </button>
-                        <button id="delete-order-button" class="button button-danger hidden" type="button">
-                            Delete Empty Order
-                        </button>
+                        <button id="new-order-toggle" class="button button-secondary" type="button">+ New Order</button>
+                        <button id="edit-order-button" class="button button-secondary hidden" type="button">Edit Order</button>
+                        <button id="delete-order-button" class="button button-danger hidden" type="button">Delete Empty Order</button>
                     </div>
                 </div>
-
-                <div class="form-row">
-                    <label class="field-label" for="order-input">Order Number</label>
-                    <input class="input" id="order-input" type="text" placeholder="e.g. 12345.6">
+            
+                <div id="new-order-panel" class="card hidden">
+                    <div class="form-row">
+                        <label class="field-label" for="new-order-number-input">Order Number</label>
+                        <input class="input" id="new-order-number-input" type="text" placeholder="e.g. 12345.6">
+                    </div>
+                    <div class="form-row">
+                        <label class="field-label" for="new-order-quantity-input">Quantity</label>
+                        <input class="input" id="new-order-quantity-input" type="number" min="1" placeholder="e.g. 50">
+                    </div>
+                    <button id="new-order-create" class="button button-primary" type="button">Create Order</button>
                 </div>
-
+            
+                <div class="form-row">
+                    <label class="field-label" for="serial-input">Serial Number</label>
+                    <input class="input" id="serial-input" type="text" placeholder="EMyyww0000">
+                </div>
+            
                 <button id="start-test" class="button button-primary start-button" type="submit">
                     Start Test
                 </button>
