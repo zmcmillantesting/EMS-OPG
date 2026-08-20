@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { loadPage } from "./helpers/loadPage.js";
 
 function loadApi() {
-    return loadPage("", ["common.js", "api.js"]);
+    return loadPage("", ["common.js", "api.js"], {
+        exposeGlobals: ["api", "mockAPI"]
+    });
 }
 
 function mockFetch(body = { session: { state: "TESTING" }, step: null }) {

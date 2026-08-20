@@ -24,12 +24,21 @@ const JS_DIR = path.resolve(__dirname, "..", "..");
  * own DOMContentLoaded handler runs, since scripts execute synchronously
  * during construction here.
  */
-export function loadPage(bodyHtml, scriptFiles, { beforeParse } = {}) {
+export function loadPage(bodyHtml, scriptFiles, { beforeParse, exposeGlobals = [] } = {}) {
     const scripts = scriptFiles
         .map((file) => `<script>${readFileSync(path.join(JS_DIR, file), "utf-8")}</script>`)
         .join("\n");
 
-    const html = `<!doctype html><html><body>${bodyHtml}\n${scripts}</body></html>`;
+    // const/let/class declared at a script's top level are visible to a
+    // bare identifier from any other <script> tag on the page (that's
+    // how the app's own files find each other), but never become
+    // properties of window - so tests that need `dom.window.api` from
+    // outside the realm need this bridge to expose it explicitly.
+    const bridge = exposeGlobals.length
+        ? `<script>${exposeGlobals.map((name) => `window.${name} = ${name};`).join("\n")}</script>`
+        : "";
+
+    const html = `<!doctype html><html><body>${bodyHtml}\n${scripts}\n${bridge}</body></html>`;
 
     return new JSDOM(html, {
         runScripts: "dangerously",
