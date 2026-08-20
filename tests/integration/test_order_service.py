@@ -67,13 +67,13 @@ def test_correct_order_rejects_quantity_below_current_passed_count(session):
         MACAddressPool(mac_address="AA:BB:CC:DD:EE:03"),
     ])
     session.commit()
-    device_service.record_result(
+    device_service.record_pass(
         order_number="12345.6", serial_number="EM20260001", operator="4521",
-        test_result="PASS", notes="", mac1="AA:BB:CC:DD:EE:00",
+        mac1="AA:BB:CC:DD:EE:00",
     )
-    device_service.record_result(
+    device_service.record_pass(
         order_number="12345.6", serial_number="EM20260002", operator="4521",
-        test_result="PASS", notes="", mac1="AA:BB:CC:DD:EE:02",
+        mac1="AA:BB:CC:DD:EE:02",
     )
 
     with pytest.raises(ValueError, match="already passed"):
@@ -91,3 +91,24 @@ def test_correct_order_rejects_rename_to_an_existing_order_number(session):
 def test_correct_order_raises_for_unknown_order(session):
     with pytest.raises(ValueError, match="not found"):
         OrderService(session).correct_order("00000.0", quantity=5)
+
+def test_record_failure_creates_an_order_failure_row(session):
+    from ems_opg.database.models import OrderFailure
+
+    service = OrderService(session)
+    service.create_order("12345.6", 10)
+
+    failure = service.record_failure(
+        order_number="12345.6", operator="4521", reason="fails -LL during functional test",
+    )
+
+    assert failure.id is not None
+    assert session.query(OrderFailure).count() == 1
+    assert session.query(OrderFailure).one().reason == "fails -LL during functional test"
+
+
+def test_record_failure_raises_for_unknown_order(session):
+    service = OrderService(session)
+
+    with pytest.raises(ValueError, match="not found"):
+        service.record_failure(order_number="00000.0", operator="4521", reason="bad port")

@@ -52,14 +52,16 @@ async function loadOrders() {
 
         select.querySelectorAll('option:not([value=""])').forEach((option) => option.remove());
 
-        result.orders.forEach((order) => {
-            orderQuantities[order.order_number] = order.quantity;
+        result.orders
+            .filter((order) => order.remaining > 0)
+            .forEach((order) => {
+                orderQuantities[order.order_number] = order.quantity;
 
-            const option = document.createElement("option");
-            option.value = order.order_number;
-            option.textContent = `${order.order_number} — ${order.passed}/${order.quantity} passed`;
-            select.appendChild(option);
-        });
+                const option = document.createElement("option");
+                option.value = order.order_number;
+                option.textContent = `${order.order_number} — ${order.passed}/${order.quantity} passed`;
+                select.appendChild(option);
+            });
     } catch (error) {
         console.error("Unable to load orders:", error);
     }
