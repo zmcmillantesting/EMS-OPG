@@ -3,6 +3,7 @@
 Tracked here rather than fixed immediately because each needs a judgment
 call, isn't urgent, or is explicitly deferred. Update this list as items get
 resolved or new ones are found.
+- previous button in testing stage isn't working
 
 ## Configuration / versioning
 
