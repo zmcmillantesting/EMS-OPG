@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from ems_opg.config.config_manager import ConfigurationManager
-from ems_opg.core.paths_manager import PathManager
 
 config = ConfigurationManager(
     Path("config/config.json")
@@ -9,22 +8,22 @@ config = ConfigurationManager(
 
 def test_config_manager_load():
     assert config.application["name"] == "EMS-OPG"
-    assert config.application["version"] == "1.0.0"
+    assert config.application["version"] == "2.0.0"
     assert config.database["filename"] == "ems_opg.db"
     assert config.logging["level"] == "INFO"
     assert config.backup["directory"] == "database/backups"
 
 def test_config_manager_save():
     # Modify a configuration value
-    config.application["version"] = "1.0.1"
+    config.application["version"] = "2.0.1"
     config.save()
 
     # Reload the configuration to verify the change
     config.load()
-    assert config.application["version"] == "1.0.1"
+    assert config.application["version"] == "2.0.1"
 
     # Revert the change for other tests
-    config.application["version"] = "1.0.0"
+    config.application["version"] = "2.0.0"
     config.save()
 
 def test_config_manager_application():

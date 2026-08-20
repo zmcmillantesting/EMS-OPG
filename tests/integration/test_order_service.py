@@ -63,16 +63,21 @@ def test_correct_order_rejects_quantity_below_current_passed_count(session):
     session.add_all([
         MACAddressPool(mac_address="AA:BB:CC:DD:EE:00"),
         MACAddressPool(mac_address="AA:BB:CC:DD:EE:01"),
+        MACAddressPool(mac_address="AA:BB:CC:DD:EE:02"),
+        MACAddressPool(mac_address="AA:BB:CC:DD:EE:03"),
     ])
     session.commit()
     device_service.record_result(
         order_number="12345.6", serial_number="EM20260001", operator="4521",
         test_result="PASS", notes="", mac1="AA:BB:CC:DD:EE:00",
     )
+    device_service.record_result(
+        order_number="12345.6", serial_number="EM20260002", operator="4521",
+        test_result="PASS", notes="", mac1="AA:BB:CC:DD:EE:02",
+    )
 
     with pytest.raises(ValueError, match="already passed"):
-        order_service.correct_order("12345.6", quantity=0)
-
+        order_service.correct_order("12345.6", quantity=1)
 
 def test_correct_order_rejects_rename_to_an_existing_order_number(session):
     service = OrderService(session)
