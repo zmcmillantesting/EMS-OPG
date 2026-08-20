@@ -16,10 +16,10 @@ function bindHomeActions(status) {
     const form = document.getElementById("start-test-form");
     if (form) form.addEventListener("submit", handleStartTest);
 
-    const orderSelect = document.getElementById("order-select");
-    if (orderSelect) {
-        orderSelect.addEventListener("change", () => {
-            updateOrderActionButtons(orderSelect.value);
+    const manageOrderInput = document.getElementById("manage-order-input");
+    if (manageOrderInput) {
+        manageOrderInput.addEventListener("input", () => {
+            updateOrderActionButtons(manageOrderInput.value.trim());
         });
     }
 
@@ -52,16 +52,16 @@ async function loadOrders() {
 
         select.querySelectorAll('option:not([value=""])').forEach((option) => option.remove());
 
-        result.orders
-            .filter((order) => order.remaining > 0)
-            .forEach((order) => {
-                orderQuantities[order.order_number] = order.quantity;
+        result.orders.forEach((order) => {
+            orderQuantities[order.order_number] = order.quantity;
 
-                const option = document.createElement("option");
-                option.value = order.order_number;
-                option.textContent = `${order.order_number} — ${order.passed}/${order.quantity} passed`;
-                select.appendChild(option);
-            });
+            if (order.remaining <= 0) return;
+
+            const option = document.createElement("option");
+            option.value = order.order_number;
+            option.textContent = `${order.order_number} — ${order.passed}/${order.quantity} passed`;
+            select.appendChild(option);
+        });
     } catch (error) {
         console.error("Unable to load orders:", error);
     }
@@ -112,10 +112,9 @@ async function handleCreateOrder() {
 }
 
 async function handleDeleteOrder() {
-    const select = document.getElementById("order-select");
+    const input = document.getElementById("manage-order-input");
     const operatorInput = document.getElementById("operator-input");
-    const orderNumber = (select?.value || "").trim();
-
+    const orderNumber = (input?.value || "").trim();
     if (!orderNumber) return;
 
     if (!confirm(
@@ -136,9 +135,9 @@ async function handleDeleteOrder() {
 }
 
 async function handleEditOrder() {
-    const select = document.getElementById("order-select");
+    const input = document.getElementById("manage-order-input");
     const operatorInput = document.getElementById("operator-input");
-    const orderNumber = (select?.value || "").trim();
+    const orderNumber = (input?.value || "").trim();
 
     if (!orderNumber) return;
 
