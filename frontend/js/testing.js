@@ -1,32 +1,31 @@
 /**
- * Testing page — QR steps, pass/fail, and (PASS only) MAC assignment and
- * verification. Operator ID, order, and serial number are all captured on
- * the home page before this page loads.
+ * Testing page — QR steps, pass/fail, and (PASS only) serial entry, MAC
+ * assignment, and verification. Operator and order are captured on the
+ * home page; serial number is only ever entered here, after a PASS.
  */
 
-const PHASES = ["qr", "result", "mac", "verification"];
+const PHASES = ["qr", "result", "serial", "mac", "verification"];
 
 const STAGE_META = {
     qr: { title: "Functional Test", sub: "Steps 1–4" },
     result: { title: "Test Result", sub: "Pass/Fail" },
+    serial: { title: "Serial Number", sub: "Assign" },
     mac: { title: "MAC Addresses", sub: "Assign" },
     verification: { title: "Verification", sub: "Confirm" },
 };
 
 const PHASE_PLACEHOLDER_IDS = {
     qr: "qr-steps-placeholder",
+    result: "result-placeholder",
+    serial: "serial-placeholder",
     mac: "mac-placeholder",
     verification: "verification-placeholder",
-    result: "result-placeholder",
 };
 
-// The only place WorkflowState -> UI phase gets decided. Session fields
-// alone (current_step/test_result/mac1) can't disambiguate every phase -
-// see the routes.py session_dict note - so everything below switches on
-// session.state, not on inferred field combinations.
 const STATE_TO_PHASE = {
     TESTING: "qr",
     AWAITING_RESULT: "result",
+    AWAITING_SERIAL: "serial",
     ASSIGNING_MAC: "mac",
     VERIFYING_MAC: "verification",
 };
@@ -62,6 +61,13 @@ function bindActions() {
     bindClick("next-button", handleNext);
     bindClick("home-button", () => navigateTo("index.html"));
 
+    bindClick("result-pass", handleResultPass);
+    bindClick("result-fail", handleResultFailShowNotes);
+    bindClick("result-fail-submit", handleResultFailSubmit);
+
+    bindClick("serial-prev", handlePrevious);
+    bindClick("serial-next", handleSerialSubmit);
+
     bindClick("mac-assign", handleMacAssign);
     bindClick("mac-prev", handlePrevious);
     bindClick("mac-next", handleMacNext);
@@ -70,10 +76,6 @@ function bindActions() {
     if (verifyCheckbox) verifyCheckbox.addEventListener("change", handleVerifyChange);
     bindClick("verification-prev", handlePrevious);
     bindClick("verification-next", handleVerificationNext);
-
-    bindClick("result-pass", handleResultPass);
-    bindClick("result-fail", handleResultFailShowNotes);
-    bindClick("result-fail-submit", handleResultFailSubmit);
 
     bindClick("reset-device-toggle", handleResetDeviceToggle);
 }
@@ -137,9 +139,10 @@ function render(session, step) {
     updateHeaderOperator(session.operator);
 
     if (phase === "qr" && step) renderQrStep(step);
+    else if (phase === "result") renderResultPhase();
+    else if (phase === "serial") renderSerialPhase(session);
     else if (phase === "mac") renderMacPhase(session, step);
     else if (phase === "verification") renderVerificationPhase(step);
-    else if (phase === "result") renderResultPhase();
 }
 
 function showPhase(phase) {
@@ -268,7 +271,8 @@ async function handleResultFailSubmit() {
         currentSession = result.session;
         saveSession(currentSession);
 
-        // FAIL has no MAC phase - save-ready the instant notes are in.
+        // FAIL has no serial/MAC phase - save-ready the instant the
+        // reason is in, and there's no device to identify, just the order.
         if (result.session.state === "READY_TO_SAVE") {
             await finishAndRestart();
         } else {
@@ -277,6 +281,34 @@ async function handleResultFailSubmit() {
     } catch (error) {
         console.error("Unable to record test result:", error);
         alert(error.message || "Unable to record test result.");
+    }
+}
+
+/* ---------- Phase: Serial Number (PASS only) ---------- */
+
+function renderSerialPhase(session) {
+    document.getElementById("serial-input").value = "";
+    document.getElementById("serial-order").textContent = session.order_number || "—";
+}
+
+async function handleSerialSubmit() {
+    const serialInput = document.getElementById("serial-input");
+    const serial = serialInput.value.trim();
+
+    if (!isValidSerialNumber(serial)) {
+        alert("Serial number must be formatted as EMyyww0000.");
+        serialInput.focus();
+        return;
+    }
+
+    try {
+        const result = await api.setSerialNumber(serial);
+        currentSession = result.session;
+        saveSession(currentSession);
+        render(result.session, result.step);
+    } catch (error) {
+        console.error("Unable to record serial number:", error);
+        alert(error.message || "Unable to record serial number.");
     }
 }
 
@@ -318,8 +350,6 @@ async function handleMacAssign() {
     }
 
     try {
-        // MAC2 is chosen server-side (next available in the pool) - the
-        // frontend doesn't compute or guess it anymore.
         const result = await api.assignMac1(mac1);
         currentSession = result.session;
         saveSession(currentSession);
@@ -373,9 +403,6 @@ async function handleVerificationNext() {
         currentSession = result.session;
         saveSession(currentSession);
 
-        // Verified -> save-ready. Save and restart immediately - "once
-        // verification is completed, restart the test procedure" - no
-        // separate confirmation click.
         if (result.session.state === "READY_TO_SAVE") {
             await finishAndRestart();
         } else {
@@ -387,19 +414,18 @@ async function handleVerificationNext() {
     }
 }
 
-/* ---------- Save + restart ---------- */
+/* ---------- Save + loop to next board ---------- */
 
 async function finishAndRestart() {
     try {
-        await api.finishSession();
+        const result = await api.finishSession();
+        currentSession = result.session;
+        saveSession(currentSession);
+        // Operator + order stay fixed - loop straight back into the
+        // next board's QR steps rather than returning to the home page.
+        render(result.session, null);
     } catch (error) {
-        console.error("Unable to save device:", error);
-        alert(error.message || "Unable to save this device.");
-        return;
+        console.error("Unable to save:", error);
+        alert(error.message || "Unable to save.");
     }
-
-    // Operator/order/serial entry all live on the home page - "restart
-    // the test procedure" means going back there, not a phase here.
-    clearSession();
-    navigateTo("index.html");
 }

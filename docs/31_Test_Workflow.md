@@ -1,6 +1,6 @@
 # Test Workflow
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 
 ---
 
@@ -22,103 +22,87 @@ The application and the test bench **never communicate directly**.
 
 Instead, the operator serves as the bridge between the two environments.
 
-The application's responsibility is to:
-
-- Guide the operator
-- Display QR codes
-- Record traceability information
-- Store production records
-
-The isolated test bench is responsible for:
-
-- Receiving scanned Bash commands
-- Executing functional tests
-- Displaying results
-
----
-
-# System Workflow
-
-```
-Production Network
-
-┌──────────────────────────┐
-│                          │
-│   CSS/HTML/JS Frontend   │
-│                          │
-└──────────────┬───────────┘
-               │
-               │ Human Operator
-               ▼
-┌──────────────────────────┐
-│  Isolated Test Bench     │
-│                          │
-│ Linux Terminal           │
-│ Device Under Test        │
-└──────────────────────────┘
-```
-
-No network communication exists between these systems.
-
----
-
-# Test Session
-
-A **Test Session** represents the complete testing process for a single device.
-
-Each session begins when the operator selects an order and ends when the traceability record is saved.
-
-No database changes should be permanently committed until the session is completed successfully.
-
 ---
 
 # Standard Workflow
+Home Screen
+│
+▼
+Operator enters Operator ID
+│
+▼
+Operator selects an existing Order
+(or creates one: order number + quantity)
+│
+▼
+Operator enters Serial Number
+│
+▼
+Start Test → navigates to Testing Screen
+│
+▼
+QR Steps 1–4 (functional test)
+│
+▼
+Pass / Fail prompt
+│
+┌────┴────┐
+│ │
+PASS FAIL
+│ │
+▼ ▼
+Scan MAC1 Operator enters
+(MAC2 auto- failure reason
+assigned) │
+│ │
+▼ │
+Verify MAC │
+addresses │
+│ │
+└─────────┬─────────┘
+▼
+Device saved automatically
+│
+▼
+Returns to Home Screen
+(Operator ID retained,
+order/serial re-prompted)
 
-```
-Operator Login
-        │
-        ▼
-Select Production Order
-        │
-        ▼
-Create Test Session
-        │
-        ▼
-Display QR Code
-        │
-        ▼
-Operator Scans QR Code
-        │
-        ▼
-Command Executes on Test Bench
-        │
-        ▼
-Operator Confirms Completion
-        │
-        ▼
-Display Next QR Code
-        │
-        ▼
-Repeat four times
-        │
-        ▼
-Scan MAC address label
-        │
-        ▼
-Verify both mac addresses are correct (should be sequential however there may be outliers)
-        │
-        ▼
-Enter Device Information (Serial Number Label)
-        │
-        ▼
-Review Summary
-        │
-        ▼
-Save Traceability Record
-        │
-        ▼
-End Session
-```
+There is no separate "Save & Repeat" confirmation step — saving happens
+automatically the instant a PASS is verified or a FAIL reason is
+submitted, and the app returns straight to the order/serial entry screen
+for the next unit.
+
+---
+
+# Order Number and Serial Number Are Captured First
+
+Unlike the original design, serial number entry happens **before** the
+functional test runs, not after — the operator applies the serial number
+label to the physical unit up front. Order number is chosen from a
+dropdown of already-created orders (created via a small "+ New Order"
+action: order number + quantity, nothing else); it is not typed freely.
+
+---
+
+# MAC Addresses Are Assigned Only on PASS
+
+A failed device never receives MAC addresses. Only once a device passes
+does the operator scan MAC1 (from the physical label) — MAC2 is chosen
+automatically as the next available address in the shared pool. Both are
+then written to the device and verified via QR-scanned commands before
+the record saves.
+
+---
+
+# Retesting a Failed Device
+
+If a serial number previously failed under a given order, entering that
+same order + serial again resumes testing on the **same** device record
+rather than creating a new one. Its prior failure reason(s) remain
+attached as history even after it eventually passes. A serial that has
+already **passed** cannot be re-tested under the same order — the app
+rejects starting a session for it.
 
 ---
 
@@ -126,91 +110,29 @@ End Session
 
 The operator is responsible for:
 
-- Selecting the correct production order
-- Scanning each QR code
-- Verifying test completion
-- Entering the correct Serial Number
-- Entering the correct MAC Address
-- Recording any post-test changes
-- Saving the completed record
+- Entering their Operator ID
+- Selecting or creating the correct production order
+- Applying and entering the correct Serial Number before testing begins
+- Scanning each QR code during the functional test
+- Recording a Pass/Fail result
+- On PASS: scanning MAC1 and verifying both MAC addresses
+- On FAIL: providing a clear failure reason
 
 The operator is **not** responsible for manually typing Bash commands unless instructed by engineering.
 
 ---
 
-# QR Code Workflow
-
-Each QR code represents one client-provided Bash command.
-
-Example:
-
-```
-Step 1
-
-Display QR Code
-
-↓
-
-Operator scans QR
-
-↓
-
-Terminal receives command
-
-↓
-
-Command executes
-
-↓
-
-Operator confirms completion
-
-↓
-
-Application displays next QR
-```
-
-The application never executes or validates the command.
-
-Its responsibility ends once the QR code has been displayed.
-
----
-
-# Device Information Entry
-
-After all QR code steps have been completed, the operator records:
-
-- Serial Number
-- MAC Address
-- Order Number (if not already selected)
-- Post-Test Changes
-- Test Result (Pass / Fail)
-
-Once validated, the record is saved to the database.
-
----
-
 # Session Validation
 
-Before a session may be completed, the application should verify:
+Before a device may be saved, the application verifies:
 
-- Production order selected
-- Order QTY remaining vs QTY completed
-- Serial Number entered
-- MAC Address entered
-- Required workflow steps completed
+- Order selected and exists
+- Serial Number entered and correctly formatted
+- All four QR steps completed
+- A Pass/Fail result recorded
+- On PASS only: both MAC addresses assigned and verified
 
-If validation fails, the operator should receive a clear explanation of what information is missing.
-
----
-
-# Session Cancellation
-
-If testing is interrupted:
-
-- No partial production record should be created.
-- The session should be discarded.
-- An audit log entry should record that the session was canceled.
+If validation fails, the operator receives a clear explanation of what's missing.
 
 ---
 
@@ -218,46 +140,23 @@ If testing is interrupted:
 
 Examples of recoverable errors include:
 
-- Incorrect Serial Number entered
-- Incorrect MAC Address entered
+- Wrong order selected — operator cancels and restarts from Home
 - QR code scanned out of order
-- Operator cancels the session
-
-The application should provide a method to restart or cancel the session without leaving incomplete records.
+- MAC1 scanned doesn't match an available pool address (rejected immediately)
+- Operator cancels the session before completion — no partial record is saved
 
 ---
 
 # Logging Requirements
 
-The following events should be logged:
+The following events are logged:
 
-- Operator login
-- Order selected
-- Session started
-- Session completed
-- Session canceled
-- Record saved
+- Order created / corrected / deleted
+- Test failed (with reason)
+- Device manually corrected
+- MAC addresses reset (undoing a PASS)
 - Database backup
-- Record modified
-- Record deleted
-
-The application should log workflow events rather than test execution.
-
----
-
-# Future Expansion
-
-The workflow is intentionally modular.
-
-Future versions may include:
-
-- Multiple production lines
-- Multiple test benches
-- Additional QR code sequences
-- Additional traceability fields
-- Automated reporting
-
-These additions should not require redesigning the existing workflow.
+- CSV export
 
 ---
 
@@ -274,5 +173,3 @@ The workflow should always prioritize:
 Every screen should answer one question:
 
 > **"What does the operator need to do next?"**
-
-If a screen does not help answer that question, it should be reconsidered.

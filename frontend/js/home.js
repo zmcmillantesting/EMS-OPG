@@ -185,11 +185,9 @@ async function handleStartTest(event) {
 
     const operatorInput = document.getElementById("operator-input");
     const orderSelect = document.getElementById("order-select");
-    const serialInput = document.getElementById("serial-input");
 
     const operator = operatorInput.value.trim();
     const order = orderSelect.value.trim();
-    const serial = serialInput.value.trim();
 
     if (!operator) {
         operatorInput.focus();
@@ -199,16 +197,11 @@ async function handleStartTest(event) {
         orderSelect.focus();
         return;
     }
-    if (!isValidSerialNumber(serial)) {
-        alert("Serial number must be formatted as EMyyww0000.");
-        serialInput.focus();
-        return;
-    }
 
     clearSession();
 
     try {
-        const result = await api.startSession({ order_number: order, operator, serial_number: serial });
+        const result = await api.startSession({ order_number: order, operator });
         saveSession(result.session);
         navigateTo("testing.html");
     } catch (error) {

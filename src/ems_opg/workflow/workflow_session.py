@@ -9,8 +9,8 @@ class WorkflowSession:
 
     order_number: str = ""
 
-    # Captured at session/start now, before the functional test runs -
-    # not at the end like the old serial-number screen.
+    # Only ever set on the PASS branch, during AWAITING_SERIAL - a failed
+    # board never gets one.
     serial_number: str = ""
 
     mac1: str = ""
@@ -23,9 +23,8 @@ class WorkflowSession:
 
     current_step: int = 0
 
-    # Only the four functional-test QR steps live on this counter - MAC
-    # assignment/verification are tracked as WorkflowState values instead
-    # (see workflow_engine.py), not additional step indexes.
+    # The four functional-test QR steps only - MAC/serial capture are
+    # tracked as WorkflowState values instead (see workflow_engine.py).
     total_steps: int = 4
 
     started: datetime = field(default_factory=datetime.now)

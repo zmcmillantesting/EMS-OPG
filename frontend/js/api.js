@@ -216,10 +216,24 @@ const mockApi = {
         );
     },
 
+    setSerialNumber(serialNumber) {
+        return withFallback(
+            () => request("/workflow/serial", { method: "PUT", body: JSON.stringify({ serial_number: serialNumber }) }),
+            () => mockApi.setSerialNumber(serialNumber)
+        );
+    },
+
     confirmVerification() {
         return withFallback(
             () => request("/workflow/verify-confirm", { method: "POST" }),
             () => mockApi.confirmVerification()
+        );
+    },
+
+    setSerialNumber(serialNumber) {
+        return withFallback(
+            () => request("/workflow/serial", { method: "PUT", body: JSON.stringify({ serial_number: serialNumber }) }),
+            () => mockApi.setSerialNumber(serialNumber)
         );
     },
 
