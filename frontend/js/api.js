@@ -594,6 +594,13 @@ const api = {
         );
     },    
 
+    setSerialNumber(serialNumber) {
+        return withFallback(
+            () => request("/workflow/serial", { method: "PUT", body: JSON.stringify({ serial_number: serialNumber }) }),
+            () => mockApi.setSerialNumber(serialNumber)
+        );
+    },
+
     finishSession() {
         return withFallback(
             () => request("/session/finish", { method: "POST" }),

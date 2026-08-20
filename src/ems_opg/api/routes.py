@@ -744,7 +744,7 @@ def register_routes(app, application):
         reason = (payload.get("reason") or "").strip()
 
         if not order_number or not new_serial or not mac1:
-            return jsonify({"error": "order_number, serial_number  and mac1 are required"}), 400
+            return jsonify({"error": "order_number, serial_number, and mac1 are required"}), 400
 
         if not reason:
             return jsonify({"error": "A reason is required for manual corrections."}), 400
@@ -765,13 +765,6 @@ def register_routes(app, application):
             # passed - a FAIL is never supposed to hold MAC addresses.
             # Assigning MACs for the first time goes through the normal
             # PASS workflow, not this manual-correction endpoint.
-            # if mac1 and device.test_result != "PASS":
-            #     return jsonify({
-            #         "error": "Cannot assign MAC addresses to a device that hasn't passed testing.",
-            #     }), 400
-
-            if device.test_result == "PASS" and not mac1:
-                return jsonify({"error": "mac1 is required for a device that has passed testing."}), 400
 
             conflict = repo.get_by_order_and_serial(order_number, new_serial)
             if conflict is not None and conflict.id != device.id:
