@@ -127,6 +127,7 @@ async function handleDeleteOrder() {
     try {
         await api.deleteOrder(orderNumber, operatorInput?.value.trim());
         updateOrderActionButtons("");
+        input.value = ""
         await loadOrders();
     } catch (error) {
         console.error("Unable to delete order:", error);
@@ -173,6 +174,7 @@ async function handleEditOrder() {
     try {
         const result = await api.correctOrder(orderNumber, updates, operatorInput?.value.trim());
         updateOrderActionButtons("");
+        input.value =""
         await loadOrders();
         alert(result.message || "Order updated.");
     } catch (error) {
