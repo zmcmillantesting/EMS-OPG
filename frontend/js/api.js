@@ -552,10 +552,24 @@ const api = {
          );
      },
 
-    setMacAddresses(mac1, mac2) {
+    assignMac1(mac1) {
         return withFallback(
-            () => request("/workflow/mac", { method: "PUT", body: JSON.stringify({ mac1, mac2 }) }),
-            () => mockApi.setMacAddresses(mac1, mac2)
+            () => request("/workflow/mac-assign", { method: "PUT", body: JSON.stringify({ mac1 }) }),
+            () => mockApi.assignMac1(mac1)
+        );
+    },
+
+    confirmMacAssignment() {
+        return withFallback(
+            () => request("/workflow/mac-confirm", { method: "POST" }),
+            () => mockApi.confirmMacAssignment()
+        );
+    },
+
+    confirmVerification() {
+        return withFallback(
+            () => request("/workflow/verify-confirm", { method: "POST" }),
+            () => mockApi.confirmVerification()
         );
     },
 
@@ -566,10 +580,10 @@ const api = {
         );
     },    
 
-    finishSession(serialNumber) {
+    finishSession() {
         return withFallback(
-            () => request("/session/finish", { method: "POST", body: JSON.stringify({ serial_number: serialNumber }) }),
-            () => mockApi.finishSession(serialNumber)
+            () => request("/session/finish", { method: "POST" }),
+            () => mockApi.finishSession()
         );
     },
 
@@ -693,20 +707,20 @@ const api = {
         );
     },
 
-    provisionOrder(payload) {
+    getOrders() {
         return withFallback(
-            () => request("/orders/provision", { method: "POST", body: JSON.stringify(payload) }),
-            () => mockApi.provisionOrder(payload)
+            () => request("/orders"),
+            () => mockApi.getOrders()
         );
     },
 
-    getOpenOrders() {
+    createOrder(payload) {
         return withFallback(
-            () => request("/orders/open"),
-            () => mockApi.getOpenOrders()
+            () => request("/orders", { method: "POST", body: JSON.stringify(payload) }),
+            () => mockApi.createOrder(payload)
         );
     },
-
+    
     deleteOrder(orderNumber, operator) {
         return withFallback(
             () =>
