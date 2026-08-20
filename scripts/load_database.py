@@ -6,10 +6,12 @@ database.
 
 Features
 --------
-- Reads MAC addresses from a CSV file
+- Reads MAC addresses (and used status) from a CSV file
 - Validates MAC address format
 - Skips duplicates already in the database
 - Imports new MAC addresses
+- Upgrades an existing unused entry to used if the CSV says it's used
+  (never the reverse - a MAC already marked used stays used)
 - Rolls back on failure
 - Verifies every imported MAC exists
 - Logs all activity
@@ -76,40 +78,38 @@ def file_checksum(path: Path) -> str:
     return sha.hexdigest()
 
 
-def load_csv(path: Path) -> list[str]:
+def load_csv(path: Path) -> list[dict]:
     """
-    Read MAC addresses from CSV.
+    Read MAC addresses (and their used status) from CSV.
 
-    The CSV contains a header row and multiple columns. The MAC address is
-    stored in the ``mac_address`` column, so the loader must read the header
-    and select that column rather than assuming the first column contains the
-    address.
+    mac_address and used are read by column name rather than position, so
+    extra columns (order_number, serial_number, etc.) can be present and
+    are ignored - this importer only ever populates the MAC pool, not
+    device/order history.
     """
 
-    macs: list[str] = []
+    rows: list[dict] = []
 
     with path.open(newline="", encoding="utf-8") as f:
         reader = csv.reader(f)
-        rows = list(reader)
+        raw_rows = list(reader)
 
-    if not rows:
-        return macs
+    if not raw_rows:
+        return rows
 
-    header = [column.strip().lower() for column in rows[0]]
+    header = [column.strip().lower() for column in raw_rows[0]]
 
     if "mac_address" not in header:
         raise ValueError("CSV file does not contain a mac_address column")
 
     mac_index = header.index("mac_address")
+    used_index = header.index("used") if "used" in header else None
 
-    for row in rows[1:]:
-        if not row:
+    for row in raw_rows[1:]:
+        if not row or len(row) <= mac_index:
             continue
 
-        if len(row) <= mac_index:
-            continue
-
-        mac = row[mac_index].strip()
+        mac = row[mac_index].strip().upper()
 
         if not mac:
             continue
@@ -121,9 +121,13 @@ def load_csv(path: Path) -> list[str]:
             )
             continue
 
-        macs.append(mac)
+        used = False
+        if used_index is not None and len(row) > used_index:
+            used = row[used_index].strip().lower() in ("true", "1", "yes")
 
-    return macs
+        rows.append({"mac_address": mac, "used": used})
+
+    return rows
 
 
 def ensure_database_schema() -> None:
@@ -169,12 +173,14 @@ def main():
     logger.info("CSV File: %s", CSV_FILE)
     logger.info("SHA256: %s", checksum)
 
-    csv_macs = load_csv(CSV_FILE)
+    csv_rows = load_csv(CSV_FILE)
 
-    logger.info("Read %d MAC addresses", len(csv_macs))
+    logger.info("Read %d MAC addresses", len(csv_rows))
 
     inserted = 0
     duplicates = 0
+    updated_to_used = 0
+    missing: list[str] = []
 
     ensure_database_schema()
 
@@ -182,25 +188,42 @@ def main():
 
         try:
 
-            existing_macs = set(
-                session.scalars(select(MACAddressPool.mac_address))
-            )
-
-            for mac in csv_macs:
-
-                if mac in existing_macs:
-                    duplicates += 1
-                    continue
-
-                session.add(
-                    MACAddressPool(
-                        mac_address=mac,
-                        used=False,
-                    )
+            existing = {
+                mac: used
+                for mac, used in session.execute(
+                    select(MACAddressPool.mac_address, MACAddressPool.used)
                 )
+            }
 
-                existing_macs.add(mac)
-                inserted += 1
+            for row in csv_rows:
+
+                mac, used = row["mac_address"], row["used"]
+
+                if mac not in existing:
+                    session.add(
+                        MACAddressPool(
+                            mac_address=mac,
+                            used=used,
+                        )
+                    )
+                    existing[mac] = used
+                    inserted += 1
+
+                elif used and not existing[mac]:
+                    # Already in the pool as unused, but this source says
+                    # it's actually spoken for - upgrade it. Never the
+                    # reverse: a MAC already marked used stays used.
+                    entry = session.scalar(
+                        select(MACAddressPool).where(
+                            MACAddressPool.mac_address == mac
+                        )
+                    )
+                    entry.used = True
+                    existing[mac] = True
+                    updated_to_used += 1
+
+                else:
+                    duplicates += 1
 
             session.commit()
 
@@ -224,7 +247,10 @@ def main():
             session.scalars(select(MACAddressPool.mac_address))
         )
 
-        missing = [mac for mac in csv_macs if mac not in pool_macs]
+        missing = [
+            row["mac_address"] for row in csv_rows
+            if row["mac_address"] not in pool_macs
+        ]
 
         if missing:
 
@@ -249,10 +275,11 @@ def main():
     logger.info("")
     logger.info("Summary")
     logger.info("------------------------------")
-    logger.info("CSV Entries      : %d", len(csv_macs))
+    logger.info("CSV Entries      : %d", len(csv_rows))
     logger.info("Inserted         : %d", inserted)
+    logger.info("Upgraded to used : %d", updated_to_used)
     logger.info("Duplicates       : %d", duplicates)
-    logger.info("Verified         : %d", len(csv_macs) - len(missing))
+    logger.info("Verified         : %d", len(csv_rows) - len(missing))
     logger.info("Missing          : %d", len(missing))
     logger.info("=" * 70)
 
@@ -260,11 +287,12 @@ def main():
     print("---------------------------------------")
     print("MAC Database Initialization Complete")
     print("---------------------------------------")
-    print(f"CSV Entries : {len(csv_macs)}")
-    print(f"Inserted    : {inserted}")
-    print(f"Duplicates  : {duplicates}")
-    print(f"Verified    : {len(csv_macs) - len(missing)}")
-    print(f"Missing     : {len(missing)}")
+    print(f"CSV Entries      : {len(csv_rows)}")
+    print(f"Inserted         : {inserted}")
+    print(f"Upgraded to used : {updated_to_used}")
+    print(f"Duplicates       : {duplicates}")
+    print(f"Verified         : {len(csv_rows) - len(missing)}")
+    print(f"Missing          : {len(missing)}")
     print("---------------------------------------")
 
 

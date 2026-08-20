@@ -27,6 +27,8 @@ Before starting, install:
 * Python 3.12+
 * pip
 * A code editor (recommended: VS Code, PyCharm, or equivalent)
+* node.js v24.19.0+
+* NPM 11.17.0+
 
 Verify installations:
 
