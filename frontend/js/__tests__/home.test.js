@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { loadPage, fireDomContentLoaded } from "./helpers/loadPage.js";
+import { loadPage } from "./helpers/loadPage.js";
 
 const HOME_BODY = `
 <form id="start-test-form">
@@ -21,17 +21,26 @@ const HOME_BODY = `
 <span id="home-database-status"></span>
 `;
 
-function loadHome({ orders = [] } = {}) {
-    const dom = loadPage(HOME_BODY, ["common.js", "api.js", "home.js"]);
+function jsonResponse(body) {
+    return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) };
+}
 
-    dom.window.fetch = vi.fn(async (url) => {
+function loadHome({ orders = [] } = {}) {
+    const fetchMock = vi.fn(async (url) => {
         if (url === "/api/status") {
-            return { ok: true, status: 200, json: async () => ({ version: "1.0.0", databaseConnected: true, devicesToday: 3 }) };
+            return jsonResponse({ version: "1.0.0", databaseConnected: true, devicesToday: 3 });
         }
         if (url === "/api/orders") {
-            return { ok: true, status: 200, json: async () => ({ orders }) };
+            return jsonResponse({ orders });
         }
-        return { ok: true, status: 200, json: async () => ({}) };
+        // header.html/footer.html component fetches, or anything else.
+        return { ok: true, status: 200, text: async () => "", json: async () => ({}) };
+    });
+
+    const dom = loadPage(HOME_BODY, ["common.js", "api.js", "home.js"], {
+        beforeParse(window) {
+            window.fetch = fetchMock;
+        },
     });
 
     return dom;
@@ -49,7 +58,6 @@ describe("home.js", () => {
             orders: [{ order_number: "12345.6", quantity: 10, passed: 3, remaining: 7 }],
         });
 
-        fireDomContentLoaded(dom);
         await afterOrdersLoaded(dom, 2);
 
         const option = dom.window.document.querySelector('#order-select option[value="12345.6"]');
@@ -58,7 +66,6 @@ describe("home.js", () => {
 
     it("rejects an invalid serial number without calling startSession", async () => {
         const dom = loadHome({ orders: [{ order_number: "12345.6", quantity: 10, passed: 0, remaining: 10 }] });
-        fireDomContentLoaded(dom);
         await afterOrdersLoaded(dom, 2);
 
         dom.window.document.getElementById("operator-input").value = "4521";
@@ -77,8 +84,12 @@ describe("home.js", () => {
 
     it("starts a session with operator, order, and serial when the form is valid", async () => {
         const dom = loadHome({ orders: [{ order_number: "12345.6", quantity: 10, passed: 0, remaining: 10 }] });
-        fireDomContentLoaded(dom);
         await afterOrdersLoaded(dom, 2);
+
+        // navigateTo() would otherwise set window.location.href, which
+        // jsdom logs as "Not implemented: navigation" - stub it, since
+        // this test only cares that startSession was called correctly.
+        dom.window.navigateTo = vi.fn();
 
         dom.window.document.getElementById("operator-input").value = "4521";
         dom.window.document.getElementById("order-select").value = "12345.6";
@@ -100,7 +111,6 @@ describe("home.js", () => {
 
     it("rejects a malformed new-order number without POSTing /api/orders", async () => {
         const dom = loadHome({ orders: [] });
-        fireDomContentLoaded(dom);
         await afterOrdersLoaded(dom, 1);
 
         dom.window.document.getElementById("new-order-number-input").value = "not-an-order-number";

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { loadPage, fireDomContentLoaded } from "./helpers/loadPage.js";
+import { loadPage } from "./helpers/loadPage.js";
 
 const TESTING_BODY = `
 <nav id="stage-nav"></nav>
@@ -46,27 +46,32 @@ const TESTING_BODY = `
 `;
 
 function loadTesting(session) {
-    const dom = loadPage(TESTING_BODY, ["common.js", "api.js", "testing.js"]);
-
-    dom.window.sessionStorage.setItem("ems-opg-session", JSON.stringify(session));
-
-    dom.window.fetch = vi.fn(async (url) => {
+    const fetchMock = vi.fn(async (url) => {
         if (url === "/api/status") {
             return { ok: true, status: 200, json: async () => ({ version: "1.0.0", databaseConnected: true }) };
         }
         if (url === "/api/workflow") {
-            return { ok: true, status: 200, json: async () => ({ session, step: { command: "", qr_url: null, step_name: "" } }) };
+            return {
+                ok: true, status: 200,
+                json: async () => ({ session, step: { command: "", qr_url: null, step_name: "" } }),
+            };
         }
-        return { ok: true, status: 200, json: async () => ({}) };
+        // command_panel.html / qr_panel.html / navigation.html / mac /
+        // verification / result panel component fetches.
+        return { ok: true, status: 200, text: async () => "", json: async () => ({}) };
     });
 
-    return dom;
+    return loadPage(TESTING_BODY, ["common.js", "api.js", "testing.js"], {
+        beforeParse(window) {
+            window.sessionStorage.setItem("ems-opg-session", JSON.stringify(session));
+            window.fetch = fetchMock;
+        },
+    });
 }
 
 describe("testing.js - state to phase mapping", () => {
     it("shows the QR phase for state TESTING", async () => {
         const dom = loadTesting({ state: "TESTING", current_step: 0, operator: "4521", mac1: "", mac2: "", test_result: "" });
-        fireDomContentLoaded(dom);
 
         await vi.waitFor(() => {
             expect(dom.window.document.getElementById("qr-steps-placeholder").classList.contains("is-active")).toBe(true);
@@ -76,7 +81,6 @@ describe("testing.js - state to phase mapping", () => {
 
     it("shows the MAC phase for state ASSIGNING_MAC, distinct from VERIFYING_MAC", async () => {
         const dom = loadTesting({ state: "ASSIGNING_MAC", current_step: 3, operator: "4521", mac1: "AA:BB:CC:DD:EE:00", mac2: "AA:BB:CC:DD:EE:01", test_result: "PASS" });
-        fireDomContentLoaded(dom);
 
         await vi.waitFor(() => {
             expect(dom.window.document.getElementById("mac-placeholder").classList.contains("is-active")).toBe(true);
@@ -86,7 +90,6 @@ describe("testing.js - state to phase mapping", () => {
 
     it("shows the verification phase for state VERIFYING_MAC", async () => {
         const dom = loadTesting({ state: "VERIFYING_MAC", current_step: 3, operator: "4521", mac1: "AA:BB:CC:DD:EE:00", mac2: "AA:BB:CC:DD:EE:01", test_result: "PASS" });
-        fireDomContentLoaded(dom);
 
         await vi.waitFor(() => {
             expect(dom.window.document.getElementById("verification-placeholder").classList.contains("is-active")).toBe(true);
@@ -96,7 +99,6 @@ describe("testing.js - state to phase mapping", () => {
 
     it("shows the result phase for state AWAITING_RESULT", async () => {
         const dom = loadTesting({ state: "AWAITING_RESULT", current_step: 3, operator: "4521", mac1: "", mac2: "", test_result: "" });
-        fireDomContentLoaded(dom);
 
         await vi.waitFor(() => {
             expect(dom.window.document.getElementById("result-placeholder").classList.contains("is-active")).toBe(true);
