@@ -79,3 +79,25 @@ class OrderService:
 
         self.session.flush()
         return order
+    
+    def record_failure(self, order_number, operator, reason):
+        """
+        Logs a failed test attempt against the order - no device, serial,
+        or MAC involved. See OrderFailure on the Order model.
+        """
+
+        from ems_opg.database.models import OrderFailure
+        from ems_opg.repositories.order_failure_repository import OrderFailureRepository
+
+        order = self.orders.get_by_order_number(order_number)
+        if order is None:
+            raise ValueError(f"Order {order_number} not found.")
+
+        failure = OrderFailure(
+            order_number=order_number,
+            operator=operator,
+            reason=reason,
+        )
+        OrderFailureRepository(self.session).create(failure)
+        self.session.commit()
+        return failure

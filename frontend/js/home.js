@@ -52,14 +52,16 @@ async function loadOrders() {
 
         select.querySelectorAll('option:not([value=""])').forEach((option) => option.remove());
 
-        result.orders.forEach((order) => {
-            orderQuantities[order.order_number] = order.quantity;
+        result.orders
+            .filter((order) => order.remaining > 0)
+            .forEach((order) => {
+                orderQuantities[order.order_number] = order.quantity;
 
-            const option = document.createElement("option");
-            option.value = order.order_number;
-            option.textContent = `${order.order_number} — ${order.passed}/${order.quantity} passed`;
-            select.appendChild(option);
-        });
+                const option = document.createElement("option");
+                option.value = order.order_number;
+                option.textContent = `${order.order_number} — ${order.passed}/${order.quantity} passed`;
+                select.appendChild(option);
+            });
     } catch (error) {
         console.error("Unable to load orders:", error);
     }
@@ -185,11 +187,9 @@ async function handleStartTest(event) {
 
     const operatorInput = document.getElementById("operator-input");
     const orderSelect = document.getElementById("order-select");
-    const serialInput = document.getElementById("serial-input");
 
     const operator = operatorInput.value.trim();
     const order = orderSelect.value.trim();
-    const serial = serialInput.value.trim();
 
     if (!operator) {
         operatorInput.focus();
@@ -199,16 +199,11 @@ async function handleStartTest(event) {
         orderSelect.focus();
         return;
     }
-    if (!isValidSerialNumber(serial)) {
-        alert("Serial number must be formatted as EMyyww0000.");
-        serialInput.focus();
-        return;
-    }
 
     clearSession();
 
     try {
-        const result = await api.startSession({ order_number: order, operator, serial_number: serial });
+        const result = await api.startSession({ order_number: order, operator });
         saveSession(result.session);
         navigateTo("testing.html");
     } catch (error) {

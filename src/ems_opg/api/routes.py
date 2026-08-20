@@ -10,7 +10,7 @@ from ems_opg.core.constants import APP_VERSION
 from ems_opg.core.validators import is_valid_serial_number
 from ems_opg.database.database import DatabaseManager
 from ems_opg.database.engine import DATABASE_FILE
-from ems_opg.database.models import AuditLog, Device, DeviceFailureNote
+from ems_opg.database.models import AuditLog, Device
 from ems_opg.repositories.audit_repository import AuditRepository
 from ems_opg.repositories.device_repository import DeviceRepository
 from ems_opg.repositories.mac_address_repository import MacAddressRepository
@@ -20,6 +20,7 @@ from ems_opg.services.order_service import OrderService
 from ems_opg.services.qr_service import QRService
 from ems_opg.workflow.workflow_engine import WorkflowEngine
 from ems_opg.workflow.workflow_state import WorkflowState
+from ems_opg.repositories.order_failure_repository import OrderFailureRepository
 
 LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR"}
 
@@ -82,7 +83,6 @@ def device_dict(device):
         "test_result": device.test_result,
         "operator": device.operator,
         "timestamp": device.timestamp.isoformat() if device.timestamp else None,
-        "failure_notes": [failure_note_dict(note) for note in device.failure_notes]
     }
 
 def resolve_device_by_serial(repo, serial, current_order_number):
@@ -116,12 +116,20 @@ def resolve_device_by_serial(repo, serial, current_order_number):
 
     return matches[0], None
     
-def maybe_export_completed_order(db_session, application, order_number):
-    """
-    If an order's PASS count has reached its target quantity, write its
-    traceability records to exports/ as a CSV. No-op if it hasn't.
-    """
+FAILURE_CSV_HEADER = ["Timestamp", "Operator", "Reason"]
 
+
+def write_failures_csv(writer, failures):
+    writer.writerow(FAILURE_CSV_HEADER)
+    for f in failures:
+        writer.writerow([
+            f.timestamp.isoformat() if f.timestamp else "",
+            f.operator,
+            f.reason,
+        ])
+
+
+def maybe_export_completed_order(db_session, application, order_number):
     order_repo = OrderRepository(db_session)
     device_repo = DeviceRepository(db_session)
 
@@ -134,16 +142,23 @@ def maybe_export_completed_order(db_session, application, order_number):
         return
 
     devices = device_repo.list_by_order(order_number)
+    failures = OrderFailureRepository(db_session).list_by_order(order_number)
 
     try:
         application.paths.exports_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-        destination = application.paths.exports_dir / f"{order_number}_{timestamp}.csv"
 
-        with destination.open("w", encoding="utf-8", newline="") as f:
+        devices_path = application.paths.exports_dir / f"{order_number}_{timestamp}.csv"
+        with devices_path.open("w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
             write_devices_csv(writer, devices)
+
+        if failures:
+            failures_path = application.paths.exports_dir / f"{order_number}_{timestamp}_failures.csv"
+            with failures_path.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                write_failures_csv(writer, failures)
 
     except OSError:
         application.logger.exception(
@@ -210,6 +225,15 @@ def build_verification_payload(qr_service):
         "qr_url": f"/qr/{result.filename}?t={time.time_ns()}",
     }
 
+def build_serial_payload(session):
+    """WorkflowState.AWAITING_SERIAL - no QR here, just a prompt."""
+    return {
+        "workflow_name": "Functional Test",
+        "step_name": "Serial Number",
+        "command": "",
+        "qr_url": None,
+    }
+
 
 def register_routes(app, application):
     api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -221,6 +245,7 @@ def register_routes(app, application):
         return engine.state in (
             WorkflowState.TESTING,
             WorkflowState.AWAITING_RESULT,
+            WorkflowState.AWAITING_SERIAL,
             WorkflowState.ASSIGNING_MAC,
             WorkflowState.VERIFYING_MAC,
             WorkflowState.READY_TO_SAVE,
@@ -231,6 +256,8 @@ def register_routes(app, application):
 
         if engine.state == WorkflowState.TESTING:
             step = build_step_payload(engine, qr_service)
+        elif engine.state == WorkflowState.AWAITING_SERIAL:
+            step = build_serial_payload(session)
         elif engine.state == WorkflowState.ASSIGNING_MAC:
             step = build_mac_payload(session, qr_service)
         elif engine.state == WorkflowState.VERIFYING_MAC:
@@ -407,29 +434,17 @@ def register_routes(app, application):
         payload = request.get_json(silent=True) or {}
         operator = (payload.get("operator") or "").strip()
         order_number = (payload.get("order_number") or "").strip()
-        serial_number = (payload.get("serial_number") or "").strip()
 
-        if not operator or not order_number or not serial_number:
-            return jsonify({"error": "operator, order_number, and serial_number are required"}), 400
-
-        if not is_valid_serial_number(serial_number):
-            return jsonify({"error": "Serial number must be formatted as EMyyww0000."}), 400
+        if not operator or not order_number:
+            return jsonify({"error": "operator and order_number are required"}), 400
 
         db = DatabaseManager()
         with db.session() as db_session:
             order_repo = OrderRepository(db_session)
-            device_repo = DeviceRepository(db_session)
-
             if order_repo.get_by_order_number(order_number) is None:
                 return jsonify({"error": f"Order {order_number} does not exist."}), 404
 
-            existing = device_repo.get_by_order_and_serial(order_number, serial_number)
-            if existing is not None and existing.test_result == "PASS":
-                return jsonify({
-                    "error": f"Serial {serial_number} in order {order_number} has already passed testing.",
-                }), 409
-
-        engine.start(operator, order_number, serial_number)
+        engine.start(operator, order_number)
 
         return workflow_response()
 
@@ -528,6 +543,32 @@ def register_routes(app, application):
 
         return workflow_response()
 
+    @api_bp.route("/workflow/serial", methods=["PUT"])
+    def workflow_serial():
+        if engine.state != WorkflowState.AWAITING_SERIAL:
+            return jsonify({"error": "Not currently awaiting a serial number"}), 409
+
+        payload = request.get_json(silent=True) or {}
+        serial_number = (payload.get("serial_number") or "").strip()
+
+        if not is_valid_serial_number(serial_number):
+            return jsonify({"error": "Serial number must be formatted as EMyyww0000."}), 400
+
+        db = DatabaseManager()
+        with db.session() as db_session:
+            device_repo = DeviceRepository(db_session)
+            existing = device_repo.get_by_order_and_serial(
+                engine.session.order_number, serial_number
+            )
+            if existing is not None:
+                return jsonify({
+                    "error": f"Serial {serial_number} already exists for this order.",
+                }), 409
+
+        engine.set_serial_number(serial_number)
+
+        return workflow_response()
+
     @api_bp.route("/session/finish", methods=["POST"])
     def session_finish():
         if engine.state != WorkflowState.READY_TO_SAVE:
@@ -538,24 +579,29 @@ def register_routes(app, application):
 
         try:
             with db.session() as db_session:
-                device_service = DeviceService(db_session)
-                device_service.record_result(
-                    order_number=session.order_number,
-                    serial_number=session.serial_number,
-                    operator=session.operator,
-                    test_result=session.test_result,
-                    notes=session.test_notes,
-                    mac1=session.mac1 or None,
-                )
+                if session.test_result == "PASS":
+                    device_service = DeviceService(db_session)
+                    device_service.record_pass(
+                        order_number=session.order_number,
+                        serial_number=session.serial_number,
+                        operator=session.operator,
+                        mac1=session.mac1,
+                    )
+                else:
+                    order_service = OrderService(db_session)
+                    order_service.record_failure(
+                        order_number=session.order_number,
+                        operator=session.operator,
+                        reason=session.test_notes,
+                    )
 
-                if session.test_result == "FAIL":
                     audit_repo = AuditRepository(db_session)
                     audit_repo.create(AuditLog(
                         operator=session.operator or "unknown",
                         action="Test Failed",
                         details=(
-                            f"Device {session.serial_number} (order {session.order_number}) "
-                            f"failed testing. Notes: {session.test_notes}"
+                            f"Order {session.order_number} - failed testing. "
+                            f"Notes: {session.test_notes}"
                         ),
                     ))
 
@@ -563,13 +609,11 @@ def register_routes(app, application):
         except ValueError as error:
             return jsonify({"error": str(error)}), 409
 
-        # Straight back to the serial/order prompt, same operator - no
-        # separate "Save & Repeat" confirmation screen anymore.
         engine.restart()
 
         return jsonify({
-            "session": session_dict(session, engine.state),
-            "message": "Device saved to traceability log.",
+            "session": session_dict(engine.session, engine.state),
+            "message": "Saved.",
         })
 
     @api_bp.route("/session/cancel", methods=["POST"])
@@ -699,8 +743,8 @@ def register_routes(app, application):
         mac2 = (payload.get("mac2") or "").strip()
         reason = (payload.get("reason") or "").strip()
 
-        if not order_number or not new_serial:
-            return jsonify({"error": "order_number and serial_number are required"}), 400
+        if not order_number or not new_serial or not mac1:
+            return jsonify({"error": "order_number, serial_number, and mac1 are required"}), 400
 
         if not reason:
             return jsonify({"error": "A reason is required for manual corrections."}), 400
@@ -721,13 +765,6 @@ def register_routes(app, application):
             # passed - a FAIL is never supposed to hold MAC addresses.
             # Assigning MACs for the first time goes through the normal
             # PASS workflow, not this manual-correction endpoint.
-            if mac1 and device.test_result != "PASS":
-                return jsonify({
-                    "error": "Cannot assign MAC addresses to a device that hasn't passed testing.",
-                }), 400
-
-            if device.test_result == "PASS" and not mac1:
-                return jsonify({"error": "mac1 is required for a device that has passed testing."}), 400
 
             conflict = repo.get_by_order_and_serial(order_number, new_serial)
             if conflict is not None and conflict.id != device.id:
@@ -805,14 +842,11 @@ def register_routes(app, application):
                 body, status = error
                 return jsonify(body), status
 
-            if device.test_result != "PASS":
-                return jsonify({"error": "This device has no MAC addresses assigned."}), 409
-
-            # Undoes a PASS: releases both addresses back to the shared
-            # pool (they were mis-scanned or wrongly assigned) and drops
-            # the device to FAIL so it's retestable again - session/start
-            # will accept this serial+order once more since it's no
-            # longer PASS.
+            # Releases the MAC pair back to the pool and removes the
+            # device entirely - there's no "failed" state for a device
+            # row to fall back into anymore, so undoing a pass means
+            # undoing the whole record. The board re-enters the line as
+            # a fresh test with a new serial if retested.
             mac_repo = MacAddressRepository(db_session)
             for mac_value in (device.ethaddr_id, device.eth1addr_id):
                 if not mac_value:
@@ -821,25 +855,17 @@ def register_routes(app, application):
                 if mac_entry is not None:
                     mac_repo.mark_unused(mac_entry)
 
-            device.ethaddr_id = None
-            device.eth1addr_id = None
-            device.used = False
-            device.test_result = "FAIL"
-            device.failure_notes.append(DeviceFailureNote(
-                operator=device.operator or "unknown",
-                reason=f"MAC reset: {reason}",
-            ))
-
             audit_repo = AuditRepository(db_session)
             audit_repo.create(AuditLog(
                 operator=device.operator or "unknown",
                 action="MAC Reset",
-                details=f"MAC addresses released for device {device.serial_number}. Reason: {reason}",
+                details=f"Device {device.serial_number} removed and MAC addresses released. Reason: {reason}",
             ))
 
+            repo.delete(device)
+
             return jsonify({
-                "device": device_dict(device),
-                "message": "MAC addresses released. Device is retestable again.",
+                "message": "Device removed and MAC addresses released.",
             })
 
         

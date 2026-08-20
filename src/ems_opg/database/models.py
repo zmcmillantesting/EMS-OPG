@@ -35,10 +35,6 @@ class Order(Base):
         index=True,
     )
 
-    # part_number removed - orders are created with just a number and a
-    # target quantity (see OrderService.create_order); this app no longer
-    # tracks which part a job is for.
-
     status: Mapped[str] = mapped_column(
         String(20),
         default="Open",
@@ -62,6 +58,16 @@ class Order(Base):
         cascade="all, delete-orphan",
     )
 
+    # Failures are order-scoped, not device-scoped - a failed board never
+    # gets a serial/MAC, so there's no Device row to attach a failure to.
+    # See OrderFailure below.
+    failures: Mapped[list["OrderFailure"]] = relationship(
+        "OrderFailure",
+        back_populates="order",
+        cascade="all, delete-orphan",
+        order_by="OrderFailure.timestamp",
+    )
+
     def __repr__(self):
         return (
             f"<Order("
@@ -76,6 +82,13 @@ class Order(Base):
 # ---------------------------------------------------------
 
 class Device(Base):
+    """
+    A Device row only ever exists for a board that has already passed -
+    serial numbers are assigned at the end of a passing test, so there is
+    no "failed device" row anymore (see OrderFailure). Every row here is
+    implicitly a PASS.
+    """
+
     __tablename__ = "devices"
     __table_args__ = (
         UniqueConstraint(
@@ -102,12 +115,6 @@ class Device(Base):
         index=True,
     )
 
-    # Both MAC columns are nullable now: a device that has only ever
-    # failed has never been issued MACs at all - they're claimed "a la
-    # carte" from the shared pool, and only on a PASS (see
-    # DeviceService.record_result). A unique index still permits any
-    # number of NULLs, so a device WITH addresses keeps the "one device
-    # per MAC" guarantee.
     ethaddr_id: Mapped[str | None] = mapped_column(
         String(17),
         unique=True,
@@ -122,20 +129,19 @@ class Device(Base):
         index=True,
     )
 
-    # Repurposed: no longer "has this pre-provisioned slot been claimed".
-    # Now means "does this device currently hold a MAC pair", which is
-    # true exactly when test_result == "PASS". Kept as a real column
-    # (rather than derived from test_result) so it stays cheap to filter
-    # and index on directly.
+    # Always True in practice now - kept for the CSV export's
+    # "Used/Available" column and to avoid touching every call site that
+    # reads it.
     used: Mapped[bool] = mapped_column(
         Boolean,
-        default=False,
+        default=True,
         nullable=False,
     )
 
     test_result: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
+        default="PASS",
     )
 
     operator: Mapped[str] = mapped_column(
@@ -167,17 +173,6 @@ class Device(Base):
     order: Mapped["Order"] = relationship(
         "Order",
         back_populates="devices"
-    )
-
-    # One Device -> Many failure notes. Every FAIL (first attempt or a
-    # later retest of the same serial+order) appends a row here instead
-    # of overwriting anything on the device itself, so a board that fails
-    # twice keeps both comments visible in its history.
-    failure_notes: Mapped[list["DeviceFailureNote"]] = relationship(
-        "DeviceFailureNote",
-        back_populates="device",
-        cascade="all, delete-orphan",
-        order_by="DeviceFailureNote.timestamp",
     )
 
     def __repr__(self):
@@ -223,17 +218,19 @@ class MACAddressPool(Base):
 
 
 # ---------------------------------------------------------
-# Device Failure Notes
+# Order Failures
 # ---------------------------------------------------------
 
-class DeviceFailureNote(Base):
+class OrderFailure(Base):
     """
-    One row per failed test attempt. Device rows are reused across
-    retests (order+serial is unique), so this table is the only place a
-    full failure history survives a later PASS or a second FAIL.
+    One row per failed test attempt under an order. Not linked to any
+    specific serial/device - a failed board is set aside and re-enters
+    the line as an ordinary board later, with no persisted link back to
+    this failure. Exported as a failure-history CSV when the order
+    completes (see maybe_export_completed_order in routes.py).
     """
 
-    __tablename__ = "device_failure_notes"
+    __tablename__ = "order_failures"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -241,8 +238,8 @@ class DeviceFailureNote(Base):
         autoincrement=True,
     )
 
-    device_id: Mapped[int] = mapped_column(
-        ForeignKey("devices.id"),
+    order_number: Mapped[str] = mapped_column(
+        ForeignKey("orders.order_number"),
         nullable=False,
         index=True,
     )
@@ -263,13 +260,13 @@ class DeviceFailureNote(Base):
         nullable=False,
     )
 
-    device: Mapped["Device"] = relationship(
-        "Device",
-        back_populates="failure_notes",
+    order: Mapped["Order"] = relationship(
+        "Order",
+        back_populates="failures",
     )
 
     def __repr__(self):
-        return f"<DeviceFailureNote(device_id={self.device_id}, {self.timestamp})>"
+        return f"<OrderFailure(order_number={self.order_number}, {self.timestamp})>"
 
 
 # ---------------------------------------------------------

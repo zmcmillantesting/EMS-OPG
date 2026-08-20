@@ -6,7 +6,6 @@ from ems_opg.workflow.workflow_state import WorkflowState
 
 class WorkflowEngine:
 
-    # Only the four functional-test QR steps are driven by current_step.
     STEP_NAMES = [
         "Username",
         "Password",
@@ -20,13 +19,15 @@ class WorkflowEngine:
 
     # --------------------------------------------------
 
-    def start(self, operator, order_number, serial_number):
-        """Serial number is captured here now, before testing runs."""
+    def start(self, operator, order_number):
+        """
+        Operator and order are chosen once, up front - serial is captured
+        later, only if this board turns out to pass.
+        """
 
         self.session = WorkflowSession(
             operator=operator,
             order_number=order_number,
-            serial_number=serial_number,
             current_step=0,
         )
 
@@ -41,7 +42,6 @@ class WorkflowEngine:
         if self.session.current_step < self.session.total_steps - 1:
             self.session.current_step += 1
         else:
-            # Last QR step confirmed - straight to the Pass/Fail prompt.
             self.state = WorkflowState.AWAITING_RESULT
 
     # --------------------------------------------------
@@ -61,9 +61,9 @@ class WorkflowEngine:
 
     def set_test_result(self, result, notes=""):
         """
-        FAIL has no MAC step at all and goes straight to READY_TO_SAVE.
-        PASS moves into the MAC sub-flow and only becomes save-ready once
-        that's verified.
+        FAIL has no serial/MAC step at all - it goes straight to
+        READY_TO_SAVE and gets logged as an OrderFailure, not a Device.
+        PASS moves into serial capture first, then the MAC sub-flow.
         """
 
         if self.state != WorkflowState.AWAITING_RESULT:
@@ -73,20 +73,28 @@ class WorkflowEngine:
         self.session.test_notes = notes
 
         self.state = (
-            WorkflowState.ASSIGNING_MAC if result == "PASS"
+            WorkflowState.AWAITING_SERIAL if result == "PASS"
             else WorkflowState.READY_TO_SAVE
         )
 
     # --------------------------------------------------
 
-    def set_mac_addresses(self, mac1, mac2):
+    def set_serial_number(self, serial_number):
         """
-        PASS branch only. The route handler validates mac1/mac2 against
-        the MAC pool before calling this (this class has no DB access) -
-        by the time it's called both addresses are already known good.
-        Stays in ASSIGNING_MAC; confirm_mac_assignment() advances further.
+        PASS branch only. The route handler validates format and
+        uniqueness before calling this - by the time it's called the
+        serial is already known good.
         """
 
+        if self.state != WorkflowState.AWAITING_SERIAL:
+            return
+
+        self.session.serial_number = serial_number
+        self.state = WorkflowState.ASSIGNING_MAC
+
+    # --------------------------------------------------
+
+    def set_mac_addresses(self, mac1, mac2):
         if self.state != WorkflowState.ASSIGNING_MAC:
             return
 
@@ -96,8 +104,6 @@ class WorkflowEngine:
     # --------------------------------------------------
 
     def confirm_mac_assignment(self):
-        """Operator has reviewed the assigned pair and is ready to verify."""
-
         if self.state != WorkflowState.ASSIGNING_MAC:
             return
 
@@ -109,8 +115,6 @@ class WorkflowEngine:
     # --------------------------------------------------
 
     def confirm_mac_verification(self):
-        """Operator confirmed the scanned-back values match. Save-ready."""
-
         if self.state != WorkflowState.VERIFYING_MAC:
             return
 
@@ -120,16 +124,17 @@ class WorkflowEngine:
 
     def restart(self):
         """
-        Return to the serial/order prompt for the next device, keeping
-        the same operator logged in. Used after every save - whether the
-        previous device passed or failed - per the "restart the test
-        procedure" workflow decision. There is no separate per-device
-        "next unit" path anymore; this is the only way back to TESTING.
+        Loop back to the next board under the same operator + order -
+        both were chosen once on the home screen and stay fixed across
+        many boards now that serial is captured per-device instead.
+        Whether the previous board passed or failed, this is the only
+        way back to TESTING.
         """
 
         operator = self.session.operator
-        self.session = WorkflowSession(operator=operator)
-        self.state = WorkflowState.IDLE
+        order_number = self.session.order_number
+        self.session = WorkflowSession(operator=operator, order_number=order_number)
+        self.state = WorkflowState.TESTING
 
     # --------------------------------------------------
 

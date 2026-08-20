@@ -4,17 +4,23 @@ from ems_opg.workflow.workflow_state import WorkflowState
 
 def started_engine():
     engine = WorkflowEngine()
-    engine.start("4521", "12345.6", "EM20260001")
+    engine.start("4521", "12345.6")
     return engine
 
 
-def test_start_captures_operator_order_serial_and_enters_testing():
+def advanced_to_awaiting_result(engine):
+    for _ in range(4):
+        engine.next_step()
+    return engine
+
+
+def test_start_captures_operator_and_order_and_enters_testing():
     engine = started_engine()
 
     assert engine.state == WorkflowState.TESTING
     assert engine.session.operator == "4521"
     assert engine.session.order_number == "12345.6"
-    assert engine.session.serial_number == "EM20260001"
+    assert engine.session.serial_number == ""
     assert engine.session.current_step == 0
 
 
@@ -29,8 +35,6 @@ def test_next_step_advances_through_all_four_qr_steps_then_awaits_result():
     engine.next_step()
 
     assert engine.state == WorkflowState.AWAITING_RESULT
-    # current_step stays at the last QR step - AWAITING_RESULT is a
-    # separate state, not a 5th step index.
     assert engine.session.current_step == 3
 
 
@@ -56,9 +60,7 @@ def test_previous_step_walks_back_through_qr_steps():
 
 
 def test_previous_step_from_awaiting_result_returns_to_testing():
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+    engine = advanced_to_awaiting_result(started_engine())
     assert engine.state == WorkflowState.AWAITING_RESULT
 
     engine.previous_step()
@@ -66,40 +68,34 @@ def test_previous_step_from_awaiting_result_returns_to_testing():
     assert engine.state == WorkflowState.TESTING
 
 
-def test_previous_step_does_not_corrupt_current_step_during_mac_assignment():
+def test_previous_step_does_not_corrupt_current_step_outside_testing():
     """
     Regression: previous_step() used to decrement current_step whenever
-    it was > 0, regardless of state - calling it during ASSIGNING_MAC
+    it was > 0, regardless of state - calling it during a later phase
     silently corrupted where the QR steps would resume.
     """
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+    engine = advanced_to_awaiting_result(started_engine())
     engine.set_test_result("PASS")
-    assert engine.state == WorkflowState.ASSIGNING_MAC
+    assert engine.state == WorkflowState.AWAITING_SERIAL
     step_before = engine.session.current_step
 
     engine.previous_step()
 
-    assert engine.state == WorkflowState.ASSIGNING_MAC
+    assert engine.state == WorkflowState.AWAITING_SERIAL
     assert engine.session.current_step == step_before
 
 
-def test_set_test_result_pass_moves_to_assigning_mac():
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+def test_set_test_result_pass_moves_to_awaiting_serial():
+    engine = advanced_to_awaiting_result(started_engine())
 
     engine.set_test_result("PASS")
 
-    assert engine.state == WorkflowState.ASSIGNING_MAC
+    assert engine.state == WorkflowState.AWAITING_SERIAL
     assert engine.session.test_result == "PASS"
 
 
-def test_set_test_result_fail_skips_mac_phase_entirely():
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+def test_set_test_result_fail_skips_serial_and_mac_entirely():
+    engine = advanced_to_awaiting_result(started_engine())
 
     engine.set_test_result("FAIL", notes="fails -LL during functional test")
 
@@ -117,11 +113,28 @@ def test_set_test_result_is_a_noop_before_qr_steps_are_done():
     assert engine.session.test_result == ""
 
 
-def test_set_mac_addresses_stores_values_and_stays_in_assigning_mac():
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+def test_set_serial_number_advances_to_assigning_mac():
+    engine = advanced_to_awaiting_result(started_engine())
     engine.set_test_result("PASS")
+
+    engine.set_serial_number("EM20260001")
+
+    assert engine.state == WorkflowState.ASSIGNING_MAC
+    assert engine.session.serial_number == "EM20260001"
+
+
+def test_set_serial_number_is_a_noop_outside_awaiting_serial():
+    engine = started_engine()
+
+    engine.set_serial_number("EM20260001")
+
+    assert engine.session.serial_number == ""
+
+
+def test_set_mac_addresses_stores_values_and_stays_in_assigning_mac():
+    engine = advanced_to_awaiting_result(started_engine())
+    engine.set_test_result("PASS")
+    engine.set_serial_number("EM20260001")
 
     engine.set_mac_addresses("00:11:22:33:44:01", "00:11:22:33:44:02")
 
@@ -139,10 +152,9 @@ def test_set_mac_addresses_is_a_noop_outside_assigning_mac():
 
 
 def test_confirm_mac_assignment_requires_both_macs_already_set():
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+    engine = advanced_to_awaiting_result(started_engine())
     engine.set_test_result("PASS")
+    engine.set_serial_number("EM20260001")
 
     engine.confirm_mac_assignment()
 
@@ -150,10 +162,9 @@ def test_confirm_mac_assignment_requires_both_macs_already_set():
 
 
 def test_confirm_mac_assignment_advances_to_verifying_mac():
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+    engine = advanced_to_awaiting_result(started_engine())
     engine.set_test_result("PASS")
+    engine.set_serial_number("EM20260001")
     engine.set_mac_addresses("00:11:22:33:44:01", "00:11:22:33:44:02")
 
     engine.confirm_mac_assignment()
@@ -162,10 +173,9 @@ def test_confirm_mac_assignment_advances_to_verifying_mac():
 
 
 def test_confirm_mac_verification_advances_to_ready_to_save():
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+    engine = advanced_to_awaiting_result(started_engine())
     engine.set_test_result("PASS")
+    engine.set_serial_number("EM20260001")
     engine.set_mac_addresses("00:11:22:33:44:01", "00:11:22:33:44:02")
     engine.confirm_mac_assignment()
 
@@ -182,19 +192,18 @@ def test_confirm_mac_verification_is_a_noop_outside_verifying_mac():
     assert engine.state == WorkflowState.TESTING
 
 
-def test_restart_keeps_operator_and_clears_everything_else():
-    engine = started_engine()
-    for _ in range(4):
-        engine.next_step()
+def test_restart_keeps_operator_and_order_and_clears_everything_else():
+    engine = advanced_to_awaiting_result(started_engine())
     engine.set_test_result("FAIL", notes="bad LED")
 
     engine.restart()
 
-    assert engine.state == WorkflowState.IDLE
+    assert engine.state == WorkflowState.TESTING
     assert engine.session.operator == "4521"
-    assert engine.session.order_number == ""
+    assert engine.session.order_number == "12345.6"
     assert engine.session.serial_number == ""
     assert engine.session.test_result == ""
+    assert engine.session.current_step == 0
 
 
 def test_cancel_marks_session_cancelled():
