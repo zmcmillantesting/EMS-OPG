@@ -1,16 +1,16 @@
 /**
- * Testing page — order/operator intake, QR steps, MAC assignment,
- * verification, and serial number capture.
+ * Testing page — QR steps, pass/fail, and (PASS only) MAC assignment and
+ * verification. Operator ID, order, and serial number are all captured on
+ * the home page before this page loads.
  */
 
-const PHASES = ["qr", "mac", "verification", "result", "serial"];
+const PHASES = ["qr", "result", "mac", "verification"];
 
 const STAGE_META = {
-    qr: { title: "Test QR Codes", sub: "Steps 1–4" },
-    mac: { title: "MAC Addresses", sub: "Step 5" },
-    verification: { title: "Verification", sub: "Step 6" },
+    qr: { title: "Functional Test", sub: "Steps 1–4" },
     result: { title: "Test Result", sub: "Pass/Fail" },
-    serial: { title: "Serial Number", sub: "Finish" },
+    mac: { title: "MAC Addresses", sub: "Assign" },
+    verification: { title: "Verification", sub: "Confirm" },
 };
 
 const PHASE_PLACEHOLDER_IDS = {
@@ -18,7 +18,17 @@ const PHASE_PLACEHOLDER_IDS = {
     mac: "mac-placeholder",
     verification: "verification-placeholder",
     result: "result-placeholder",
-    serial: "serial-placeholder",
+};
+
+// The only place WorkflowState -> UI phase gets decided. Session fields
+// alone (current_step/test_result/mac1) can't disambiguate every phase -
+// see the routes.py session_dict note - so everything below switches on
+// session.state, not on inferred field combinations.
+const STATE_TO_PHASE = {
+    TESTING: "qr",
+    AWAITING_RESULT: "result",
+    ASSIGNING_MAC: "mac",
+    VERIFYING_MAC: "verification",
 };
 
 let currentSession = null;
@@ -27,7 +37,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await initPage();
 
     currentSession = loadSession();
-
     if (!currentSession) {
         navigateTo("index.html");
         return;
@@ -40,7 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const result = await api.getWorkflow();
         currentSession = result.session;
         saveSession(currentSession);
-        render(result.step);
+        render(result.session, result.step);
     } catch (error) {
         console.error("Unable to load workflow:", error);
         clearSession();
@@ -55,26 +64,21 @@ function bindActions() {
 
     bindClick("mac-assign", handleMacAssign);
     bindClick("mac-prev", handlePrevious);
-    bindClick("mac-next", handleNext);
+    bindClick("mac-next", handleMacNext);
 
     const verifyCheckbox = document.getElementById("verify-confirm");
-    if (verifyCheckbox) {
-        verifyCheckbox.addEventListener("change", handleVerifyChange);
-    }
+    if (verifyCheckbox) verifyCheckbox.addEventListener("change", handleVerifyChange);
     bindClick("verification-prev", handlePrevious);
-    bindClick("verification-next", handleNext);
+    bindClick("verification-next", handleVerificationNext);
 
     bindClick("result-pass", handleResultPass);
     bindClick("result-fail", handleResultFailShowNotes);
     bindClick("result-fail-submit", handleResultFailSubmit);
 
-    bindClick("serial-prev", handlePrevious);
-    bindClick("serial-finish", handleFinish);
-
     bindClick("reset-device-toggle", handleResetDeviceToggle);
 }
 
-/* ---------- Reset Device (static, not part of the standard workflow) ---------- */
+/* ---------- Reset Device (static, unchanged) ---------- */
 
 let resetDeviceLoaded = false;
 
@@ -98,13 +102,10 @@ async function handleResetDeviceToggle() {
 
 function renderResetDevicePanel(result) {
     const instructionsEl = document.getElementById("reset-device-instructions");
-    if (instructionsEl) {
-        instructionsEl.textContent = result.instructions;
-    }
+    if (instructionsEl) instructionsEl.textContent = result.instructions;
 
     const stepsEl = document.getElementById("reset-device-steps");
     if (!stepsEl) return;
-
     stepsEl.innerHTML = "";
 
     result.steps.forEach((step, index) => {
@@ -128,13 +129,17 @@ function renderResetDevicePanel(result) {
 
 /* ---------- Phase derivation & shared rendering ---------- */
 
-function derivePhase(session) {
-    if (session.completed) {
-        return session.test_result ? "serial" : "result";
-    }
-    if (session.current_step <= 3) return "qr";
-    if (session.current_step === 4) return "mac";
-    return "verification";
+function render(session, step) {
+    const phase = STATE_TO_PHASE[session.state] || "qr";
+
+    renderStageNav(phase);
+    showPhase(phase);
+    updateHeaderOperator(session.operator);
+
+    if (phase === "qr" && step) renderQrStep(step);
+    else if (phase === "mac") renderMacPhase(session, step);
+    else if (phase === "verification") renderVerificationPhase(step);
+    else if (phase === "result") renderResultPhase();
 }
 
 function showPhase(phase) {
@@ -142,7 +147,6 @@ function showPhase(phase) {
         const el = document.getElementById(id);
         if (el) el.classList.remove("is-active");
     });
-
     const activeEl = document.getElementById(PHASE_PLACEHOLDER_IDS[phase]);
     if (activeEl) activeEl.classList.add("is-active");
 }
@@ -159,9 +163,6 @@ function renderStageNav(phase) {
         const tab = document.createElement("button");
         tab.type = "button";
         tab.className = "stage-tab";
-        // Stage tabs are a progress readout, not a navigation shortcut —
-        // moving between phases goes through Previous/Next so session
-        // state (created order, assigned MAC) always stays consistent.
         tab.disabled = true;
         if (index === activeIndex) tab.classList.add("is-active");
         if (index < activeIndex) tab.classList.add("is-complete");
@@ -182,34 +183,14 @@ function updateHeaderOperator(operator) {
     if (el) el.textContent = operator ? `Operator: ${operator}` : "";
 }
 
-function render(step) {
-    const phase = derivePhase(currentSession);
-
-    renderStageNav(phase);
-    showPhase(phase);
-    updateHeaderOperator(currentSession ? currentSession.operator : "");
-
-    if (phase === "qr" && step) {
-        renderQrStep(step);
-    } else if (phase === "mac" && step) {
-        renderMacPhase(step);
-    } else if (phase === "verification" && step) {
-        renderVerificationPhase(step);
-    } else if (phase == "result") {
-        renderResultPhase();
-    } else if (phase === "serial") {
-        renderSerialPhase();
-    }
-}
-
-/* ---------- Shared step navigation (qr / mac / verification phases) ---------- */
+/* ---------- Phase: QR steps (1-4) ---------- */
 
 async function handlePrevious() {
     try {
         const result = await api.previousStep();
         currentSession = result.session;
         saveSession(currentSession);
-        render(result.step);
+        render(result.session, result.step);
     } catch (error) {
         console.error("Unable to go to previous step:", error);
     }
@@ -220,13 +201,11 @@ async function handleNext() {
         const result = await api.nextStep();
         currentSession = result.session;
         saveSession(currentSession);
-        render(result.step);
+        render(result.session, result.step);
     } catch (error) {
         console.error("Unable to advance workflow:", error);
     }
 }
-
-/* ---------- Phase 1: Test QR Codes (steps 1–4) ---------- */
 
 function renderQrStep(step) {
     const workflowName = document.getElementById("workflow-name");
@@ -236,55 +215,80 @@ function renderQrStep(step) {
     const previousButton = document.getElementById("previous-button");
     const nextButton = document.getElementById("next-button");
 
-    if (workflowName) {
-        workflowName.textContent = step.workflow_name;
-    }
-
+    if (workflowName) workflowName.textContent = step.workflow_name;
     if (stepIndicator) {
-        stepIndicator.textContent = `Step ${step.step_number} of 4 — ${step.step_name}`;
+        stepIndicator.textContent = `Step ${step.step_number} of ${step.total_steps} — ${step.step_name}`;
     }
-
-    if (commandEl) {
-        commandEl.textContent = step.command;
-    }
-
+    if (commandEl) commandEl.textContent = step.command;
     if (qrImage) {
         qrImage.src = step.qr_url;
         qrImage.alt = `QR Code for ${step.step_name}`;
     }
-
-    if (previousButton) {
-        previousButton.disabled = step.step_index === 0;
-    }
-
+    if (previousButton) previousButton.disabled = step.step_index === 0;
     if (nextButton) {
         nextButton.textContent = "Next";
         nextButton.disabled = false;
     }
 }
 
-/* ---------- Phase 2: MAC Addresses (step 5) ---------- */
+/* ---------- Phase: Test Result ---------- */
 
-function nextMacFromPool(mac) {
-    // Placeholder pool assignment for the mock API — the real backend
-    // reserves the next available MAC from the order's allocated pool.
-    const parts = mac.split(":");
-    if (parts.length !== 6) return mac;
-
-    const last = parseInt(parts[5], 16);
-    if (Number.isNaN(last)) return mac;
-
-    parts[5] = ((last + 1) % 256).toString(16).padStart(2, "0").toUpperCase();
-    return parts.join(":");
+function renderResultPhase() {
+    document.getElementById("result-notes").value = "";
+    setVisible("result-notes-row", false);
 }
 
-function renderMacPhase(step) {
+async function handleResultPass() {
+    try {
+        const result = await api.setTestResult("PASS", "");
+        currentSession = result.session;
+        saveSession(currentSession);
+        render(result.session, result.step);
+    } catch (error) {
+        console.error("Unable to record test result:", error);
+        alert(error.message || "Unable to record test result.");
+    }
+}
+
+function handleResultFailShowNotes() {
+    setVisible("result-notes-row", true);
+    document.getElementById("result-notes").focus();
+}
+
+async function handleResultFailSubmit() {
+    const notesInput = document.getElementById("result-notes");
+    const notes = notesInput.value.trim();
+    if (!notes) {
+        notesInput.focus();
+        return;
+    }
+
+    try {
+        const result = await api.setTestResult("FAIL", notes);
+        currentSession = result.session;
+        saveSession(currentSession);
+
+        // FAIL has no MAC phase - save-ready the instant notes are in.
+        if (result.session.state === "READY_TO_SAVE") {
+            await finishAndRestart();
+        } else {
+            render(result.session, result.step);
+        }
+    } catch (error) {
+        console.error("Unable to record test result:", error);
+        alert(error.message || "Unable to record test result.");
+    }
+}
+
+/* ---------- Phase: MAC Addresses (PASS only) ---------- */
+
+function renderMacPhase(session, step) {
     const mac1Input = document.getElementById("mac1-input");
     const nextButton = document.getElementById("mac-next");
 
-    if (currentSession.mac1 && currentSession.mac2) {
-        if (mac1Input) mac1Input.value = currentSession.mac1;
-        showMacResult(step);
+    if (session.mac1 && session.mac2) {
+        if (mac1Input) mac1Input.value = session.mac1;
+        showMacResult(session, step);
         if (nextButton) nextButton.disabled = false;
     } else {
         if (mac1Input) mac1Input.value = "";
@@ -293,14 +297,14 @@ function renderMacPhase(step) {
     }
 }
 
-function showMacResult(step) {
-    document.getElementById("mac1-value").textContent = currentSession.mac1;
-    document.getElementById("mac2-value").textContent = currentSession.mac2;
+function showMacResult(session, step) {
+    document.getElementById("mac1-value").textContent = session.mac1;
+    document.getElementById("mac2-value").textContent = session.mac2;
     document.getElementById("mac-command").textContent = step.command;
 
     const qrImage = document.getElementById("mac-qr-image");
     qrImage.src = step.qr_url;
-    qrImage.alt = "QR Code for MAC Addresses";
+    qrImage.alt = "QR Code for MAC assignment";
 
     setVisible("mac-result", true);
 }
@@ -308,19 +312,18 @@ function showMacResult(step) {
 async function handleMacAssign() {
     const mac1Input = document.getElementById("mac1-input");
     const mac1 = mac1Input.value.trim();
-
     if (!mac1) {
         mac1Input.focus();
         return;
     }
 
-    const mac2 = nextMacFromPool(mac1);
-
     try {
-        const result = await api.setMacAddresses(mac1, mac2);
+        // MAC2 is chosen server-side (next available in the pool) - the
+        // frontend doesn't compute or guess it anymore.
+        const result = await api.assignMac1(mac1);
         currentSession = result.session;
         saveSession(currentSession);
-        showMacResult(result.step);
+        showMacResult(result.session, result.step);
         document.getElementById("mac-next").disabled = false;
     } catch (error) {
         console.error("Unable to assign MAC addresses:", error);
@@ -328,7 +331,19 @@ async function handleMacAssign() {
     }
 }
 
-/* ---------- Phase 3: Verification (step 6) ---------- */
+async function handleMacNext() {
+    try {
+        const result = await api.confirmMacAssignment();
+        currentSession = result.session;
+        saveSession(currentSession);
+        render(result.session, result.step);
+    } catch (error) {
+        console.error("Unable to continue to verification:", error);
+        alert(error.message || "Unable to continue to verification.");
+    }
+}
+
+/* ---------- Phase: Verification (PASS only) ---------- */
 
 function renderVerificationPhase(step) {
     document.getElementById("verification-command").textContent = step.command;
@@ -352,105 +367,39 @@ function handleVerifyChange(event) {
     document.getElementById("verification-next").disabled = !confirmed;
 }
 
-/* ---------- Phase 3.5: Test Result ---------- */
-
-function renderResultPhase() {
-    document.getElementById("result-notes").value = "";
-    setVisible("result-notes-row", false);
-}
-
-async function handleResultPass() {
+async function handleVerificationNext() {
     try {
-        const result = await api.setTestResult("PASS", "");
+        const result = await api.confirmVerification();
         currentSession = result.session;
         saveSession(currentSession);
-        render(result.step);
+
+        // Verified -> save-ready. Save and restart immediately - "once
+        // verification is completed, restart the test procedure" - no
+        // separate confirmation click.
+        if (result.session.state === "READY_TO_SAVE") {
+            await finishAndRestart();
+        } else {
+            render(result.session, result.step);
+        }
     } catch (error) {
-        console.error("Unable to record test result:", error);
-        alert(error.message || "Unable to record test result.");
+        console.error("Unable to confirm verification:", error);
+        alert(error.message || "Unable to confirm verification.");
     }
 }
 
-function handleResultFailShowNotes() {
-    setVisible("result-notes-row", true);
-    document.getElementById("result-notes").focus();
-}
+/* ---------- Save + restart ---------- */
 
-async function handleResultFailSubmit() {
-    const notesInput = document.getElementById("result-notes");
-    const notes = notesInput.value.trim();
-
-    if (!notes) {
-        notesInput.focus();
-        return;
-    }
-
+async function finishAndRestart() {
     try {
-        const result = await api.setTestResult("FAIL", notes);
-        currentSession = result.session;
-        saveSession(currentSession);
-        render(result.step);
-    } catch (error) {
-        console.error("Unable to record test result:", error);
-        alert(error.message || "Unable to record test result.");
-    }
-}
-
-/* ---------- Phase 4: Serial Number ---------- */
-
-function renderSerialPhase() {
-    document.getElementById("finish-order").textContent = currentSession.order_number || "—";
-    document.getElementById("finish-mac1").textContent = currentSession.mac1 || "—";
-    document.getElementById("finish-mac2").textContent = currentSession.mac2 || "—";
-    document.getElementById("serial-input").value = "";
-    document.getElementById("repeat-banner").classList.remove("is-visible");
-    document.getElementById("serial-finish").disabled = false;
-    document.getElementById("serial-prev").disabled = false;
-}
-
-async function handleFinish() {
-    const serialInput = document.getElementById("serial-input");
-    const serial = serialInput.value.trim();
-
-    if (!serial) {
-        serialInput.focus();
-        return;
-    }
-
-    if (!isValidSerialNumber(serial)) {
-        alert("Serial number must be formatted as EMyyww0000.");
-        serialInput.focus();
-        return;
-    }
-
-    try {
-        await api.finishSession(serial);
+        await api.finishSession();
     } catch (error) {
         console.error("Unable to save device:", error);
         alert(error.message || "Unable to save this device.");
         return;
     }
 
-    document.getElementById("repeat-banner").classList.add("is-visible");
-    document.getElementById("serial-finish").disabled = true;
-    document.getElementById("serial-prev").disabled = true;
-
-    setTimeout(startNextUnit, 1400);
-}
-
-async function startNextUnit() {
-    const order = currentSession.order_number;
-    const operator = currentSession.operator;
+    // Operator/order/serial entry all live on the home page - "restart
+    // the test procedure" means going back there, not a phase here.
     clearSession();
-
-    try {
-        const result = await api.startSession({ order_number: order, operator });
-        currentSession = result.session;
-        saveSession(currentSession);
-        render(result.step);
-    } catch (error) {
-        console.error("Unable to start the next unit:", error);
-        currentSession = null;
-        navigateTo("index.html");
-    }
+    navigateTo("index.html");
 }

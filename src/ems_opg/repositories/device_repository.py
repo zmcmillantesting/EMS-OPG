@@ -1,8 +1,6 @@
-from datetime import UTC, datetime
+from sqlalchemy import func, or_, select
 
-from sqlalchemy import or_, select
-
-from ems_opg.database.models import Device, Order
+from ems_opg.database.models import Device
 
 class DeviceRepository:
 
@@ -75,61 +73,20 @@ class DeviceRepository:
     def delete(self, device):
         self.session.delete(device)
 
-    def mark_used(self, device):
-        device.used = True
-        return device
-    
-    def mark_unused(self, device):
-        device.used = False
-        return device
-    
-    def get_by_order(self, order_number):
-
-        return self.session.scalars(
-            select(Device).where(
-                Device.used == True
-            )
-            .where(Device.order_number == order_number)
-        ).all()
-
     def list_by_order(self, order_number):
         return self.session.scalars(
             select(Device).where(Device.order_number == order_number)
         ).all()
 
-    def list_available(self):
-        return self.session.scalars(
-            select(Device).where(Device.used.is_(False))
-        ).all()
-        
-    def get_next_unused_by_order(self, order_number):
+    def count_passed_by_order(self, order_number):
+        """
+        The "completed" side of an order's progress tracker - compared
+        against Order.quantity for remaining = quantity - this count.
+        Only PASS counts; a device sitting on a FAIL still needs a
+        retest before it contributes.
+        """
         return self.session.scalar(
-            select(Device)
+            select(func.count(Device.id))
             .where(Device.order_number == order_number)
-            .where(Device.used.is_(False))
-            .order_by(Device.id)
+            .where(Device.test_result == "PASS")
         )
-        
-    def assign_order(self, device, order_number, serial_number, operator, test_result):
-        if device.used:
-            raise ValueError("MAC address has already been used.")
-
-        existing = self.get_by_order_and_serial(order_number, serial_number)
-        if existing and existing.id != device.id:
-            raise ValueError("Serial number already exists for this order.")
-
-        order_obj = self.session.scalars(
-            select(Order).where(Order.order_number == order_number)
-        ).all()
-        if not order_obj:
-            raise ValueError("Order not found.")
-
-        device.order_number = order_number
-        device.serial_number = serial_number
-        device.operator = operator
-        device.test_result = test_result
-        device.used = True
-        device.timestamp = datetime.now(UTC)
-
-        self.session.commit()
-        return device

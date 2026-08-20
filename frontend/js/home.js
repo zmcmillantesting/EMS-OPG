@@ -1,39 +1,30 @@
 /**
- * Home page behavior — operator identification and order selection.
+ * Home page behavior — operator ID, order selection/creation, and serial
+ * number entry. The redesigned workflow captures the serial number here,
+ * before the functional test runs, rather than at the end of a session.
  */
 
-let orderDeviceCounts = {};
 let orderQuantities = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
     const status = await initPage();
     bindHomeActions(status);
-    await loadOpenOrders();
+    await loadOrders();
 });
 
 function bindHomeActions(status) {
     const form = document.getElementById("start-test-form");
-    if (form) {
-        form.addEventListener("submit", handleStartTest);
-    }
+    if (form) form.addEventListener("submit", handleStartTest);
 
-    const openOrdersSelect = document.getElementById("open-orders-select");
-    const orderInputE1 = document.getElementById("order-input");
-    if (openOrdersSelect) {
-        openOrdersSelect.addEventListener("change", () => {
-            if (orderInputE1 && openOrdersSelect.value) {
-                orderInputE1.value = openOrdersSelect.value;
-            }
-            updateOrderActionButton(openOrdersSelect.value);
+    const orderSelect = document.getElementById("order-select");
+    if (orderSelect) {
+        orderSelect.addEventListener("change", () => {
+            updateOrderActionButtons(orderSelect.value);
         });
     }
 
-    if (orderInputE1) {
-        orderInputE1.addEventListener("input", ()=> {
-            updateOrderActionButton(orderInputE1.value.trim());
-        });
-    }
-
+    bindClick("new-order-toggle", handleNewOrderToggle);
+    bindClick("new-order-create", handleCreateOrder);
     bindClick("delete-order-button", handleDeleteOrder);
     bindClick("edit-order-button", handleEditOrder);
 
@@ -42,14 +33,8 @@ function bindHomeActions(status) {
         const version = document.getElementById("home-version");
         const databaseStatus = document.getElementById("home-database-status");
 
-        if (devicesCount) {
-            devicesCount.textContent = status.devicesToday ?? "—";
-        }
-
-        if (version && status.version) {
-            version.textContent = status.version;
-        }
-
+        if (devicesCount) devicesCount.textContent = status.devicesToday ?? "—";
+        if (version && status.version) version.textContent = status.version;
         if (databaseStatus) {
             databaseStatus.textContent = status.databaseConnected ? "Connected" : "Offline";
             databaseStatus.className = `status-value ${status.databaseConnected ? "status-success" : "status-error"}`;
@@ -57,69 +42,91 @@ function bindHomeActions(status) {
     }
 }
 
-async function loadOpenOrders() {
-    const select = document.getElementById("open-orders-select");
+async function loadOrders() {
+    const select = document.getElementById("order-select");
     if (!select) return;
 
     try {
-        const result = await api.getOpenOrders();
-        orderDeviceCounts = {};
+        const result = await api.getOrders();
         orderQuantities = {};
 
         select.querySelectorAll('option:not([value=""])').forEach((option) => option.remove());
 
         result.orders.forEach((order) => {
-            orderDeviceCounts[order.order_number] = order.device_count ?? order.completed;
             orderQuantities[order.order_number] = order.quantity;
 
             const option = document.createElement("option");
             option.value = order.order_number;
-            option.textContent =
-                order.device_count === 0
-                    ? `${order.order_number} — ${order.part_number} (empty — nothing provisioned)`
-                    : `${order.order_number} — ${order.part_number} (${order.completed}/${order.quantity})`;
+            option.textContent = `${order.order_number} — ${order.passed}/${order.quantity} passed`;
             select.appendChild(option);
         });
     } catch (error) {
-        console.error("Unable to load open orders:", error);
+        console.error("Unable to load orders:", error);
     }
 }
 
-function updateOrderActionButton(orderNumber) {
+function updateOrderActionButtons(orderNumber) {
     setVisible("delete-order-button", Boolean(orderNumber));
     setVisible("edit-order-button", Boolean(orderNumber));
 }
 
-async function handleDeleteOrder() {
-    const select = document.getElementById("open-orders-select");
-    const orderInput = document.getElementById("order-input");
-    const operatorInput = document.getElementById("operator-input");
-    const orderNumber = (orderInput?.value || select?.value || "").trim();
+function handleNewOrderToggle() {
+    const panel = document.getElementById("new-order-panel");
+    if (!panel) return;
+    setVisible("new-order-panel", panel.classList.contains("hidden"));
+}
 
-    if (!orderNumber) {
+async function handleCreateOrder() {
+    const numberInput = document.getElementById("new-order-number-input");
+    const quantityInput = document.getElementById("new-order-quantity-input");
+
+    const orderNumber = numberInput.value.trim();
+    const quantity = Number(quantityInput.value);
+
+    if (!isValidOrderNumber(orderNumber)) {
+        alert("Order number must be formatted as 0000.0 or 00000.0.");
+        numberInput.focus();
+        return;
+    }
+    if (!Number.isInteger(quantity) || quantity < 1) {
+        alert("Quantity must be a whole number of at least 1.");
+        quantityInput.focus();
         return;
     }
 
-    const knownCount = orderDeviceCounts[orderNumber];
-    const confirmMessage = knownCount
-        ? `Reset order ${orderNumber}? Its ${knownCount} device(s) will be marked ` +
-          `available again for re-testing. Serial numbers, operators, and MAC ` +
-          `assignments are kept - this does not release any MAC addresses.`
-        : `Delete or reset order ${orderNumber}? If it has devices assigned, ` + 
-        `they will be marked available again for retesting (serial numbers, operators, ` +
-        `and MAC assignments are kept). If it's empty the order itself will be deleted. This cannot be undone`;
+    try {
+        await api.createOrder({ order_number: orderNumber, quantity });
+        numberInput.value = "";
+        quantityInput.value = "";
+        setVisible("new-order-panel", false);
 
-    if (!confirm(confirmMessage)) {
+        await loadOrders();
+        document.getElementById("order-select").value = orderNumber;
+        updateOrderActionButtons(orderNumber);
+    } catch (error) {
+        console.error("Unable to create order:", error);
+        alert(error.message || "Unable to create this order.");
+    }
+}
+
+async function handleDeleteOrder() {
+    const select = document.getElementById("order-select");
+    const operatorInput = document.getElementById("operator-input");
+    const orderNumber = (select?.value || "").trim();
+
+    if (!orderNumber) return;
+
+    if (!confirm(
+        `Delete order ${orderNumber}? This only works if no devices have ` +
+        `been recorded against it yet, and cannot be undone.`
+    )) {
         return;
     }
 
     try {
         await api.deleteOrder(orderNumber, operatorInput?.value.trim());
-        if (select) select.value = ""
-        if (orderInput) orderInput.value = "";
-        updateOrderActionButton("")
-
-        await loadOpenOrders()
+        updateOrderActionButtons("");
+        await loadOrders();
     } catch (error) {
         console.error("Unable to delete order:", error);
         alert(error.message || "Unable to delete this order.");
@@ -127,25 +134,17 @@ async function handleDeleteOrder() {
 }
 
 async function handleEditOrder() {
-    const select = document.getElementById("open-orders-select");
-    const orderInput = document.getElementById("order-input");
+    const select = document.getElementById("order-select");
     const operatorInput = document.getElementById("operator-input");
-    const orderNumber = (orderInput?.value || select?.value || "").trim();
+    const orderNumber = (select?.value || "").trim();
 
-    if (!orderNumber) {
-        return;
-    }
+    if (!orderNumber) return;
 
-    // Correcting a mistake on a large order (hundreds of devices) shouldn't
-    // require touching devices one at a time - this only renames the order
-    // number and/or adjusts the planned quantity; devices are untouched.
     const newOrderNumberRaw = prompt(
         `New order number for ${orderNumber} (leave unchanged to keep it):`,
         orderNumber
     );
-    if (newOrderNumberRaw === null) {
-        return;
-    }
+    if (newOrderNumberRaw === null) return;
     const newOrderNumber = newOrderNumberRaw.trim();
 
     const currentQuantity = orderQuantities[orderNumber];
@@ -153,9 +152,7 @@ async function handleEditOrder() {
         `New quantity for ${orderNumber} (leave blank to keep it unchanged):`,
         currentQuantity ?? ""
     );
-    if (newQuantityRaw === null) {
-        return;
-    }
+    if (newQuantityRaw === null) return;
     const trimmedQuantity = newQuantityRaw.trim();
 
     const updates = {};
@@ -170,19 +167,12 @@ async function handleEditOrder() {
         updates.quantity = Number(trimmedQuantity);
     }
 
-    if (Object.keys(updates).length === 0) {
-        return;
-    }
+    if (Object.keys(updates).length === 0) return;
 
     try {
         const result = await api.correctOrder(orderNumber, updates, operatorInput?.value.trim());
-
-        if (select) select.value = "";
-        if (orderInput) orderInput.value = "";
-        updateOrderActionButton("");
-
-        await loadOpenOrders();
-
+        updateOrderActionButtons("");
+        await loadOrders();
         alert(result.message || "Order updated.");
     } catch (error) {
         console.error("Unable to update order:", error);
@@ -194,24 +184,31 @@ async function handleStartTest(event) {
     event.preventDefault();
 
     const operatorInput = document.getElementById("operator-input");
-    const orderInput = document.getElementById("order-input");
+    const orderSelect = document.getElementById("order-select");
+    const serialInput = document.getElementById("serial-input");
+
     const operator = operatorInput.value.trim();
-    const order = orderInput.value.trim();
+    const order = orderSelect.value.trim();
+    const serial = serialInput.value.trim();
 
     if (!operator) {
         operatorInput.focus();
         return;
     }
     if (!order) {
-        orderInput.focus();
+        orderSelect.focus();
+        return;
+    }
+    if (!isValidSerialNumber(serial)) {
+        alert("Serial number must be formatted as EMyyww0000.");
+        serialInput.focus();
         return;
     }
 
-    // Starting fresh discards any abandoned in-progress session
     clearSession();
 
     try {
-        const result = await api.startSession({ order_number: order, operator });
+        const result = await api.startSession({ order_number: order, operator, serial_number: serial });
         saveSession(result.session);
         navigateTo("testing.html");
     } catch (error) {
