@@ -13,7 +13,7 @@ from pathlib import Path
 # ==========================================================
 
 APP_NAME = "EMS OPG"
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.0.1"
 
 # ==========================================================
 # Project Directories
