@@ -423,7 +423,7 @@ async function finishAndRestart() {
         saveSession(currentSession);
         // Operator + order stay fixed - loop straight back into the
         // next board's QR steps rather than returning to the home page.
-        render(result.session, null);
+        render(result.session, result.step);
     } catch (error) {
         console.error("Unable to save:", error);
         alert(error.message || "Unable to save.");
