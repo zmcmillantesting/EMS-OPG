@@ -611,9 +611,11 @@ def register_routes(app, application):
 
         engine.restart()
 
+        step = build_step_payload(engine, qr_service)
+
         return jsonify({
             "session": session_dict(engine.session, engine.state),
-            "message": "Saved.",
+            "step": step, "message": "Saved.",
         })
 
     @api_bp.route("/session/cancel", methods=["POST"])
