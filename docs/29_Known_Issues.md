@@ -4,6 +4,7 @@ Tracked here rather than fixed immediately because each needs a judgment
 call, isn't urgent, or is explicitly deferred. Update this list as items get
 resolved or new ones are found.
 - previous button in testing stage isn't working
+- Max limit exceeded pop up while trying to generate mac address QR-Code. Could not move onto next step b/c error message would pop up every time. No log information in application.log. Returning to home page and retrying worked. 
 
 ## Configuration / versioning
 
